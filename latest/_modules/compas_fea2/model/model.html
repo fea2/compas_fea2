@@ -92,28 +92,35 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 
-<span class="c1"># import pickle</span>
-<span class="c1"># import os</span>
 <span class="kn">import</span> <span class="nn">importlib</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">import</span> <span class="nn">gc</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Type</span>
+<span class="kn">import</span> <span class="nn">pint</span>
 
-<span class="c1"># import compas_fea2</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">from</span> <span class="nn">compas_fea2</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">import</span> <span class="nn">compas_fea2</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.utilities._utils</span> <span class="kn">import</span> <span class="n">timer</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.base</span> <span class="kn">import</span> <span class="n">FEAData</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.interactions</span> <span class="kn">import</span> <span class="n">_Interaction</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.parts</span> <span class="kn">import</span> <span class="n">Part</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.nodes</span> <span class="kn">import</span> <span class="n">Node</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.materials</span> <span class="kn">import</span> <span class="n">_Material</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.sections</span> <span class="kn">import</span> <span class="n">_Section</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.bcs</span> <span class="kn">import</span> <span class="n">_BoundaryCondition</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.groups</span> <span class="kn">import</span> <span class="n">_Group</span><span class="p">,</span> <span class="n">NodesGroup</span><span class="p">,</span> <span class="n">PartsGroup</span><span class="p">,</span> <span class="n">ElementsGroup</span><span class="p">,</span> <span class="n">FacesGroup</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.interfaces</span> <span class="kn">import</span> <span class="n">Interface</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.model.constraints</span> <span class="kn">import</span> <span class="n">_Constraint</span><span class="p">,</span> <span class="n">TieConstraint</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.utilities.interfaces</span> <span class="kn">import</span> <span class="n">faces_in_interface</span>
-<span class="kn">from</span> <span class="nn">compas_fea2.utilities.interfaces</span> <span class="kn">import</span> <span class="n">nodes_in_interface</span>
+<span class="kn">from</span> <span class="nn">compas_fea2.utilities._utils</span> <span class="kn">import</span> <span class="n">part_method</span><span class="p">,</span> <span class="n">get_docstring</span><span class="p">,</span> <span class="n">problem_method</span>
 
+<span class="kn">from</span> <span class="nn">compas_fea2.base</span> <span class="kn">import</span> <span class="n">FEAData</span>
+<span class="kn">from</span> <span class="nn">compas_fea2.model.parts</span> <span class="kn">import</span> <span class="n">_Part</span><span class="p">,</span> <span class="n">DeformablePart</span><span class="p">,</span> <span class="n">RigidPart</span>
+<span class="kn">from</span> <span class="nn">compas_fea2.model.nodes</span> <span class="kn">import</span> <span class="n">Node</span>
+<span class="kn">from</span> <span class="nn">compas_fea2.model.bcs</span> <span class="kn">import</span> <span class="n">_BoundaryCondition</span>
+<span class="kn">from</span> <span class="nn">compas_fea2.model.ics</span> <span class="kn">import</span> <span class="n">_InitialCondition</span><span class="p">,</span> <span class="n">InitialStressField</span>
+<span class="kn">from</span> <span class="nn">compas_fea2.model.groups</span> <span class="kn">import</span> <span class="n">_Group</span><span class="p">,</span> <span class="n">NodesGroup</span><span class="p">,</span> <span class="n">PartsGroup</span><span class="p">,</span> <span class="n">ElementsGroup</span><span class="p">,</span> <span class="n">FacesGroup</span>
+<span class="kn">from</span> <span class="nn">compas_fea2.model.constraints</span> <span class="kn">import</span> <span class="n">_Constraint</span><span class="p">,</span> <span class="n">TieMPC</span><span class="p">,</span> <span class="n">BeamMPC</span>
+
+<span class="c1"># from compas_fea2.problem.problem import Problem</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">compas_assembly</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: compas_assembly was not found in your evironment. Some functionalities will not be available.&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">compas_fea2.units</span> <span class="kn">import</span> <span class="n">units</span>
 
 <div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.html#compas_fea2.model.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class representing an FEA model.</span>
@@ -141,16 +148,14 @@
 <span class="sd">    author : str</span>
 <span class="sd">        The name of the author of the model.</span>
 <span class="sd">        This will be added to the input file and can be useful for future reference.</span>
-<span class="sd">    parts : Set[:class:`compas_fea2.model.Part`]</span>
+<span class="sd">    parts : Set[:class:`compas_fea2.model.DeformablePart`]</span>
 <span class="sd">        The parts of the model.</span>
 <span class="sd">    bcs : dict</span>
 <span class="sd">        The boundary conditions of the model.</span>
+<span class="sd">    ics : dict</span>
+<span class="sd">        The initial conditions of the model.</span>
 <span class="sd">    constraints : Set[:class:`compas_fea2.model._Constraint`]</span>
 <span class="sd">        The constraints of the model.</span>
-<span class="sd">    interactions : Set[:class:`compas_fea2.model._Interaction`]</span>
-<span class="sd">        The interactions between parts of the model.</span>
-<span class="sd">    interfaces : Set[:class:`compas_fea2.model._Interface`]</span>
-<span class="sd">        The interface between two parts of the model.</span>
 <span class="sd">    partgroups : Set[:class:`compas_fea2.model.PartsGroup`]</span>
 <span class="sd">        The part groups of the model.</span>
 <span class="sd">    facesgroups : Set[:class:`compas_fea2.model.FacesGroup`]</span>
@@ -164,10 +169,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">author</span> <span class="o">=</span> <span class="n">author</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_parts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_bcs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ics</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_interactions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_interfaces</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_partsgroups</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_problems</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loads</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -182,49 +189,132 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bcs</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ics</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interactions</span>
+    <span class="k">def</span> <span class="nf">materials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">materials</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">RigidPart</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">material</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">materials</span><span class="p">:</span>
+                <span class="n">materials</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">material</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">materials</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">interfaces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interfaces</span>
+    <span class="k">def</span> <span class="nf">sections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">sections</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">RigidPart</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">sections</span><span class="p">:</span>
+                <span class="n">sections</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sections</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">facesgroups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facesgroups</span>
+    <span class="k">def</span> <span class="nf">problems</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problems</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">loads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loads</span>
+
+    <span class="c1"># =========================================================================</span>
+    <span class="c1">#                       Constructor methods</span>
+    <span class="c1"># =========================================================================</span>
+
+<div class="viewcode-block" id="Model.from_cfm"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.from_cfm.html#compas_fea2.model.Model.from_cfm">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@timer</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="s1">&#39;Model loaded from cfm file in &#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">from_cfm</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="c1"># type: (str) -&gt; Model</span>
+        <span class="sd">&quot;&quot;&quot;Imports a Problem object from an .cfm file through Pickle.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : str</span>
+<span class="sd">            Complete path of the file. (for example &#39;C:/temp/model.cfm&#39;)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.model.Model`</span>
+<span class="sd">            The imported model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># disable garbage collector</span>
+                <span class="n">gc</span><span class="o">.</span><span class="n">disable</span><span class="p">()</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="c1"># enable garbage collector again</span>
+                <span class="n">gc</span><span class="o">.</span><span class="n">enable</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">gc</span><span class="o">.</span><span class="n">enable</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Model not created!&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">model</span></div>
+
+    <span class="c1"># =========================================================================</span>
+    <span class="c1">#                       De-constructor methods</span>
+    <span class="c1"># =========================================================================</span>
+
+<div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.to_json.html#compas_fea2.model.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Model.to_cfm"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.to_cfm.html#compas_fea2.model.Model.to_cfm">[docs]</a>    <span class="k">def</span> <span class="nf">to_cfm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="c1"># type: (Path) -&gt; None</span>
+        <span class="sd">&quot;&quot;&quot;Exports the Model object to an .cfm file through Pickle.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : path</span>
+<span class="sd">            Complete path to the new file. (for example &#39;C:/temp/model.cfm&#39;)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s1">&#39;.cfm&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please provide a valid path including the name of the file.&quot;</span><span class="p">)</span>
+        <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">())</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Model saved to: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span></div>
 
     <span class="c1"># =========================================================================</span>
     <span class="c1">#                             Parts methods</span>
     <span class="c1"># =========================================================================</span>
 
-<div class="viewcode-block" id="Model.find_part_by_name"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_part_by_name.html#compas_fea2.model.Model.find_part_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">find_part_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="c1"># type: (str) -&gt; Part</span>
+<div class="viewcode-block" id="Model.find_part_by_name"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_part_by_name.html#compas_fea2.model.Model.find_part_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">find_part_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># type: (str, bool) -&gt; DeformablePart</span>
         <span class="sd">&quot;&quot;&quot;Find if there is a part with a given name in the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        name : str</span>
+<span class="sd">            The name to match</span>
+<span class="sd">        casefolde : bool</span>
+<span class="sd">            If `True` perform a case insensitive search, by default `False`.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        :class:`compas_fea2.model.Part`</span>
+<span class="sd">        :class:`compas_fea2.model.DeformablePart`</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">name_1</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">casefold</span> <span class="k">else</span> <span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
+            <span class="n">name_2</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">casefold</span> <span class="k">else</span> <span class="n">name</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">name_1</span> <span class="o">==</span> <span class="n">name_2</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">part</span></div>
 
 <div class="viewcode-block" id="Model.contains_part"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.contains_part.html#compas_fea2.model.Model.contains_part">[docs]</a>    <span class="k">def</span> <span class="nf">contains_part</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">part</span><span class="p">):</span>
-        <span class="c1"># type: (Part) -&gt; Part</span>
+        <span class="c1"># type: (DeformablePart) -&gt; DeformablePart</span>
         <span class="sd">&quot;&quot;&quot;Verify that the model contains a specific part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        part : :class:`compas_fea2.model.Part`</span>
+<span class="sd">        part : :class:`compas_fea2.model.DeformablePart`</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -234,16 +324,16 @@
         <span class="k">return</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span></div>
 
 <div class="viewcode-block" id="Model.add_part"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_part.html#compas_fea2.model.Model.add_part">[docs]</a>    <span class="k">def</span> <span class="nf">add_part</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">part</span><span class="p">):</span>
-        <span class="c1"># type: (Part) -&gt; Part</span>
-        <span class="sd">&quot;&quot;&quot;Adds a Part to the Model.</span>
+        <span class="c1"># type: (DeformablePart) -&gt; DeformablePart</span>
+        <span class="sd">&quot;&quot;&quot;Adds a DeformablePart to the Model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        part : :class:`compas_fea2.model.Part`</span>
+<span class="sd">        part : :class:`compas_fea2.model._Part`</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        :class:`compas_fea2.model.Part`</span>
+<span class="sd">        :class:`compas_fea2.model._Part`</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
@@ -251,22 +341,30 @@
 <span class="sd">            If the part is not a part.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">Part</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">_Part</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{!r}</span><span class="s2"> is not a part.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_part</span><span class="p">(</span><span class="n">part</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SKIPPED: Part </span><span class="si">{!r}</span><span class="s2"> is already in the model.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SKIPPED: DeformablePart </span><span class="si">{!r}</span><span class="s2"> is already in the model.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
             <span class="k">return</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_part_by_name</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Duplicate name! The name &#39;</span><span class="si">{}</span><span class="s2">&#39; is already in use.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 
-        <span class="n">part</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">part</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{!r}</span><span class="s2"> registered to </span><span class="si">{!r}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_parts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">RigidPart</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">material</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">materials</span><span class="p">:</span>
+                <span class="n">material</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
+
+            <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">sections</span><span class="p">:</span>
+                <span class="n">section</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
+
         <span class="k">return</span> <span class="n">part</span></div>
 
 <div class="viewcode-block" id="Model.add_parts"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_parts.html#compas_fea2.model.Model.add_parts">[docs]</a>    <span class="k">def</span> <span class="nf">add_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parts</span><span class="p">):</span>
@@ -275,160 +373,142 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        parts : list[:class:`compas_fea2.model.Part`]</span>
+<span class="sd">        parts : list[:class:`compas_fea2.model.DeformablePart`]</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        list[:class:`compas_fea2.model.Part`]</span>
+<span class="sd">        list[:class:`compas_fea2.model.DeformablePart`]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_part</span><span class="p">(</span><span class="n">part</span><span class="p">)</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">]</span></div>
-
-<div class="viewcode-block" id="Model.get_node_from_coordinates"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.get_node_from_coordinates.html#compas_fea2.model.Model.get_node_from_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">get_node_from_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xyz</span><span class="p">,</span> <span class="n">tol</span><span class="p">):</span>
-        <span class="c1"># type: (list, float) -&gt; dict</span>
-        <span class="sd">&quot;&quot;&quot;Finds (if any) the Node object in the model with the specified coordinates.</span>
-<span class="sd">        A tollerance factor can be specified.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        xyz : list</span>
-<span class="sd">            List with the [x, y, z] coordinates of the Node.</span>
-<span class="sd">        tol : int</span>
-<span class="sd">            multiple to which round the coordinates.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        dict</span>
-<span class="sd">            Dictionary with the keys of the maching nodes for each Part.</span>
-<span class="sd">            key =  Part name</span>
-<span class="sd">            value = list of keys of the maching the specified coordinates.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">{</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">part</span><span class="o">.</span><span class="n">get_node_from_coordinates</span><span class="p">(</span><span class="n">xyz</span><span class="p">,</span> <span class="n">tol</span><span class="p">)</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="o">.</span><span class="n">values</span><span class="p">()}</span></div>
 
     <span class="c1"># =========================================================================</span>
     <span class="c1">#                           Nodes methods</span>
     <span class="c1"># =========================================================================</span>
 
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_node_by_key"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_node_by_key.html#compas_fea2.model.Model.find_node_by_key">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_node_by_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_nodes_by_name"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_nodes_by_name.html#compas_fea2.model.Model.find_nodes_by_name">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_nodes_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_nodes_by_location"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_nodes_by_location.html#compas_fea2.model.Model.find_nodes_by_location">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_nodes_by_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_closest_nodes_to_point"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_closest_nodes_to_point.html#compas_fea2.model.Model.find_closest_nodes_to_point">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_closest_nodes_to_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">number_of_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_nodes_around_node"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_nodes_around_node.html#compas_fea2.model.Model.find_nodes_around_node">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_nodes_around_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">distance</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_closest_nodes_to_node"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_closest_nodes_to_node.html#compas_fea2.model.Model.find_closest_nodes_to_node">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_closest_nodes_to_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">number_of_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_nodes_by_attribute"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_nodes_by_attribute.html#compas_fea2.model.Model.find_nodes_by_attribute">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_nodes_by_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_nodes_on_plane"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_nodes_on_plane.html#compas_fea2.model.Model.find_nodes_on_plane">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_nodes_on_plane</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plane</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_nodes_in_polygon"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_nodes_in_polygon.html#compas_fea2.model.Model.find_nodes_in_polygon">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_nodes_in_polygon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">polygon</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">1.1</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_nodes_where"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_nodes_where.html#compas_fea2.model.Model.find_nodes_where">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_nodes_where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conditions</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.contains_node"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.contains_node.html#compas_fea2.model.Model.contains_node">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">contains_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1"># =========================================================================</span>
+    <span class="c1">#                           Nodes methods</span>
+    <span class="c1"># =========================================================================</span>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_element_by_key"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_element_by_key.html#compas_fea2.model.Model.find_element_by_key">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_element_by_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(_Part)</span>
+<div class="viewcode-block" id="Model.find_elements_by_name"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_elements_by_name.html#compas_fea2.model.Model.find_elements_by_name">[docs]</a>    <span class="nd">@part_method</span>
+    <span class="k">def</span> <span class="nf">find_elements_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
     <span class="c1"># =========================================================================</span>
     <span class="c1">#                           Groups methods</span>
     <span class="c1"># =========================================================================</span>
+<div class="viewcode-block" id="Model.add_parts_group"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_parts_group.html#compas_fea2.model.Model.add_parts_group">[docs]</a>    <span class="k">def</span> <span class="nf">add_parts_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a PartsGroup object to the Model.</span>
 
-<div class="viewcode-block" id="Model.group_nodes_by_attribute"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.group_nodes_by_attribute.html#compas_fea2.model.Model.group_nodes_by_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">group_nodes_by_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Find all nodes with a given value for a the given attribute.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : :class:`compas_fea2.model.PartsGroup`</span>
+<span class="sd">            The group object to add.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.model.PartsGroup`</span>
+<span class="sd">            The added group.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">PartsGroup</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Only PartsGroups can be added to a model&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">partgroups</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">group</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>  <span class="c1"># FIXME wrong because the members of the group might have a different registation</span>
+        <span class="k">return</span> <span class="n">group</span></div>
+
+<div class="viewcode-block" id="Model.add_parts_groups"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_parts_groups.html#compas_fea2.model.Model.add_parts_groups">[docs]</a>    <span class="k">def</span> <span class="nf">add_parts_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a multiple PartsGroup object to the Model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : [:class:`compas_fea2.model.PartsGroup`]</span>
+<span class="sd">            The list with the group object to add.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        [:class:`compas_fea2.model.PartsGroup`]</span>
+<span class="sd">            The list with the added groups.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_parts_group</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Model.group_parts_where"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.group_parts_where.html#compas_fea2.model.Model.group_parts_where">[docs]</a>    <span class="k">def</span> <span class="nf">group_parts_where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Group a set of parts with a give value of a given attribute.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        attr : str</span>
-<span class="sd">            Attribute name.</span>
-<span class="sd">        value : any</span>
-<span class="sd">            Appropriate value for the given attribute.</span>
-<span class="sd">        name : str, optional</span>
-<span class="sd">            Name of the group. If not provided, one is automatically generated.</span>
+<span class="sd">            The name of the attribute.</span>
+<span class="sd">        value : var</span>
+<span class="sd">            The value of the attribute</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        [:class:`compas_fea2.model.NodesGroup`]</span>
-
+<span class="sd">        :class:`compas_fea2.model.PartsGroup`</span>
+<span class="sd">            The group with the matching parts.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">NodesGroup</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">find_nodes_by_attribute</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)),</span>
-                           <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span> <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">find_nodes_by_attribute</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)]</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parts_group</span><span class="p">(</span><span class="n">PartsGroup</span><span class="p">(</span><span class="n">parts</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="o">==</span> <span class="n">value</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">)))</span></div>
 
-<div class="viewcode-block" id="Model.group_parts"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.group_parts.html#compas_fea2.model.Model.group_parts">[docs]</a>    <span class="k">def</span> <span class="nf">group_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add a Group object to a part in the Model. it can be either a</span>
-<span class="sd">        :class:`FacesGroup` or an :class:`ElementsGroup`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        group : obj</span>
-<span class="sd">            :class:`NodesGroup` or :class:`ElementsGroup` object to add.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_partsgroups</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">group</span></div>
-
-    <span class="c1"># =========================================================================</span>
-    <span class="c1">#                       Constraints methods</span>
-    <span class="c1"># =========================================================================</span>
-
-<div class="viewcode-block" id="Model.add_constraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_constraint.html#compas_fea2.model.Model.add_constraint">[docs]</a>    <span class="k">def</span> <span class="nf">add_constraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint</span><span class="p">):</span>
-        <span class="c1"># type: (_Constraint) -&gt; _Constraint</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._Constraint` object to the Model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        constraint : :class:`compas_fea2.model._Constraint`</span>
-<span class="sd">            Constraint object to add to the model.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        :class:`compas_fea2.model.Constraint`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constraint</span><span class="p">,</span> <span class="n">_Constraint</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a constraint.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">constraint</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">constraint</span></div>
-
-<div class="viewcode-block" id="Model.add_constraints"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_constraints.html#compas_fea2.model.Model.add_constraints">[docs]</a>    <span class="k">def</span> <span class="nf">add_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
-        <span class="c1"># type: (list) -&gt; list</span>
-        <span class="sd">&quot;&quot;&quot;Add multiple :class:`compas_fea2.model._Constraint` objects to the Model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        constraints : list[:class:`compas_fea2.model._Constraint`]</span>
-<span class="sd">            list of constraints objects to add to the model.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        list[:class:`compas_fea2.model._Constraint`]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="n">constraint</span><span class="p">)</span> <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">constraints</span><span class="p">]</span></div>
-
-    <span class="c1"># =========================================================================</span>
-    <span class="c1">#                        ContactPair methods</span>
-    <span class="c1"># =========================================================================</span>
-
-<div class="viewcode-block" id="Model.add_interface"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_interface.html#compas_fea2.model.Model.add_interface">[docs]</a>    <span class="k">def</span> <span class="nf">add_interface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interface</span><span class="p">):</span>
-        <span class="c1"># type: (Interface) -&gt; Interface</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._Interface` object to the model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        interface : :class:`compas_fea2.model._Interface`</span>
-<span class="sd">            Interface object to add to the model.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        :class:`compas_fea2.model._Interface`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interface</span><span class="p">,</span> <span class="n">Interface</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_interfaces</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">interface</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">interface</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">part</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The master surface is not registered to any part&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">interface</span><span class="o">.</span><span class="n">slave</span><span class="o">.</span><span class="n">part</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The slave surface is not registered to any part&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not an interface.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interface</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_interactions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">interaction</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">interface</span></div>
-
-<div class="viewcode-block" id="Model.add_interfaces"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_interfaces.html#compas_fea2.model.Model.add_interfaces">[docs]</a>    <span class="k">def</span> <span class="nf">add_interfaces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">):</span>
-        <span class="c1"># type: (list) -&gt; list</span>
-        <span class="sd">&quot;&quot;&quot;Add multiple :class:`compas_fea2.model.Interface` objects to the Model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        interfaces : list[:class:`compas_fea2.model._Interface`]</span>
-<span class="sd">            List with interfaces to add to the model.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        list[:class:`compas_fea2.model._Interface`]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_interface</span><span class="p">(</span><span class="n">interface</span><span class="p">)</span> <span class="k">for</span> <span class="n">interface</span> <span class="ow">in</span> <span class="n">interfaces</span><span class="p">]</span></div>
 
     <span class="c1"># =========================================================================</span>
     <span class="c1">#                           BCs methods</span>
@@ -451,19 +531,18 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        list[:class:`compas_fea2.model._BoundaryCondition`]</span>
+<span class="sd">        :class:`compas_fea2.model._BoundaryCondition`</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">_Group</span><span class="p">):</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">_members</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bc</span><span class="p">,</span> <span class="n">_BoundaryCondition</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a _BoundaryCondition.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bc</span><span class="p">))</span>
 
-        <span class="n">bcs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a Node.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
@@ -471,10 +550,15 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not registered to any part.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
             <span class="k">elif</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> belongs to a part not registered to this model.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">part</span><span class="p">,</span> <span class="n">RigidPart</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">is_reference</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;For rigid parts bundary conditions can be assigned only to the reference point&#39;</span><span class="p">)</span>
+
             <span class="n">node</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">bc</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_bcs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">part</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">bc</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-            <span class="n">bcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bc</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">bcs</span></div>
+        <span class="n">bc</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">bc</span></div>
 
     <span class="k">def</span> <span class="nf">_add_bc_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bc_type</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (str, Node, str) -&gt; _BoundaryCondition</span>
@@ -713,9 +797,83 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
     <span class="c1"># ==============================================================================</span>
-    <span class="c1"># Summary</span>
+    <span class="c1"># Initial Conditions methods</span>
     <span class="c1"># ==============================================================================</span>
 
+    <span class="k">def</span> <span class="nf">_add_ics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
+        <span class="c1"># type: (_InitialCondition, _Group, str) -&gt; list</span>
+        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ic : :class:`compas_fea2.model._InitialCondition`</span>
+<span class="sd">            Initial condition object to add to the model.</span>
+<span class="sd">        group : :class:`compas_fea2.model._Group`</span>
+<span class="sd">            Group of Nodes/Elements where the initial condition is assigned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.model._InitialCondition`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">group</span><span class="o">.</span><span class="n">part</span><span class="o">.</span><span class="n">add_group</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="n">_InitialCondition</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a _InitialCondition.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ic</span><span class="p">))</span>
+
+        <span class="c1"># for member in group._members:</span>
+        <span class="c1">#     member.ics = ic</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ics</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">part</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">ic</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">ic</span>
+
+<div class="viewcode-block" id="Model.add_nodes_ics"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_nodes_ics.html#compas_fea2.model.Model.add_nodes_ics">[docs]</a>    <span class="k">def</span> <span class="nf">add_nodes_ics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="c1"># type: (_InitialCondition, Node, str) -&gt; list</span>
+        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ic : :class:`compas_fea2.model._InitialCondition`</span>
+<span class="sd">            Initial condition object to add to the model.</span>
+<span class="sd">        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`</span>
+<span class="sd">            List or Group with the nodes where the initial condition is assigned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[:class:`compas_fea2.model._InitialCondition`]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">NodesGroup</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> is not a group of nodes&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_ics</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="n">nodes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ic</span></div>
+
+<div class="viewcode-block" id="Model.add_elements_ics"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_elements_ics.html#compas_fea2.model.Model.add_elements_ics">[docs]</a>    <span class="k">def</span> <span class="nf">add_elements_ics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic</span><span class="p">,</span> <span class="n">elements</span><span class="p">):</span>
+        <span class="c1"># type: (_InitialCondition, Node, str) -&gt; list</span>
+        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ic : :class:`compas_fea2.model._InitialCondition`</span>
+<span class="sd">            Initial condition object to add to the model.</span>
+<span class="sd">        elements : :class:`compas_fea2.model.ElementsGroup`</span>
+<span class="sd">            List or Group with the elements where the initial condition is assigned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.model._InitialCondition`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">ElementsGroup</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> is not a group of elements&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_ics</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="n">elements</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ic</span></div>
+
+    <span class="c1"># ==============================================================================</span>
+    <span class="c1"># Summary</span>
+    <span class="c1"># ==============================================================================</span>
+    <span class="c1"># TODO add shor/ long</span>
 <div class="viewcode-block" id="Model.summary"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.summary.html#compas_fea2.model.Model.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># type: () -&gt; str</span>
         <span class="sd">&quot;&quot;&quot;Prints a summary of the Model object.</span>
@@ -731,11 +889,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">parts_info</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
                                  <span class="s1">&#39;    # of nodes: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">nodes</span><span class="p">)),</span>
-                                 <span class="s1">&#39;    # of elements: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">elements</span><span class="p">))])</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">]</span>
-        <span class="n">interactions_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">e</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">])</span>
+                                 <span class="s1">&#39;    # of elements: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">elements</span><span class="p">)),</span>
+                                 <span class="s1">&#39;    is_rigid : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;True&#39;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">RigidPart</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;False&#39;</span><span class="p">)])</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">]</span>
         <span class="n">constraints_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">e</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">])</span>
         <span class="n">bc_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;  </span><span class="si">{!r}</span><span class="s1"> - # of restrained nodes </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span>
                                                                      <span class="k">for</span> <span class="n">bc</span><span class="p">,</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">bc_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span> <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">bc_nodes</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bcs</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+        <span class="n">ic_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;  </span><span class="si">{!r}</span><span class="s1"> - # of nodes assigned </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span>
+                                                                     <span class="k">for</span> <span class="n">ic</span><span class="p">,</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">ic_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span> <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">ic_nodes</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ics</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
         <span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</span>
 <span class="s2">compas_fea2 Model: </span><span class="si">{}</span><span class="s2"></span>
@@ -748,10 +908,6 @@
 <span class="s2">-----</span>
 <span class="si">{}</span><span class="s2"></span>
 
-<span class="s2">Interactions</span>
-<span class="s2">------------</span>
-<span class="si">{}</span><span class="s2"></span>
-
 <span class="s2">Constraints</span>
 <span class="s2">-----------</span>
 <span class="si">{}</span><span class="s2"></span>
@@ -759,13 +915,17 @@
 <span class="s2">Boundary Conditions</span>
 <span class="s2">-------------------</span>
 <span class="si">{}</span><span class="s2"></span>
+
+<span class="s2">Initial Conditions</span>
+<span class="s2">------------------</span>
+<span class="si">{}</span><span class="s2"></span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
            <span class="bp">self</span><span class="o">.</span><span class="n">author</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts_info</span><span class="p">),</span>
-           <span class="n">interactions_info</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
            <span class="n">constraints_info</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
-           <span class="n">bc_info</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span>
+           <span class="n">bc_info</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
+           <span class="n">ic_info</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span>
            <span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">data</span></div>
@@ -808,29 +968,188 @@
     <span class="c1"># Viewer</span>
     <span class="c1"># ==============================================================================</span>
 <div class="viewcode-block" id="Model.show"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.show.html#compas_fea2.model.Model.show">[docs]</a>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">1600</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">parts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-             <span class="n">draw_elements</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">draw_nodes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">node_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-             <span class="n">draw_bcs</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+             <span class="n">solid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">draw_nodes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">node_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">draw_bcs</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">draw_constraints</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;WIP</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        width : int, optional</span>
+<span class="sd">            _description_, by default 1600</span>
+<span class="sd">        height : int, optional</span>
+<span class="sd">            _description_, by default 900</span>
+<span class="sd">        scale_factor : _type_, optional</span>
+<span class="sd">            _description_, by default 1.</span>
+<span class="sd">        parts : _type_, optional</span>
+<span class="sd">            _description_, by default None</span>
+<span class="sd">        solid : bool, optional</span>
+<span class="sd">            _description_, by default True</span>
+<span class="sd">        draw_nodes : bool, optional</span>
+<span class="sd">            _description_, by default False</span>
+<span class="sd">        node_labels : bool, optional</span>
+<span class="sd">            _description_, by default False</span>
+<span class="sd">        draw_bcs : _type_, optional</span>
+<span class="sd">            _description_, by default 1.</span>
+<span class="sd">        draw_constraints : bool, optional</span>
+<span class="sd">            _description_, by default True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="kn">from</span> <span class="nn">compas_fea2.UI.viewer</span> <span class="kn">import</span> <span class="n">FEA2Viewer</span>
         <span class="kn">from</span> <span class="nn">compas.geometry</span> <span class="kn">import</span> <span class="n">Point</span><span class="p">,</span> <span class="n">Vector</span>
-        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-        <span class="kn">from</span> <span class="nn">compas.colors</span> <span class="kn">import</span> <span class="n">ColorMap</span><span class="p">,</span> <span class="n">Color</span>
-        <span class="n">cmap</span> <span class="o">=</span> <span class="n">ColorMap</span><span class="o">.</span><span class="n">from_mpl</span><span class="p">(</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
 
         <span class="n">parts</span> <span class="o">=</span> <span class="n">parts</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span>
 
-        <span class="n">v</span> <span class="o">=</span> <span class="n">FEA2Viewer</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">FEA2Viewer</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
 
         <span class="n">v</span><span class="o">.</span><span class="n">draw_parts</span><span class="p">(</span><span class="n">parts</span><span class="p">,</span>
-                     <span class="n">draw_elements</span><span class="p">,</span>
                      <span class="n">draw_nodes</span><span class="p">,</span>
-                     <span class="n">node_labels</span><span class="p">)</span>
+                     <span class="n">node_labels</span><span class="p">,</span>
+                     <span class="n">solid</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">draw_bcs</span><span class="p">:</span>
             <span class="n">v</span><span class="o">.</span><span class="n">draw_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">draw_bcs</span><span class="p">)</span>
 
-        <span class="n">v</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+        <span class="k">if</span> <span class="n">draw_constraints</span><span class="p">:</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">draw_constraint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">)</span>
+
+        <span class="n">v</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+    <span class="c1"># =========================================================================</span>
+    <span class="c1">#                       Problems methods</span>
+    <span class="c1"># =========================================================================</span>
+
+<div class="viewcode-block" id="Model.add_problem"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_problem.html#compas_fea2.model.Model.add_problem">[docs]</a>    <span class="k">def</span> <span class="nf">add_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.problem.Problem` object to the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        problem : :class:`compas_fea2.problem.Problem`</span>
+<span class="sd">            The problem to add</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.problem.Problem`</span>
+<span class="sd">            The added problem</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            if problem is not type :class:`compas_fea2.problem.Problem`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">problem</span><span class="p">,</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">problem</span><span class="o">.</span><span class="n">Problem</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> is not a Problem&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">problem</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_problems</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">problem</span><span class="p">)</span>
+        <span class="n">problem</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">problem</span></div>
+
+<div class="viewcode-block" id="Model.add_problems"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_problems.html#compas_fea2.model.Model.add_problems">[docs]</a>    <span class="k">def</span> <span class="nf">add_problems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problems</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add multiple :class:`compas_fea2.problem.Problem` objects to the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        problems : []:class:`compas_fea2.problem.Problem`]</span>
+<span class="sd">            The problems to add</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        [:class:`compas_fea2.problem.Problem`]</span>
+<span class="sd">            The added problems</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            if a problem is not type :class:`compas_fea2.problem.Problem`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_problem</span><span class="p">(</span><span class="n">problem</span><span class="p">)</span> <span class="k">for</span> <span class="n">problem</span> <span class="ow">in</span> <span class="n">problems</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Model.find_problem_by_name"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_problem_by_name.html#compas_fea2.model.Model.find_problem_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">find_problem_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find a problem in the model using its name.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            The name of the Problem</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.problem.Problem`</span>
+<span class="sd">            The problem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">problem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">problems</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">problem</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">problem</span></div>
+
+    <span class="c1"># =========================================================================</span>
+    <span class="c1">#                       Run methods</span>
+    <span class="c1"># =========================================================================</span>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.write_input_file"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.write_input_file.html#compas_fea2.model.Model.write_input_file">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">write_input_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.analyse"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.analyse.html#compas_fea2.model.Model.analyse">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">analyse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.analyze"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.analyze.html#compas_fea2.model.Model.analyze">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.restart_analysis"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.restart_analysis.html#compas_fea2.model.Model.restart_analysis">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">restart_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problem</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.analyse_and_extract"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.analyse_and_extract.html#compas_fea2.model.Model.analyse_and_extract">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">analyse_and_extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.analyse_and_store"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.analyse_and_store.html#compas_fea2.model.Model.analyse_and_store">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">analyse_and_store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">memory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.store_results_in_model"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.store_results_in_model.html#compas_fea2.model.Model.store_results_in_model">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">store_results_in_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1"># ==============================================================================</span>
+    <span class="c1"># Results methods</span>
+    <span class="c1"># ==============================================================================</span>
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.get_reaction_forces_sql"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.get_reaction_forces_sql.html#compas_fea2.model.Model.get_reaction_forces_sql">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">get_reaction_forces_sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">problem</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.get_reaction_moments_sql"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.get_reaction_moments_sql.html#compas_fea2.model.Model.get_reaction_moments_sql">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">get_reaction_moments_sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problem</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.get_displacements_sql"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.get_displacements_sql.html#compas_fea2.model.Model.get_displacements_sql">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">get_displacements_sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problem</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.get_max_displacement_sql"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.get_max_displacement_sql.html#compas_fea2.model.Model.get_max_displacement_sql">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">get_max_displacement_sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problem</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;magnitude&#39;</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.get_min_displacement_sql"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.get_min_displacement_sql.html#compas_fea2.model.Model.get_min_displacement_sql">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">get_min_displacement_sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problem</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;length&#39;</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1">#@get_docstring(Problem)</span>
+<div class="viewcode-block" id="Model.get_displacement_at_nodes_sql"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.get_displacement_at_nodes_sql.html#compas_fea2.model.Model.get_displacement_at_nodes_sql">[docs]</a>    <span class="nd">@problem_method</span>
+    <span class="k">def</span> <span class="nf">get_displacement_at_nodes_sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span></div></div>
 </code></pre></div>
         
       </main>
@@ -861,28 +1180,12 @@
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../tutorial/umat.html">User Material subroutines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../examples.html">Examples</a><ul class="nav flex-column collapse">
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/0_scripting_save_and_load_model.html">Save and load a model</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/0_scripting_simple_frame.html">Simple frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/0_scripting_simple_shell.html">Simple shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_compas_hypar_frame.html">Hypar frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_compas_hypar_gmsh.html">Hypar shell using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_cantilever_gmsh.html">Cantilever beam using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_compas_hypar_shell.html">Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_compas_hypar_shell_modal.html">Modal analysis of an hypar shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/2_scripting_compas_hypar_sections.html">Hypar Frame with different sections</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/3_scripting_compas_hypar_umat.html">User Materials</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/4_top_opt_compas_hypar_gmsh.html">Topology optimisation of an Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/4_top_opt_solid_simple.html">Topology optimisation of a cube</a></li>
+<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../api.html">API Reference</a><ul class="nav flex-column collapse">
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.html">compas_fea2</a><ul class="nav flex-column collapse">
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.model.html">model</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.problem.html">problem</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.postprocessor.html">post-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.preprocessor.html">pre-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.optimisation.html">optimisation</a></li>
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.utilities.html">Utilities</a></li>
 </ul>
 </li>

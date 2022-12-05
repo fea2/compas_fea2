@@ -100,6 +100,11 @@
 <div class="viewcode-block" id="_Material"><a class="viewcode-back" href="../../../../api/generated/compas_fea2.model._Material.html#compas_fea2.model._Material">[docs]</a><span class="k">class</span> <span class="nc">_Material</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Initialises base Material object.</span>
 
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    Materials are registered to a :class:`compas_fea2.model.Model` and can be assigned</span>
+<span class="sd">    to sections in different elements and parts.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    denisty : float</span>
@@ -115,22 +120,34 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">expansion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">_Material</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">density</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expansion</span> <span class="o">=</span> <span class="n">expansion</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registration</span>
+
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="si">{}</span><span class="s2"></span>
 <span class="si">{}</span><span class="s2"></span>
-<span class="s2">name    : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">density : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span> <span class="o">*</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
+<span class="s2">name        : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">density     : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">expansion   : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span> <span class="o">*</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expansion</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__html__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;&quot;&lt;html&gt;</span>
+<span class="s2">&lt;head&gt;&lt;/head&gt;</span>
+<span class="s2">&lt;body&gt;&lt;p&gt;Hello World!&lt;/p&gt;&lt;/body&gt;</span>
+<span class="s2">&lt;/html&gt;&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="_Material.jobdata"><a class="viewcode-back" href="../../../../api/generated/compas_fea2.model._Material.jobdata.html#compas_fea2.model._Material.jobdata">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">jobdata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -175,8 +192,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">Ex</span><span class="p">,</span> <span class="n">Ey</span><span class="p">,</span> <span class="n">Ez</span><span class="p">,</span> <span class="n">vxy</span><span class="p">,</span> <span class="n">vyz</span><span class="p">,</span> <span class="n">vzx</span><span class="p">,</span> <span class="n">Gxy</span><span class="p">,</span> <span class="n">Gyz</span><span class="p">,</span> <span class="n">Gzx</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ElasticOrthotropic</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">Ex</span><span class="p">,</span> <span class="n">Ey</span><span class="p">,</span> <span class="n">Ez</span><span class="p">,</span> <span class="n">vxy</span><span class="p">,</span> <span class="n">vyz</span><span class="p">,</span> <span class="n">vzx</span><span class="p">,</span> <span class="n">Gxy</span><span class="p">,</span> <span class="n">Gyz</span><span class="p">,</span> <span class="n">Gzx</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">expansion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ElasticOrthotropic</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">expansion</span><span class="o">=</span><span class="n">expansion</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Ex</span> <span class="o">=</span> <span class="n">Ex</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Ey</span> <span class="o">=</span> <span class="n">Ey</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Ez</span> <span class="o">=</span> <span class="n">Ez</span>
@@ -191,8 +208,9 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="si">{}</span><span class="s2"></span>
 <span class="si">{}</span><span class="s2"></span>
-<span class="s2">name    : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">density : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">name        : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">density     : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">expansion   : </span><span class="si">{}</span><span class="s2"></span>
 
 <span class="s2">Ex  : </span><span class="si">{}</span><span class="s2"></span>
 <span class="s2">Ey  : </span><span class="si">{}</span><span class="s2"></span>
@@ -204,7 +222,7 @@
 <span class="s2">Gyz : </span><span class="si">{}</span><span class="s2"></span>
 <span class="s2">Gzx : </span><span class="si">{}</span><span class="s2"></span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span> <span class="o">*</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span>
-           <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expansion</span><span class="p">,</span>
            <span class="bp">self</span><span class="o">.</span><span class="n">Ex</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ey</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ez</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vxy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vyz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vzx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Gxy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Gyz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Gzx</span><span class="p">)</span></div>
 
 
@@ -228,8 +246,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ElasticIsotropic</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span>  <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">expansion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ElasticIsotropic</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">expansion</span><span class="o">=</span><span class="n">expansion</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="n">E</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">v</span>
 
@@ -237,13 +255,14 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">ElasticIsotropic Material</span>
 <span class="s2">-------------------------</span>
-<span class="s2">name    : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">density : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">name        : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">density     : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">expansion   : </span><span class="si">{}</span><span class="s2"></span>
 
 <span class="s2">E : </span><span class="si">{}</span><span class="s2"></span>
 <span class="s2">v : </span><span class="si">{}</span><span class="s2"></span>
 <span class="s2">G : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">)</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expansion</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">G</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -292,23 +311,24 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">strain_stress</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ElasticPlastic</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">E</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">strain_stress</span><span class="p">,</span> <span class="n">expansion</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ElasticPlastic</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">E</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">expansion</span><span class="o">=</span><span class="n">expansion</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">strain_stress</span> <span class="o">=</span> <span class="n">strain_stress</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">ElasticPlastic Material</span>
 <span class="s2">-----------------------</span>
-<span class="s2">name    : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">density : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">name        : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">density     : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">expansion   : </span><span class="si">{}</span><span class="s2"></span>
 
 <span class="s2">E  : </span><span class="si">{}</span><span class="s2"></span>
 <span class="s2">v  : </span><span class="si">{}</span><span class="s2"></span>
 <span class="s2">G  : </span><span class="si">{}</span><span class="s2"></span>
 
 <span class="s2">strain_stress : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">strain_stress</span><span class="p">)</span></div>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expansion</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">strain_stress</span><span class="p">)</span></div>
 
 
 <span class="c1"># ==============================================================================</span>
@@ -355,28 +375,12 @@
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../tutorial/umat.html">User Material subroutines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../../examples.html">Examples</a><ul class="nav flex-column collapse">
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/0_scripting_save_and_load_model.html">Save and load a model</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/0_scripting_simple_frame.html">Simple frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/0_scripting_simple_shell.html">Simple shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/1_scripting_compas_hypar_frame.html">Hypar frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/1_scripting_compas_hypar_gmsh.html">Hypar shell using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/1_scripting_cantilever_gmsh.html">Cantilever beam using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/1_scripting_compas_hypar_shell.html">Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/1_scripting_compas_hypar_shell_modal.html">Modal analysis of an hypar shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/2_scripting_compas_hypar_sections.html">Hypar Frame with different sections</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/3_scripting_compas_hypar_umat.html">User Materials</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/4_top_opt_compas_hypar_gmsh.html">Topology optimisation of an Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../examples/4_top_opt_solid_simple.html">Topology optimisation of a cube</a></li>
+<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../../api.html">API Reference</a><ul class="nav flex-column collapse">
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../../api/compas_fea2.html">compas_fea2</a><ul class="nav flex-column collapse">
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../../api/compas_fea2.model.html">model</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../../api/compas_fea2.problem.html">problem</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../../api/compas_fea2.postprocessor.html">post-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../../api/compas_fea2.preprocessor.html">pre-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../../api/compas_fea2.optimisation.html">optimisation</a></li>
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../../api/compas_fea2.utilities.html">Utilities</a></li>
 </ul>
 </li>

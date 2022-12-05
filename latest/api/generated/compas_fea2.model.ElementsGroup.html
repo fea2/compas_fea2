@@ -20,7 +20,7 @@
   <link rel="stylesheet" type="text/css" href="../../_static/css/compas-reference.css" />
 
   
-  <link rel="next" title="ElementsGroup.ToString" href="compas_fea2.model.ElementsGroup.ToString.html" />
+  <link rel="next" title="ElementsGroup.add_element" href="compas_fea2.model.ElementsGroup.add_element.html" />
   
 
   
@@ -101,13 +101,18 @@
 <dt class="sig sig-object py" id="compas_fea2.model.ElementsGroup">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compas_fea2.model.</span></span><span class="sig-name descname"><span class="pre">ElementsGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/compas_fea2/model/groups.html#ElementsGroup"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Base class for elements groups.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>ElementsGroups are registered to the same <a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a> as
+its elements and can belong to only one DeformablePart.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str, optional</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
 name if you want a more human-readable input file.</p></li>
 <li><p><strong>elements</strong> (list[<code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Element</span></code>]) – The elements belonging to the group.</p></li>
-<li><p><strong>part</strong> (<a class="reference internal" href="compas_fea2.model.Part.html#compas_fea2.model.Part" title="compas_fea2.model.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Part</span></code></a> | <a class="reference internal" href="compas_fea2.model.Model.html#compas_fea2.model.Model" title="compas_fea2.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Model</span></code></a>, optional) – The part where the members are located, by default <cite>None</cite>.</p></li>
+<li><p><strong>part</strong> (<a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a> | <a class="reference internal" href="compas_fea2.model.Model.html#compas_fea2.model.Model" title="compas_fea2.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Model</span></code></a>, optional) – The part where the members are located, by default <cite>None</cite>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Attributes</dt>
@@ -115,10 +120,25 @@ name if you want a more human-readable input file.</p></li>
 <li><p><strong>name</strong> (<em>str</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
 name if you want a more human-readable input file.</p></li>
 <li><p><strong>elements</strong> (list[<code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Element</span></code>]) – The elements belonging to the group.</p></li>
-<li><p><strong>part</strong> (<a class="reference internal" href="compas_fea2.model.Part.html#compas_fea2.model.Part" title="compas_fea2.model.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Part</span></code></a>) – The part where the members are located, by default <cite>None</cite>.</p></li>
+<li><p><strong>part</strong> (<a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a>) – The part where the members are located, by default <cite>None</cite>.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.ElementsGroup.add_element.html#compas_fea2.model.ElementsGroup.add_element" title="compas_fea2.model.ElementsGroup.add_element"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_element</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.ElementsGroup.add_elements.html#compas_fea2.model.ElementsGroup.add_elements" title="compas_fea2.model.ElementsGroup.add_elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_elements</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Inherited Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -129,11 +149,11 @@ name if you want a more human-readable input file.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.ElementsGroup.ToString.html#compas_fea2.model.ElementsGroup.ToString" title="compas_fea2.model.ElementsGroup.ToString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToString</span></code></a></p></td>
 <td><p>Converts the instance to a string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.ElementsGroup.add_members.html#compas_fea2.model.ElementsGroup.add_members" title="compas_fea2.model.ElementsGroup.add_members"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_members</span></code></a></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.ElementsGroup.copy.html#compas_fea2.model.ElementsGroup.copy" title="compas_fea2.model.ElementsGroup.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.ElementsGroup.copy.html#compas_fea2.model.ElementsGroup.copy" title="compas_fea2.model.ElementsGroup.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a></p></td>
 <td><p>Make an independent copy of the data object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.ElementsGroup.data.html#compas_fea2.model.ElementsGroup.data" title="compas_fea2.model.ElementsGroup.data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></a></p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.ElementsGroup.from_data.html#compas_fea2.model.ElementsGroup.from_data" title="compas_fea2.model.ElementsGroup.from_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_data</span></code></a></p></td>
 <td><p>Construct an object of this type from the provided data.</p></td>
@@ -200,28 +220,12 @@ name if you want a more human-readable input file.</p></li>
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../tutorial/umat.html">User Material subroutines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../examples.html">Examples</a><ul class="nav flex-column collapse">
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_save_and_load_model.html">Save and load a model</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_simple_frame.html">Simple frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_simple_shell.html">Simple shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_frame.html">Hypar frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_gmsh.html">Hypar shell using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_cantilever_gmsh.html">Cantilever beam using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_shell.html">Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_shell_modal.html">Modal analysis of an hypar shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/2_scripting_compas_hypar_sections.html">Hypar Frame with different sections</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/3_scripting_compas_hypar_umat.html">User Materials</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/4_top_opt_compas_hypar_gmsh.html">Topology optimisation of an Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/4_top_opt_solid_simple.html">Topology optimisation of a cube</a></li>
+<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item active"><a class="nav-link reference internal" href="../../api.html">API Reference</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l2 nav-item active"><a class="nav-link reference internal" href="../compas_fea2.html">compas_fea2</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l3 nav-item active"><a class="nav-link reference internal" href="../compas_fea2.model.html">model</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.problem.html">problem</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.postprocessor.html">post-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.preprocessor.html">pre-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.optimisation.html">optimisation</a></li>
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -242,7 +246,9 @@ name if you want a more human-readable input file.</p></li>
       <div class="d-none d-xl-block col-xl-2 compas-toc" role="toc">
         
         <ul class="nav flex-column" id="compas-toc">
-<li class="nav-item"><a class="nav-link reference internal" href="#">ElementsGroup</a></li>
+<li class="nav-item"><a class="nav-link reference internal" href="#">ElementsGroup</a><ul class="nav flex-column">
+</ul>
+</li>
 </ul>
 
       </div>
@@ -264,10 +270,10 @@ name if you want a more human-readable input file.</p></li>
       
 
       
-      <a href="compas_fea2.model.ElementsGroup.ToString.html" title="ElementsGroup.ToString" class="nav-link footer-link float-end text-right d-flex w-50" rel="next">
+      <a href="compas_fea2.model.ElementsGroup.add_element.html" title="ElementsGroup.add_element" class="nav-link footer-link float-end text-right d-flex w-50" rel="next">
         <div class="nav-title footer-link flex-grow-1 align-self-center">
           <div class="nav-direction small font-weight-light">Next</div>
-          ElementsGroup.ToString
+          ElementsGroup.add_element
         </div>
         <div class="nav-button p-2 m-2"><i class="fas fa-arrow-right"></i></div>
       </a>

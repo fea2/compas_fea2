@@ -120,11 +120,10 @@ name if you want a more human-readable input file.</p></li>
 This will be added to the input file and can be useful for future reference.</p></li>
 <li><p><strong>author</strong> (<em>str</em>) – The name of the author of the model.
 This will be added to the input file and can be useful for future reference.</p></li>
-<li><p><strong>parts</strong> (Set[<a class="reference internal" href="compas_fea2.model.Part.html#compas_fea2.model.Part" title="compas_fea2.model.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Part</span></code></a>]) – The parts of the model.</p></li>
+<li><p><strong>parts</strong> (Set[<a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a>]) – The parts of the model.</p></li>
 <li><p><strong>bcs</strong> (<em>dict</em>) – The boundary conditions of the model.</p></li>
+<li><p><strong>ics</strong> (<em>dict</em>) – The initial conditions of the model.</p></li>
 <li><p><strong>constraints</strong> (Set[<a class="reference internal" href="compas_fea2.model._Constraint.html#compas_fea2.model._Constraint" title="compas_fea2.model._Constraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Constraint</span></code></a>]) – The constraints of the model.</p></li>
-<li><p><strong>interactions</strong> (Set[<a class="reference internal" href="compas_fea2.model._Interaction.html#compas_fea2.model._Interaction" title="compas_fea2.model._Interaction"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Interaction</span></code></a>]) – The interactions between parts of the model.</p></li>
-<li><p><strong>interfaces</strong> (Set[<code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Interface</span></code>]) – The interface between two parts of the model.</p></li>
 <li><p><strong>partgroups</strong> (Set[<a class="reference internal" href="compas_fea2.model.PartsGroup.html#compas_fea2.model.PartsGroup" title="compas_fea2.model.PartsGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.PartsGroup</span></code></a>]) – The part groups of the model.</p></li>
 <li><p><strong>facesgroups</strong> (Set[<a class="reference internal" href="compas_fea2.model.FacesGroup.html#compas_fea2.model.FacesGroup" title="compas_fea2.model.FacesGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.FacesGroup</span></code></a>]) – The surfaces of the model.</p></li>
 </ul>
@@ -149,29 +148,35 @@ This will be added to the input file and can be useful for future reference.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_clampZZ_bc.html#compas_fea2.model.Model.add_clampZZ_bc" title="compas_fea2.model.Model.add_clampZZ_bc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_clampZZ_bc</span></code></a></p></td>
 <td><p>Add a fixed boundary condition free about ZZ type to some nodes in a part.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_constraint.html#compas_fea2.model.Model.add_constraint" title="compas_fea2.model.Model.add_constraint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_constraint</span></code></a></p></td>
-<td><p>Add a <a class="reference internal" href="compas_fea2.model._Constraint.html#compas_fea2.model._Constraint" title="compas_fea2.model._Constraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Constraint</span></code></a> object to the Model.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_elements_ics.html#compas_fea2.model.Model.add_elements_ics" title="compas_fea2.model.Model.add_elements_ics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_elements_ics</span></code></a></p></td>
+<td><p>Add a <code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._InitialCondition</span></code> to the model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_constraints.html#compas_fea2.model.Model.add_constraints" title="compas_fea2.model.Model.add_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_constraints</span></code></a></p></td>
-<td><p>Add multiple <a class="reference internal" href="compas_fea2.model._Constraint.html#compas_fea2.model._Constraint" title="compas_fea2.model._Constraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Constraint</span></code></a> objects to the Model.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_fix_bc.html#compas_fea2.model.Model.add_fix_bc" title="compas_fea2.model.Model.add_fix_bc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_fix_bc</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_fix_bc.html#compas_fea2.model.Model.add_fix_bc" title="compas_fea2.model.Model.add_fix_bc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_fix_bc</span></code></a></p></td>
 <td><p>Add a <a class="reference internal" href="compas_fea2.model.FixedBC.html#compas_fea2.model.FixedBC" title="compas_fea2.model.FixedBC"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.FixedBC</span></code></a> to the nodes in a part.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_interface.html#compas_fea2.model.Model.add_interface" title="compas_fea2.model.Model.add_interface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_interface</span></code></a></p></td>
-<td><p>Add a <code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Interface</span></code> object to the model.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_interfaces.html#compas_fea2.model.Model.add_interfaces" title="compas_fea2.model.Model.add_interfaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_interfaces</span></code></a></p></td>
-<td><p>Add multiple <a class="reference internal" href="compas_fea2.model.Interface.html#compas_fea2.model.Interface" title="compas_fea2.model.Interface"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Interface</span></code></a> objects to the Model.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_nodes_ics.html#compas_fea2.model.Model.add_nodes_ics" title="compas_fea2.model.Model.add_nodes_ics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_nodes_ics</span></code></a></p></td>
+<td><p>Add a <code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._InitialCondition</span></code> to the model.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_part.html#compas_fea2.model.Model.add_part" title="compas_fea2.model.Model.add_part"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_part</span></code></a></p></td>
-<td><p>Adds a Part to the Model.</p></td>
+<td><p>Adds a DeformablePart to the Model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_parts.html#compas_fea2.model.Model.add_parts" title="compas_fea2.model.Model.add_parts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_parts</span></code></a></p></td>
 <td><p>Add multiple parts to the model.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_parts_group.html#compas_fea2.model.Model.add_parts_group" title="compas_fea2.model.Model.add_parts_group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_parts_group</span></code></a></p></td>
+<td><p>Add a PartsGroup object to the Model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_parts_groups.html#compas_fea2.model.Model.add_parts_groups" title="compas_fea2.model.Model.add_parts_groups"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_parts_groups</span></code></a></p></td>
+<td><p>Add a multiple PartsGroup object to the Model.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_pin_bc.html#compas_fea2.model.Model.add_pin_bc" title="compas_fea2.model.Model.add_pin_bc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_pin_bc</span></code></a></p></td>
 <td><p>Add a pinned boundary condition type to some nodes in a part.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_problem.html#compas_fea2.model.Model.add_problem" title="compas_fea2.model.Model.add_problem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_problem</span></code></a></p></td>
+<td><p>Add a <code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.problem.Problem</span></code> object to the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_problems.html#compas_fea2.model.Model.add_problems" title="compas_fea2.model.Model.add_problems"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_problems</span></code></a></p></td>
+<td><p>Add multiple <code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.problem.Problem</span></code> objects to the model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_rollerXY_bc.html#compas_fea2.model.Model.add_rollerXY_bc" title="compas_fea2.model.Model.add_rollerXY_bc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_rollerXY_bc</span></code></a></p></td>
 <td><p>Add a roller free on XY boundary condition type to some nodes in a part.</p></td>
@@ -191,35 +196,119 @@ This will be added to the input file and can be useful for future reference.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.add_rollerZ_bc.html#compas_fea2.model.Model.add_rollerZ_bc" title="compas_fea2.model.Model.add_rollerZ_bc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_rollerZ_bc</span></code></a></p></td>
 <td><p>Add a roller free on Z boundary condition type to some nodes in a part.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.analyse.html#compas_fea2.model.Model.analyse" title="compas_fea2.model.Model.analyse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyse</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.analyse_and_extract.html#compas_fea2.model.Model.analyse_and_extract" title="compas_fea2.model.Model.analyse_and_extract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyse_and_extract</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.analyse_and_store.html#compas_fea2.model.Model.analyse_and_store" title="compas_fea2.model.Model.analyse_and_store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyse_and_store</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.analyze.html#compas_fea2.model.Model.analyze" title="compas_fea2.model.Model.analyze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyze</span></code></a></p></td>
+<td><p></p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.check.html#compas_fea2.model.Model.check" title="compas_fea2.model.Model.check"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check</span></code></a></p></td>
 <td><p>Check for possible problems in the model</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.contains_part.html#compas_fea2.model.Model.contains_part" title="compas_fea2.model.Model.contains_part"><code class="xref py py-obj docutils literal notranslate"><span class="pre">contains_part</span></code></a></p></td>
-<td><p>Verify that the model contains a specific part.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_part_by_name.html#compas_fea2.model.Model.find_part_by_name" title="compas_fea2.model.Model.find_part_by_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_part_by_name</span></code></a></p></td>
-<td><p>Find if there is a part with a given name in the model.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.get_node_from_coordinates.html#compas_fea2.model.Model.get_node_from_coordinates" title="compas_fea2.model.Model.get_node_from_coordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_node_from_coordinates</span></code></a></p></td>
-<td><p>Finds (if any) the Node object in the model with the specified coordinates.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.group_nodes_by_attribute.html#compas_fea2.model.Model.group_nodes_by_attribute" title="compas_fea2.model.Model.group_nodes_by_attribute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">group_nodes_by_attribute</span></code></a></p></td>
-<td><p>Find all nodes with a given value for a the given attribute.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.group_parts.html#compas_fea2.model.Model.group_parts" title="compas_fea2.model.Model.group_parts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">group_parts</span></code></a></p></td>
-<td><p>Add a Group object to a part in the Model.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.remove_all_bcs.html#compas_fea2.model.Model.remove_all_bcs" title="compas_fea2.model.Model.remove_all_bcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_all_bcs</span></code></a></p></td>
-<td><p>Removes all the boundary conditions from the Model.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.remove_bcs.html#compas_fea2.model.Model.remove_bcs" title="compas_fea2.model.Model.remove_bcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_bcs</span></code></a></p></td>
-<td><p>Removes multiple boundary conditions from the Model.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.show.html#compas_fea2.model.Model.show" title="compas_fea2.model.Model.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.contains_node.html#compas_fea2.model.Model.contains_node" title="compas_fea2.model.Model.contains_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">contains_node</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.summary.html#compas_fea2.model.Model.summary" title="compas_fea2.model.Model.summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">summary</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.contains_part.html#compas_fea2.model.Model.contains_part" title="compas_fea2.model.Model.contains_part"><code class="xref py py-obj docutils literal notranslate"><span class="pre">contains_part</span></code></a></p></td>
+<td><p>Verify that the model contains a specific part.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_closest_nodes_to_node.html#compas_fea2.model.Model.find_closest_nodes_to_node" title="compas_fea2.model.Model.find_closest_nodes_to_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_nodes_to_node</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_closest_nodes_to_point.html#compas_fea2.model.Model.find_closest_nodes_to_point" title="compas_fea2.model.Model.find_closest_nodes_to_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_nodes_to_point</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_element_by_key.html#compas_fea2.model.Model.find_element_by_key" title="compas_fea2.model.Model.find_element_by_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_element_by_key</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_elements_by_name.html#compas_fea2.model.Model.find_elements_by_name" title="compas_fea2.model.Model.find_elements_by_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_elements_by_name</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_node_by_key.html#compas_fea2.model.Model.find_node_by_key" title="compas_fea2.model.Model.find_node_by_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_node_by_key</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_nodes_around_node.html#compas_fea2.model.Model.find_nodes_around_node" title="compas_fea2.model.Model.find_nodes_around_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_nodes_around_node</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_nodes_by_attribute.html#compas_fea2.model.Model.find_nodes_by_attribute" title="compas_fea2.model.Model.find_nodes_by_attribute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_nodes_by_attribute</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_nodes_by_location.html#compas_fea2.model.Model.find_nodes_by_location" title="compas_fea2.model.Model.find_nodes_by_location"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_nodes_by_location</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_nodes_by_name.html#compas_fea2.model.Model.find_nodes_by_name" title="compas_fea2.model.Model.find_nodes_by_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_nodes_by_name</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_nodes_in_polygon.html#compas_fea2.model.Model.find_nodes_in_polygon" title="compas_fea2.model.Model.find_nodes_in_polygon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_nodes_in_polygon</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_nodes_on_plane.html#compas_fea2.model.Model.find_nodes_on_plane" title="compas_fea2.model.Model.find_nodes_on_plane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_nodes_on_plane</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_nodes_where.html#compas_fea2.model.Model.find_nodes_where" title="compas_fea2.model.Model.find_nodes_where"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_nodes_where</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_part_by_name.html#compas_fea2.model.Model.find_part_by_name" title="compas_fea2.model.Model.find_part_by_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_part_by_name</span></code></a></p></td>
+<td><p>Find if there is a part with a given name in the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.find_problem_by_name.html#compas_fea2.model.Model.find_problem_by_name" title="compas_fea2.model.Model.find_problem_by_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_problem_by_name</span></code></a></p></td>
+<td><p>Find a problem in the model using its name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_cfm.html#compas_fea2.model.Model.from_cfm" title="compas_fea2.model.Model.from_cfm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_cfm</span></code></a></p></td>
+<td><p>Imports a Problem object from an .cfm file through Pickle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.get_displacement_at_nodes_sql.html#compas_fea2.model.Model.get_displacement_at_nodes_sql" title="compas_fea2.model.Model.get_displacement_at_nodes_sql"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_displacement_at_nodes_sql</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.get_displacements_sql.html#compas_fea2.model.Model.get_displacements_sql" title="compas_fea2.model.Model.get_displacements_sql"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_displacements_sql</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.get_max_displacement_sql.html#compas_fea2.model.Model.get_max_displacement_sql" title="compas_fea2.model.Model.get_max_displacement_sql"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_displacement_sql</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.get_min_displacement_sql.html#compas_fea2.model.Model.get_min_displacement_sql" title="compas_fea2.model.Model.get_min_displacement_sql"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_displacement_sql</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.get_reaction_forces_sql.html#compas_fea2.model.Model.get_reaction_forces_sql" title="compas_fea2.model.Model.get_reaction_forces_sql"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_reaction_forces_sql</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.get_reaction_moments_sql.html#compas_fea2.model.Model.get_reaction_moments_sql" title="compas_fea2.model.Model.get_reaction_moments_sql"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_reaction_moments_sql</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.group_parts_where.html#compas_fea2.model.Model.group_parts_where" title="compas_fea2.model.Model.group_parts_where"><code class="xref py py-obj docutils literal notranslate"><span class="pre">group_parts_where</span></code></a></p></td>
+<td><p>Group a set of parts with a give value of a given attribute.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.remove_all_bcs.html#compas_fea2.model.Model.remove_all_bcs" title="compas_fea2.model.Model.remove_all_bcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_all_bcs</span></code></a></p></td>
+<td><p>Removes all the boundary conditions from the Model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.remove_bcs.html#compas_fea2.model.Model.remove_bcs" title="compas_fea2.model.Model.remove_bcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_bcs</span></code></a></p></td>
+<td><p>Removes multiple boundary conditions from the Model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.restart_analysis.html#compas_fea2.model.Model.restart_analysis" title="compas_fea2.model.Model.restart_analysis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restart_analysis</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.show.html#compas_fea2.model.Model.show" title="compas_fea2.model.Model.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a></p></td>
+<td><p>WIP</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.store_results_in_model.html#compas_fea2.model.Model.store_results_in_model" title="compas_fea2.model.Model.store_results_in_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_results_in_model</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.summary.html#compas_fea2.model.Model.summary" title="compas_fea2.model.Model.summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">summary</span></code></a></p></td>
 <td><p>Prints a summary of the Model object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_cfm.html#compas_fea2.model.Model.to_cfm" title="compas_fea2.model.Model.to_cfm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_cfm</span></code></a></p></td>
+<td><p>Exports the Model object to an .cfm file through Pickle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_json.html#compas_fea2.model.Model.to_json" title="compas_fea2.model.Model.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
+<td><p>Serialize the data representation of an object to a JSON file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.write_input_file.html#compas_fea2.model.Model.write_input_file" title="compas_fea2.model.Model.write_input_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_input_file</span></code></a></p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
@@ -236,26 +325,26 @@ This will be added to the input file and can be useful for future reference.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.copy.html#compas_fea2.model.Model.copy" title="compas_fea2.model.Model.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a></p></td>
 <td><p>Make an independent copy of the data object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_data.html#compas_fea2.model.Model.from_data" title="compas_fea2.model.Model.from_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_data</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.data.html#compas_fea2.model.Model.data" title="compas_fea2.model.Model.data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_data.html#compas_fea2.model.Model.from_data" title="compas_fea2.model.Model.from_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_data</span></code></a></p></td>
 <td><p>Construct an object of this type from the provided data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_json.html#compas_fea2.model.Model.from_json" title="compas_fea2.model.Model.from_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_json</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_json.html#compas_fea2.model.Model.from_json" title="compas_fea2.model.Model.from_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_json</span></code></a></p></td>
 <td><p>Construct an object from serialized data contained in a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_jsonstring.html#compas_fea2.model.Model.from_jsonstring" title="compas_fea2.model.Model.from_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_jsonstring</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_jsonstring.html#compas_fea2.model.Model.from_jsonstring" title="compas_fea2.model.Model.from_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_jsonstring</span></code></a></p></td>
 <td><p>Construct an object from serialized data contained in a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_name.html#compas_fea2.model.Model.from_name" title="compas_fea2.model.Model.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_name.html#compas_fea2.model.Model.from_name" title="compas_fea2.model.Model.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
 <td><p>Create an instance of a class of the registered plugin from its name.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.sha256.html#compas_fea2.model.Model.sha256" title="compas_fea2.model.Model.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.sha256.html#compas_fea2.model.Model.sha256" title="compas_fea2.model.Model.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
 <td><p>Compute a hash of the data for comparison during version control using the sha256 algorithm.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_data.html#compas_fea2.model.Model.to_data" title="compas_fea2.model.Model.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_data.html#compas_fea2.model.Model.to_data" title="compas_fea2.model.Model.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
 <td><p>Convert an object to its native data representation.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_json.html#compas_fea2.model.Model.to_json" title="compas_fea2.model.Model.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
-<td><p>Serialize the data representation of an object to a JSON file.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_jsonstring.html#compas_fea2.model.Model.to_jsonstring" title="compas_fea2.model.Model.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON string.</p></td>
@@ -301,28 +390,12 @@ This will be added to the input file and can be useful for future reference.</p>
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../tutorial/umat.html">User Material subroutines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../examples.html">Examples</a><ul class="nav flex-column collapse">
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_save_and_load_model.html">Save and load a model</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_simple_frame.html">Simple frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_simple_shell.html">Simple shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_frame.html">Hypar frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_gmsh.html">Hypar shell using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_cantilever_gmsh.html">Cantilever beam using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_shell.html">Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_shell_modal.html">Modal analysis of an hypar shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/2_scripting_compas_hypar_sections.html">Hypar Frame with different sections</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/3_scripting_compas_hypar_umat.html">User Materials</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/4_top_opt_compas_hypar_gmsh.html">Topology optimisation of an Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/4_top_opt_solid_simple.html">Topology optimisation of a cube</a></li>
+<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item active"><a class="nav-link reference internal" href="../../api.html">API Reference</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l2 nav-item active"><a class="nav-link reference internal" href="../compas_fea2.html">compas_fea2</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l3 nav-item active"><a class="nav-link reference internal" href="../compas_fea2.model.html">model</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.problem.html">problem</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.postprocessor.html">post-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.preprocessor.html">pre-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.optimisation.html">optimisation</a></li>
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.utilities.html">Utilities</a></li>
 </ul>
 </li>

@@ -96,163 +96,81 @@
 
 
 <div class="viewcode-block" id="_Constraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._Constraint.html#compas_fea2.model._Constraint">[docs]</a><span class="k">class</span> <span class="nc">_Constraint</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Initialises base Constraint object.</span>
+    <span class="sd">&quot;&quot;&quot;Initialises base Constraint object. A constraint removes degree of freedom</span>
+<span class="sd">    of nodes in the model.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    Constraints are registered to a :class:`compas_fea2.model.Model`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name : str,optional</span>
 <span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
 <span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    master : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as master.</span>
-<span class="sd">    slave : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slave.</span>
-<span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slave.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
 <span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
 <span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    master : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as master.</span>
-<span class="sd">    slave : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slave.</span>
-<span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slave.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">slave</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_master</span> <span class="o">=</span> <span class="n">master</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_slave</span> <span class="o">=</span> <span class="n">slave</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tol</span> <span class="o">=</span> <span class="n">tol</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">master</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_master</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">slave</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slave</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tol</span></div>
+<span class="c1"># ------------------------------------------------------------------------------</span>
+<span class="c1"># MPC</span>
+<span class="c1"># ------------------------------------------------------------------------------</span>
 
 
-<div class="viewcode-block" id="TieConstraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TieConstraint.html#compas_fea2.model.TieConstraint">[docs]</a><span class="k">class</span> <span class="nc">TieConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Tie constraint between two sets of nodes, elements or surfaces.</span>
+<div class="viewcode-block" id="MultiPointConstraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.MultiPointConstraint.html#compas_fea2.model.MultiPointConstraint">[docs]</a><span class="k">class</span> <span class="nc">MultiPointConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A MPC constraint links a node (master) to other nodes (slaves) in the model.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    name : str, optional</span>
+<span class="sd">    name : str,optional</span>
 <span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
 <span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    master : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as master.</span>
-<span class="sd">    slave : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slave.</span>
+<span class="sd">    master : :class:`compas_fea2.model.Node`</span>
+<span class="sd">        Node that act as master.</span>
+<span class="sd">    slaves : :class:`compas_fea2.model.NodesGroup`</span>
+<span class="sd">        Group of nodes that act as slaves.</span>
 <span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slave.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str, optional</span>
-<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
-<span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    master : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as master.</span>
-<span class="sd">    slave : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slave.</span>
-<span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slave.</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">slave</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">TieConstraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">master</span><span class="o">=</span><span class="n">master</span><span class="p">,</span> <span class="n">slave</span><span class="o">=</span><span class="n">slave</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<span class="k">class</span> <span class="nc">Pin3DConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Pin constraint between two sets of nodes, elements or surfaces that allows</span>
-<span class="sd">    all rotations and fixes all translations.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str, optional</span>
-<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
-<span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    master : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as master.</span>
-<span class="sd">    slave : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slave.</span>
-<span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slave.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    master : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as master.</span>
-<span class="sd">    slave : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slave.</span>
-<span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slave.</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">pass</span>
-
-
-<span class="k">class</span> <span class="nc">Pin2DConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Pin constraint between two sets of nodes, elements or surfaces that allows</span>
-<span class="sd">    rotations about an axis and fixes all translations.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str, optional</span>
-<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
-<span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    master : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as master.</span>
-<span class="sd">    slave : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slave.</span>
-<span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slave.</span>
-<span class="sd">    axis : :class:`compas.geometry.Vector`</span>
-<span class="sd">        Axis of rotation.</span>
+<span class="sd">        Constraint tolerance, distance limit between master and slaves.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
 <span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
 <span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    master : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as master.</span>
-<span class="sd">    slave : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slave.</span>
+<span class="sd">    master : :class:`compas_fea2.model.Node`</span>
+<span class="sd">        Node that act as master.</span>
+<span class="sd">    slaves : :class:`compas_fea2.model.NodesGroup`</span>
+<span class="sd">        Goup of nodes that act as slaves.</span>
 <span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slave.</span>
-<span class="sd">    axis : :class:`compas.geometry.Vector`</span>
-<span class="sd">        Axis of rotation.</span>
+<span class="sd">        Constraint tolerance, distance limit between master and slaves.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">slave</span><span class="p">,</span> <span class="n">tol</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SliderConstraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">master</span><span class="o">=</span><span class="n">master</span><span class="p">,</span> <span class="n">slave</span><span class="o">=</span><span class="n">slave</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="n">axis</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint_type</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MultiPointConstraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint_type</span> <span class="o">=</span> <span class="n">constraint_type</span></div>
 
 
-<span class="k">class</span> <span class="nc">SliderConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Slider constraint between two sets of nodes, elements or surfaces that allows</span>
-<span class="sd">    translations on a plane about an axis and fixes all translations.</span>
+<div class="viewcode-block" id="TieMPC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TieMPC.html#compas_fea2.model.TieMPC">[docs]</a><span class="k">class</span> <span class="nc">TieMPC</span><span class="p">(</span><span class="n">MultiPointConstraint</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A MPC constraint links a node (master) to other nodes (slaves) in the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
 
+
+<div class="viewcode-block" id="BeamMPC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.BeamMPC.html#compas_fea2.model.BeamMPC">[docs]</a><span class="k">class</span> <span class="nc">BeamMPC</span><span class="p">(</span><span class="n">MultiPointConstraint</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A MPC constraint links a node (master) to other nodes (slaves) in the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+<span class="k">class</span> <span class="nc">TieConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tie constraint between two surfaces.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">slave</span><span class="p">,</span> <span class="n">tol</span><span class="p">,</span> <span class="n">plane</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">SliderConstraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">master</span><span class="o">=</span><span class="n">master</span><span class="p">,</span> <span class="n">slave</span><span class="o">=</span><span class="n">slave</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">plane</span> <span class="o">=</span> <span class="n">plane</span>
 </code></pre></div>
         
       </main>
@@ -283,28 +201,12 @@
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../tutorial/umat.html">User Material subroutines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../examples.html">Examples</a><ul class="nav flex-column collapse">
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/0_scripting_save_and_load_model.html">Save and load a model</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/0_scripting_simple_frame.html">Simple frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/0_scripting_simple_shell.html">Simple shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_compas_hypar_frame.html">Hypar frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_compas_hypar_gmsh.html">Hypar shell using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_cantilever_gmsh.html">Cantilever beam using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_compas_hypar_shell.html">Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/1_scripting_compas_hypar_shell_modal.html">Modal analysis of an hypar shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/2_scripting_compas_hypar_sections.html">Hypar Frame with different sections</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/3_scripting_compas_hypar_umat.html">User Materials</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/4_top_opt_compas_hypar_gmsh.html">Topology optimisation of an Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../examples/4_top_opt_solid_simple.html">Topology optimisation of a cube</a></li>
+<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../api.html">API Reference</a><ul class="nav flex-column collapse">
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.html">compas_fea2</a><ul class="nav flex-column collapse">
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.model.html">model</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.problem.html">problem</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.postprocessor.html">post-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.preprocessor.html">pre-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.optimisation.html">optimisation</a></li>
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../../../api/compas_fea2.utilities.html">Utilities</a></li>
 </ul>
 </li>

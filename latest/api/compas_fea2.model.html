@@ -117,8 +117,11 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.Part.html#compas_fea2.model.Part" title="compas_fea2.model.Part"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Part</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Base class for all parts.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeformablePart</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Deformable part.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.RigidPart.html#compas_fea2.model.RigidPart" title="compas_fea2.model.RigidPart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RigidPart</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Rigid part.</p></td>
 </tr>
 </tbody>
 </table>
@@ -172,7 +175,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.MembraneElement.html#compas_fea2.model.MembraneElement" title="compas_fea2.model.MembraneElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MembraneElement</span></code></a>(*args, **kwargs)</p></td>
 <td><p>A shell element that resists only axial loads.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.SolidElement.html#compas_fea2.model.SolidElement" title="compas_fea2.model.SolidElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SolidElement</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model._Element3D.html#compas_fea2.model._Element3D" title="compas_fea2.model._Element3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">_Element3D</span></code></a>(*args, **kwargs)</p></td>
 <td><p>A 3D element that resists axial, shear, bending and torsion.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.TetrahedronElement.html#compas_fea2.model.TetrahedronElement" title="compas_fea2.model.TetrahedronElement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TetrahedronElement</span></code></a>(*args, **kwargs)</p></td>
@@ -215,51 +218,14 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model._Constraint.html#compas_fea2.model._Constraint" title="compas_fea2.model._Constraint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">_Constraint</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Initialises base Constraint object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.TieConstraint.html#compas_fea2.model.TieConstraint" title="compas_fea2.model.TieConstraint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TieConstraint</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Tie constraint between two sets of nodes, elements or surfaces.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.MultiPointConstraint.html#compas_fea2.model.MultiPointConstraint" title="compas_fea2.model.MultiPointConstraint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiPointConstraint</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A MPC constraint links a node (master) to other nodes (slaves) in the model.</p></td>
 </tr>
-</tbody>
-</table>
-</section>
-<section id="interactions">
-<h2>Interactions</h2>
-<table class="autosummary longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model._Interaction.html#compas_fea2.model._Interaction" title="compas_fea2.model._Interaction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">_Interaction</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Base class for all interactions.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.TieMPC.html#compas_fea2.model.TieMPC" title="compas_fea2.model.TieMPC"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TieMPC</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A MPC constraint links a node (master) to other nodes (slaves) in the model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.Contact.html#compas_fea2.model.Contact" title="compas_fea2.model.Contact"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contact</span></code></a>(*args, **kwargs)</p></td>
-<td><p>General contact interaction between two parts.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.HardContactNoFriction.html#compas_fea2.model.HardContactNoFriction" title="compas_fea2.model.HardContactNoFriction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HardContactNoFriction</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Hard contact interaction property with friction using a penalty formulation.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.HardContactFrictionPenalty.html#compas_fea2.model.HardContactFrictionPenalty" title="compas_fea2.model.HardContactFrictionPenalty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HardContactFrictionPenalty</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Hard contact interaction property with friction using a penalty formulation.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.LinearContactFrictionPenalty.html#compas_fea2.model.LinearContactFrictionPenalty" title="compas_fea2.model.LinearContactFrictionPenalty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LinearContactFrictionPenalty</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Contact interaction property with linear softnening and friction using a penalty formulation.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.HardContactRough.html#compas_fea2.model.HardContactRough" title="compas_fea2.model.HardContactRough"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HardContactRough</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Hard contact interaction property with indefinite friction (rough surfaces).</p></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="interfaces">
-<h2>Interfaces</h2>
-<table class="autosummary longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.Interface.html#compas_fea2.model.Interface" title="compas_fea2.model.Interface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Interface</span></code></a>(*args, **kwargs)</p></td>
-<td><p>An interface is defined as a pair of master and slave surfaces with an interaction property between them.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.BeamMPC.html#compas_fea2.model.BeamMPC" title="compas_fea2.model.BeamMPC"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BeamMPC</span></code></a>(*args, **kwargs)</p></td>
+<td><p>A MPC constraint links a node (master) to other nodes (slaves) in the model.</p></td>
 </tr>
 </tbody>
 </table>
@@ -379,7 +345,7 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.GeneralBC.html#compas_fea2.model.GeneralBC" title="compas_fea2.model.GeneralBC"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeneralBC</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Base class for all zero-valued boundary conditions.</p></td>
+<td><p>Costumized boundary condition.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.FixedBC.html#compas_fea2.model.FixedBC" title="compas_fea2.model.FixedBC"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FixedBC</span></code></a>(*args, **kwargs)</p></td>
 <td><p>A fixed nodal displacement boundary condition.</p></td>
@@ -404,6 +370,23 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.RollerBCXZ.html#compas_fea2.model.RollerBCXZ" title="compas_fea2.model.RollerBCXZ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RollerBCXZ</span></code></a>(*args, **kwargs)</p></td>
 <td><p>A pinned nodal displacement boundary condition released in X and Z.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="initial-conditions">
+<h2>Initial Conditions</h2>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/compas_fea2.model.InitialTemperatureField.html#compas_fea2.model.InitialTemperatureField" title="compas_fea2.model.InitialTemperatureField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InitialTemperatureField</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Temperature field</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/compas_fea2.model.InitialStressField.html#compas_fea2.model.InitialStressField" title="compas_fea2.model.InitialStressField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InitialStressField</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Stress field</p></td>
 </tr>
 </tbody>
 </table>
@@ -465,28 +448,12 @@
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../tutorial/umat.html">User Material subroutines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../examples.html">Examples</a><ul class="nav flex-column collapse">
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/0_scripting_save_and_load_model.html">Save and load a model</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/0_scripting_simple_frame.html">Simple frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/0_scripting_simple_shell.html">Simple shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/1_scripting_compas_hypar_frame.html">Hypar frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/1_scripting_compas_hypar_gmsh.html">Hypar shell using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/1_scripting_cantilever_gmsh.html">Cantilever beam using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/1_scripting_compas_hypar_shell.html">Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/1_scripting_compas_hypar_shell_modal.html">Modal analysis of an hypar shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/2_scripting_compas_hypar_sections.html">Hypar Frame with different sections</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/3_scripting_compas_hypar_umat.html">User Materials</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/4_top_opt_compas_hypar_gmsh.html">Topology optimisation of an Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../examples/4_top_opt_solid_simple.html">Topology optimisation of a cube</a></li>
+<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item active"><a class="nav-link reference internal" href="../api.html">API Reference</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l2 nav-item active"><a class="nav-link reference internal" href="compas_fea2.html">compas_fea2</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l3 nav-item active"><a class="nav-link active reference internal" href="#">model</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="compas_fea2.problem.html">problem</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="compas_fea2.postprocessor.html">post-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="compas_fea2.preprocessor.html">pre-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="compas_fea2.optimisation.html">optimisation</a></li>
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="compas_fea2.utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -514,11 +481,10 @@
 <li class="nav-item"><a class="nav-link reference internal" href="#elements">Elements</a></li>
 <li class="nav-item"><a class="nav-link reference internal" href="#releases">Releases</a></li>
 <li class="nav-item"><a class="nav-link reference internal" href="#constraints">Constraints</a></li>
-<li class="nav-item"><a class="nav-link reference internal" href="#interactions">Interactions</a></li>
-<li class="nav-item"><a class="nav-link reference internal" href="#interfaces">Interfaces</a></li>
 <li class="nav-item"><a class="nav-link reference internal" href="#materials">Materials</a></li>
 <li class="nav-item"><a class="nav-link reference internal" href="#sections">Sections</a></li>
 <li class="nav-item"><a class="nav-link reference internal" href="#boundary-conditions">Boundary Conditions</a></li>
+<li class="nav-item"><a class="nav-link reference internal" href="#initial-conditions">Initial Conditions</a></li>
 <li class="nav-item"><a class="nav-link reference internal" href="#groups">Groups</a></li>
 </ul>
 </li>

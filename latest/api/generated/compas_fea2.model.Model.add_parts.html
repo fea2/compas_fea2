@@ -20,7 +20,7 @@
   <link rel="stylesheet" type="text/css" href="../../_static/css/compas-reference.css" />
 
   
-  <link rel="next" title="Model.add_pin_bc" href="compas_fea2.model.Model.add_pin_bc.html" />
+  <link rel="next" title="Model.add_parts_group" href="compas_fea2.model.Model.add_parts_group.html" />
   
 
   
@@ -101,14 +101,14 @@
 <h1>Model.add_parts</h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="compas_fea2.model.Model.add_parts">
-<span class="sig-prename descclassname"><span class="pre">Model.</span></span><span class="sig-name descname"><span class="pre">add_parts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a></span></span><a class="reference internal" href="../../_modules/compas_fea2/model/model.html#Model.add_parts"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<span class="sig-prename descclassname"><span class="pre">Model.</span></span><span class="sig-name descname"><span class="pre">add_parts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><span class="pre">list</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><span class="pre">list</span></a></span></span><a class="reference internal" href="../../_modules/compas_fea2/model/model.html#Model.add_parts"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Add multiple parts to the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>parts</strong> (list[<a class="reference internal" href="compas_fea2.model.Part.html#compas_fea2.model.Part" title="compas_fea2.model.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Part</span></code></a>])</p>
+<dd class="field-odd"><p><strong>parts</strong> (list[<a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a>])</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>list[<a class="reference internal" href="compas_fea2.model.Part.html#compas_fea2.model.Part" title="compas_fea2.model.Part"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Part</span></code></a>]</p>
+<dd class="field-even"><p>list[<a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -144,28 +144,12 @@
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../tutorial/umat.html">User Material subroutines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../examples.html">Examples</a><ul class="nav flex-column collapse">
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_save_and_load_model.html">Save and load a model</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_simple_frame.html">Simple frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_simple_shell.html">Simple shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_frame.html">Hypar frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_gmsh.html">Hypar shell using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_cantilever_gmsh.html">Cantilever beam using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_shell.html">Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_shell_modal.html">Modal analysis of an hypar shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/2_scripting_compas_hypar_sections.html">Hypar Frame with different sections</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/3_scripting_compas_hypar_umat.html">User Materials</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/4_top_opt_compas_hypar_gmsh.html">Topology optimisation of an Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/4_top_opt_solid_simple.html">Topology optimisation of a cube</a></li>
+<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item active"><a class="nav-link reference internal" href="../../api.html">API Reference</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l2 nav-item active"><a class="nav-link reference internal" href="../compas_fea2.html">compas_fea2</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l3 nav-item active"><a class="nav-link reference internal" href="../compas_fea2.model.html">model</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.problem.html">problem</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.postprocessor.html">post-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.preprocessor.html">pre-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.optimisation.html">optimisation</a></li>
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -208,10 +192,10 @@
       
 
       
-      <a href="compas_fea2.model.Model.add_pin_bc.html" title="Model.add_pin_bc" class="nav-link footer-link float-end text-right d-flex w-50" rel="next">
+      <a href="compas_fea2.model.Model.add_parts_group.html" title="Model.add_parts_group" class="nav-link footer-link float-end text-right d-flex w-50" rel="next">
         <div class="nav-title footer-link flex-grow-1 align-self-center">
           <div class="nav-direction small font-weight-light">Next</div>
-          Model.add_pin_bc
+          Model.add_parts_group
         </div>
         <div class="nav-button p-2 m-2"><i class="fas fa-arrow-right"></i></div>
       </a>

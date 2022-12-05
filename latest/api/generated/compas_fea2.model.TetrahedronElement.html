@@ -24,7 +24,7 @@
   
 
   
-  <link rel="prev" title="SolidElement.validate_json" href="compas_fea2.model.SolidElement.validate_json.html" />
+  <link rel="prev" title="_Element3D.validate_json" href="compas_fea2.model._Element3D.validate_json.html" />
   
 
   <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
@@ -127,17 +127,23 @@
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.copy.html#compas_fea2.model.TetrahedronElement.copy" title="compas_fea2.model.TetrahedronElement.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a></p></td>
 <td><p>Make an independent copy of the data object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_data.html#compas_fea2.model.TetrahedronElement.from_data" title="compas_fea2.model.TetrahedronElement.from_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_data</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.data.html#compas_fea2.model.TetrahedronElement.data" title="compas_fea2.model.TetrahedronElement.data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_data.html#compas_fea2.model.TetrahedronElement.from_data" title="compas_fea2.model.TetrahedronElement.from_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_data</span></code></a></p></td>
 <td><p>Construct an object of this type from the provided data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_json.html#compas_fea2.model.TetrahedronElement.from_json" title="compas_fea2.model.TetrahedronElement.from_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_json</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_json.html#compas_fea2.model.TetrahedronElement.from_json" title="compas_fea2.model.TetrahedronElement.from_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_json</span></code></a></p></td>
 <td><p>Construct an object from serialized data contained in a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_jsonstring.html#compas_fea2.model.TetrahedronElement.from_jsonstring" title="compas_fea2.model.TetrahedronElement.from_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_jsonstring</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_jsonstring.html#compas_fea2.model.TetrahedronElement.from_jsonstring" title="compas_fea2.model.TetrahedronElement.from_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_jsonstring</span></code></a></p></td>
 <td><p>Construct an object from serialized data contained in a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_name.html#compas_fea2.model.TetrahedronElement.from_name" title="compas_fea2.model.TetrahedronElement.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_name.html#compas_fea2.model.TetrahedronElement.from_name" title="compas_fea2.model.TetrahedronElement.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
 <td><p>Create an instance of a class of the registered plugin from its name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.from_polyhedron.html#compas_fea2.model.TetrahedronElement.from_polyhedron" title="compas_fea2.model.TetrahedronElement.from_polyhedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_polyhedron</span></code></a></p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.TetrahedronElement.sha256.html#compas_fea2.model.TetrahedronElement.sha256" title="compas_fea2.model.TetrahedronElement.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
 <td><p>Compute a hash of the data for comparison during version control using the sha256 algorithm.</p></td>
@@ -192,28 +198,12 @@
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../tutorial/umat.html">User Material subroutines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../examples.html">Examples</a><ul class="nav flex-column collapse">
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_save_and_load_model.html">Save and load a model</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_simple_frame.html">Simple frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/0_scripting_simple_shell.html">Simple shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_frame.html">Hypar frame</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_gmsh.html">Hypar shell using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_cantilever_gmsh.html">Cantilever beam using <cite>gmesh</cite></a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_shell.html">Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/1_scripting_compas_hypar_shell_modal.html">Modal analysis of an hypar shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/2_scripting_compas_hypar_sections.html">Hypar Frame with different sections</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/3_scripting_compas_hypar_umat.html">User Materials</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/4_top_opt_compas_hypar_gmsh.html">Topology optimisation of an Hypar Shell</a></li>
-<li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../examples/4_top_opt_solid_simple.html">Topology optimisation of a cube</a></li>
+<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item active"><a class="nav-link reference internal" href="../../api.html">API Reference</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l2 nav-item active"><a class="nav-link reference internal" href="../compas_fea2.html">compas_fea2</a><ul class="nav flex-column collapse show active">
 <li class="toctree-l3 nav-item active"><a class="nav-link reference internal" href="../compas_fea2.model.html">model</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.problem.html">problem</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.postprocessor.html">post-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.preprocessor.html">pre-processor</a></li>
-<li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.optimisation.html">optimisation</a></li>
 <li class="toctree-l3 nav-item"><a class="nav-link reference internal" href="../compas_fea2.utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -246,11 +236,11 @@
   <footer class="compas-footer">
     <nav class="nav p-2">
       
-      <a href="compas_fea2.model.SolidElement.validate_json.html" title="SolidElement.validate_json" class="nav-link footer-link float-start text-left d-flex w-50" rel="prev">
+      <a href="compas_fea2.model._Element3D.validate_json.html" title="_Element3D.validate_json" class="nav-link footer-link float-start text-left d-flex w-50" rel="prev">
         <div class="nav-button p-2 m-2"><i class="fas fa-arrow-left"></i></div>
         <div class="nav-title flex-grow-1 align-self-center">
           <div class="nav-direction small font-weight-light">Previous</div>
-          SolidElement.validate_json
+          _Element3D.validate_json
         </div>
       </a>
       
