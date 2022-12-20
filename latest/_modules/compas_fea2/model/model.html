@@ -97,6 +97,8 @@
 <span class="kn">import</span> <span class="nn">pathlib</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Type</span>
 <span class="kn">import</span> <span class="nn">pint</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">groupby</span>
+
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
@@ -108,6 +110,7 @@
 <span class="kn">from</span> <span class="nn">compas_fea2.base</span> <span class="kn">import</span> <span class="n">FEAData</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.model.parts</span> <span class="kn">import</span> <span class="n">_Part</span><span class="p">,</span> <span class="n">DeformablePart</span><span class="p">,</span> <span class="n">RigidPart</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.model.nodes</span> <span class="kn">import</span> <span class="n">Node</span>
+<span class="kn">from</span> <span class="nn">compas_fea2.model.elements</span> <span class="kn">import</span> <span class="n">_Element</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.model.bcs</span> <span class="kn">import</span> <span class="n">_BoundaryCondition</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.model.ics</span> <span class="kn">import</span> <span class="n">_InitialCondition</span><span class="p">,</span> <span class="n">InitialStressField</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.model.groups</span> <span class="kn">import</span> <span class="n">_Group</span><span class="p">,</span> <span class="n">NodesGroup</span><span class="p">,</span> <span class="n">PartsGroup</span><span class="p">,</span> <span class="n">ElementsGroup</span><span class="p">,</span> <span class="n">FacesGroup</span>
@@ -151,7 +154,8 @@
 <span class="sd">    parts : Set[:class:`compas_fea2.model.DeformablePart`]</span>
 <span class="sd">        The parts of the model.</span>
 <span class="sd">    bcs : dict</span>
-<span class="sd">        The boundary conditions of the model.</span>
+<span class="sd">        Dictionary with the boundary conditions of the model and the nodes where</span>
+<span class="sd">        these are applied.</span>
 <span class="sd">    ics : dict</span>
 <span class="sd">        The initial conditions of the model.</span>
 <span class="sd">    constraints : Set[:class:`compas_fea2.model._Constraint`]</span>
@@ -537,11 +541,11 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">_Group</span><span class="p">):</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">_members</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bc</span><span class="p">,</span> <span class="n">_BoundaryCondition</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a _BoundaryCondition.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bc</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a Boundary Condition.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bc</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
@@ -550,14 +554,14 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not registered to any part.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
             <span class="k">elif</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> belongs to a part not registered to this model.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">part</span><span class="p">,</span> <span class="n">RigidPart</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">is_reference</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;For rigid parts bundary conditions can be assigned only to the reference point&#39;</span><span class="p">)</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">_bc</span> <span class="o">=</span> <span class="n">bc</span>
 
-            <span class="n">node</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">bc</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_bcs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">part</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">bc</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bcs</span><span class="p">[</span><span class="n">bc</span><span class="p">]</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
         <span class="n">bc</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
+
         <span class="k">return</span> <span class="n">bc</span></div>
 
     <span class="k">def</span> <span class="nf">_add_bc_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bc_type</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
@@ -769,19 +773,29 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_bc_type</span><span class="p">(</span><span class="s1">&#39;rollerYZ&#39;</span><span class="p">,</span>  <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Model.remove_bcs"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.remove_bcs.html#compas_fea2.model.Model.remove_bcs">[docs]</a>    <span class="k">def</span> <span class="nf">remove_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bcs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Removes multiple boundary conditions from the Model.</span>
+<div class="viewcode-block" id="Model.remove_bcs"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.remove_bcs.html#compas_fea2.model.Model.remove_bcs">[docs]</a>    <span class="k">def</span> <span class="nf">remove_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Release a node previously restrained.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        bc_names : list</span>
-<span class="sd">            List of names of the boundary conditions to remove.</span>
+<span class="sd">        nodes : [:class:`compas_fe2.model.Node]</span>
+<span class="sd">            List of nodes to release.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">dof</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bcs</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">dof</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: </span><span class="si">{!r}</span><span class="s2"> was not restrained. skipped!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
+
 
 <div class="viewcode-block" id="Model.remove_all_bcs"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.remove_all_bcs.html#compas_fea2.model.Model.remove_all_bcs">[docs]</a>    <span class="k">def</span> <span class="nf">remove_all_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes all the boundary conditions from the Model.</span>
@@ -794,7 +808,9 @@
 <span class="sd">        -------</span>
 <span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bcs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_bcs</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bcs</span> <span class="o">=</span> <span class="p">{}</span></div>
 
     <span class="c1"># ==============================================================================</span>
     <span class="c1"># Initial Conditions methods</span>
@@ -820,13 +836,20 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="n">_InitialCondition</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a _InitialCondition.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ic</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">members</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">member</span><span class="p">,</span> <span class="p">(</span><span class="n">Node</span><span class="p">,</span> <span class="n">_Element</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a Node or an Element.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">member</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">member</span><span class="o">.</span><span class="n">part</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not registered to any part.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">member</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">member</span><span class="o">.</span><span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> belongs to a part not registered to this model.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">member</span><span class="p">))</span>
+            <span class="n">member</span><span class="o">.</span><span class="n">_ic</span> <span class="o">=</span> <span class="n">ic</span>
 
-        <span class="c1"># for member in group._members:</span>
-        <span class="c1">#     member.ics = ic</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ics</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">part</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ics</span><span class="p">[</span><span class="n">ic</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">members</span>
         <span class="n">ic</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
+
         <span class="k">return</span> <span class="n">ic</span>
+
 
 <div class="viewcode-block" id="Model.add_nodes_ics"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_nodes_ics.html#compas_fea2.model.Model.add_nodes_ics">[docs]</a>    <span class="k">def</span> <span class="nf">add_nodes_ics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
         <span class="c1"># type: (_InitialCondition, Node, str) -&gt; list</span>
@@ -891,11 +914,21 @@
                                  <span class="s1">&#39;    # of nodes: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">nodes</span><span class="p">)),</span>
                                  <span class="s1">&#39;    # of elements: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">elements</span><span class="p">)),</span>
                                  <span class="s1">&#39;    is_rigid : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;True&#39;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">RigidPart</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;False&#39;</span><span class="p">)])</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">]</span>
+
         <span class="n">constraints_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">e</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">])</span>
-        <span class="n">bc_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;  </span><span class="si">{!r}</span><span class="s1"> - # of restrained nodes </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span>
-                                                                     <span class="k">for</span> <span class="n">bc</span><span class="p">,</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">bc_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span> <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">bc_nodes</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bcs</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
-        <span class="n">ic_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;  </span><span class="si">{!r}</span><span class="s1"> - # of nodes assigned </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span>
-                                                                     <span class="k">for</span> <span class="n">ic</span><span class="p">,</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">ic_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span> <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">ic_nodes</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ics</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+
+        <span class="n">bc_info</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">bc</span><span class="p">,</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bcs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">part_nodes</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">part</span><span class="p">):</span>
+                <span class="n">bc_info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;  </span><span class="si">{!r}</span><span class="s1"> - # of restrained nodes </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bc</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">part_nodes</span><span class="p">)))])))</span>
+        <span class="n">bc_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bc_info</span><span class="p">)</span>
+
+        <span class="n">ic_info</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ic</span><span class="p">,</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">part</span><span class="p">,</span> <span class="n">part_nodes</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">part</span><span class="p">):</span>
+                <span class="n">ic_info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;  </span><span class="si">{!r}</span><span class="s1"> - # of restrained nodes </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">part_nodes</span><span class="p">)))])))</span>
+        <span class="n">ic_info</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ic_info</span><span class="p">)</span>
+
         <span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</span>
 <span class="s2">compas_fea2 Model: </span><span class="si">{}</span><span class="s2"></span>

@@ -121,7 +121,8 @@ This will be added to the input file and can be useful for future reference.</p>
 <li><p><strong>author</strong> (<em>str</em>) – The name of the author of the model.
 This will be added to the input file and can be useful for future reference.</p></li>
 <li><p><strong>parts</strong> (Set[<a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a>]) – The parts of the model.</p></li>
-<li><p><strong>bcs</strong> (<em>dict</em>) – The boundary conditions of the model.</p></li>
+<li><p><strong>bcs</strong> (<em>dict</em>) – Dictionary with the boundary conditions of the model and the nodes where
+these are applied.</p></li>
 <li><p><strong>ics</strong> (<em>dict</em>) – The initial conditions of the model.</p></li>
 <li><p><strong>constraints</strong> (Set[<a class="reference internal" href="compas_fea2.model._Constraint.html#compas_fea2.model._Constraint" title="compas_fea2.model._Constraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Constraint</span></code></a>]) – The constraints of the model.</p></li>
 <li><p><strong>partgroups</strong> (Set[<a class="reference internal" href="compas_fea2.model.PartsGroup.html#compas_fea2.model.PartsGroup" title="compas_fea2.model.PartsGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.PartsGroup</span></code></a>]) – The part groups of the model.</p></li>
@@ -287,7 +288,7 @@ This will be added to the input file and can be useful for future reference.</p>
 <td><p>Removes all the boundary conditions from the Model.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.remove_bcs.html#compas_fea2.model.Model.remove_bcs" title="compas_fea2.model.Model.remove_bcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_bcs</span></code></a></p></td>
-<td><p>Removes multiple boundary conditions from the Model.</p></td>
+<td><p>Release a node previously restrained.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.restart_analysis.html#compas_fea2.model.Model.restart_analysis" title="compas_fea2.model.Model.restart_analysis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restart_analysis</span></code></a></p></td>
 <td><p></p></td>
