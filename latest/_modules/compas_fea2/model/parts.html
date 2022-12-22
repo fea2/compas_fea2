@@ -103,7 +103,7 @@
 <span class="kn">from</span> <span class="nn">compas.geometry</span> <span class="kn">import</span> <span class="n">Vector</span>
 <span class="kn">from</span> <span class="nn">compas.geometry</span> <span class="kn">import</span> <span class="n">sum_vectors</span>
 
-<span class="kn">from</span> <span class="nn">compas_fea2</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">import</span> <span class="nn">compas_fea2</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.base</span> <span class="kn">import</span> <span class="n">FEAData</span>
 
 <span class="kn">from</span> <span class="nn">.nodes</span> <span class="kn">import</span> <span class="n">Node</span>
@@ -775,13 +775,13 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a node.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_node</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NODE SKIPPED: Node </span><span class="si">{!r}</span><span class="s1"> already in part.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
             <span class="k">return</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">POINT_OVERLAP</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_nodes_by_location</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">xyz</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">GLOBAL_TOLERANCE</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">POINT_OVERLAP</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_nodes_by_location</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">xyz</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="n">compas_fea2</span><span class="o">.</span><span class="n">GLOBAL_TOLERANCE</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NODE SKIPPED: Part </span><span class="si">{!r}</span><span class="s1"> has already a node at </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">xyz</span><span class="p">))</span>
                 <span class="k">return</span>
 
@@ -789,7 +789,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_gkey_node</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">gkey</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
         <span class="n">node</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Node </span><span class="si">{!r}</span><span class="s1"> registered to </span><span class="si">{!r}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">node</span>
 
@@ -920,7 +920,7 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not an element.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_element</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SKIPPED: Element </span><span class="si">{!r}</span><span class="s2"> already in part.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
             <span class="k">return</span>
 
@@ -936,7 +936,7 @@
         <span class="n">element</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
         <span class="n">element</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Element </span><span class="si">{!r}</span><span class="s1"> registered to </span><span class="si">{!r}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">element</span>
 
@@ -1069,7 +1069,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">add_elements</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_group</span><span class="p">(</span><span class="n">group</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SKIPPED: Group </span><span class="si">{!r}</span><span class="s2"> already in part.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">group</span><span class="p">))</span>
             <span class="k">return</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">NodesGroup</span><span class="p">):</span>
@@ -1330,7 +1330,7 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a material.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">material</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_material</span><span class="p">(</span><span class="n">material</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SKIPPED: Material </span><span class="si">{!r}</span><span class="s1"> already in part.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">material</span><span class="p">))</span>
             <span class="k">return</span>
 
@@ -1410,7 +1410,7 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1"> is not a section.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">section</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_section</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SKIPPED: Section </span><span class="si">{!r}</span><span class="s2"> already in part.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">section</span><span class="p">))</span>
             <span class="k">return</span>
 

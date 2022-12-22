@@ -102,7 +102,6 @@
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">from</span> <span class="nn">compas_fea2</span> <span class="kn">import</span> <span class="n">config</span>
 <span class="kn">import</span> <span class="nn">compas_fea2</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.utilities._utils</span> <span class="kn">import</span> <span class="n">timer</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.utilities._utils</span> <span class="kn">import</span> <span class="n">part_method</span><span class="p">,</span> <span class="n">get_docstring</span><span class="p">,</span> <span class="n">problem_method</span>
@@ -120,7 +119,7 @@
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">compas_assembly</span>
 <span class="k">except</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: compas_assembly was not found in your evironment. Some functionalities will not be available.&#39;</span><span class="p">)</span>
 
 <span class="kn">from</span> <span class="nn">compas_fea2.units</span> <span class="kn">import</span> <span class="n">units</span>
@@ -349,7 +348,7 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{!r}</span><span class="s2"> is not a part.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_part</span><span class="p">(</span><span class="n">part</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SKIPPED: DeformablePart </span><span class="si">{!r}</span><span class="s2"> is already in the model.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
             <span class="k">return</span>
 
@@ -357,7 +356,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Duplicate name! The name &#39;</span><span class="si">{}</span><span class="s2">&#39; is already in use.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 
         <span class="n">part</span><span class="o">.</span><span class="n">_registration</span> <span class="o">=</span> <span class="bp">self</span>
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{!r}</span><span class="s2"> registered to </span><span class="si">{!r}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_parts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
@@ -1042,8 +1041,8 @@
         <span class="k">if</span> <span class="n">draw_bcs</span><span class="p">:</span>
             <span class="n">v</span><span class="o">.</span><span class="n">draw_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">draw_bcs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">draw_constraints</span><span class="p">:</span>
-            <span class="n">v</span><span class="o">.</span><span class="n">draw_constraint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">)</span>
+        <span class="c1"># if draw_constraints:</span>
+        <span class="c1">#     v.draw_constraint(self.constraints)</span>
 
         <span class="n">v</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
