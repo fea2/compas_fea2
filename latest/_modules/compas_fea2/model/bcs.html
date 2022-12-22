@@ -122,7 +122,7 @@
 <span class="s2">&quot;&quot;&quot;</span>
 
 
-<span class="k">class</span> <span class="nc">_BoundaryCondition</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
+<div class="viewcode-block" id="_BoundaryCondition"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._BoundaryCondition.html#compas_fea2.model._BoundaryCondition">[docs]</a><span class="k">class</span> <span class="nc">_BoundaryCondition</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Base class for all zero-valued boundary conditions.</span>
 
 <span class="sd">    Note</span>
@@ -151,7 +151,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;xx&#39;</span><span class="p">,</span> <span class="s1">&#39;yy&#39;</span><span class="p">,</span> <span class="s1">&#39;zz&#39;</span><span class="p">]}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;xx&#39;</span><span class="p">,</span> <span class="s1">&#39;yy&#39;</span><span class="p">,</span> <span class="s1">&#39;zz&#39;</span><span class="p">]}</span></div>
 
 
 <div class="viewcode-block" id="GeneralBC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.GeneralBC.html#compas_fea2.model.GeneralBC">[docs]</a><span class="k">class</span> <span class="nc">GeneralBC</span><span class="p">(</span><span class="n">_BoundaryCondition</span><span class="p">):</span>
@@ -196,34 +196,34 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
-<span class="k">class</span> <span class="nc">ClampBCXX</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
+<div class="viewcode-block" id="ClampBCXX"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ClampBCXX.html#compas_fea2.model.ClampBCXX">[docs]</a><span class="k">class</span> <span class="nc">ClampBCXX</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in XX.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ClampBCXX</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
-<span class="k">class</span> <span class="nc">ClampBCYY</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
+<div class="viewcode-block" id="ClampBCYY"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ClampBCYY.html#compas_fea2.model.ClampBCYY">[docs]</a><span class="k">class</span> <span class="nc">ClampBCYY</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in YY.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ClampBCYY</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
-<span class="k">class</span> <span class="nc">ClampBCZZ</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
+<div class="viewcode-block" id="ClampBCZZ"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ClampBCZZ.html#compas_fea2.model.ClampBCZZ">[docs]</a><span class="k">class</span> <span class="nc">ClampBCZZ</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in ZZ.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ClampBCZZ</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="RollerBCX"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.RollerBCX.html#compas_fea2.model.RollerBCX">[docs]</a><span class="k">class</span> <span class="nc">RollerBCX</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
@@ -312,9 +312,6 @@
 </li>
 <li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../tutorial.html">Tutorial</a><ul class="nav flex-column collapse">
 <li class="toctree-l2 nav-item"><a class="nav-link reference internal" href="../../../tutorial/umat.html">User Material subroutines</a></li>
-</ul>
-</li>
-<li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../examples.html">Examples</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1 nav-item"><a class="nav-link reference internal" href="../../../api.html">API Reference</a><ul class="nav flex-column collapse">
