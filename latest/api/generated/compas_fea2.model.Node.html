@@ -104,20 +104,20 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Nodes are registered to a <a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a> object and can
-belong to only one DeformablePart.vEvery time a node is added to a part, it gets
-registered to that part.</p>
+belong to only one Part. Every time a node is added to a Part, it gets
+registered to that Part.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str, optional</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
-name if you want a more human-readable input file.</p></li>
+<li><p><strong>xyz</strong> (list[float, float, float] | <code class="xref py py-class docutils literal notranslate"><span class="pre">compas.geometry.Point</span></code>) – The location of the node in the global coordinate system.</p></li>
 <li><p><strong>mass</strong> (<em>float or tuple, optional</em>) – Lumped nodal mass, by default <code class="docutils literal notranslate"><span class="pre">None</span></code>. If <code class="docutils literal notranslate"><span class="pre">float</span></code>, the same value is
 used in all 3 directions. if you want to specify a different mass for each
 direction, provide a <code class="docutils literal notranslate"><span class="pre">tuple</span></code> as (mass_x, mass_y, mass_z) in global
 coordinates.</p></li>
-<li><p><strong>xyz</strong> (list[float, float, float] | <code class="xref py py-class docutils literal notranslate"><span class="pre">compas.geometry.Point</span></code>) – The location of the node in the global coordinate system.</p></li>
-<li><p><strong>part</strong> (<cite>compas_fea2.model.DeformablePart</cite>, optional) – DeformablePart object where the node will be registered, by default <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
+<li><p><strong>temperature</strong> (<em>float, optional</em>) – The temperature at the Node.</p></li>
+<li><p><strong>name</strong> (<em>str, optional</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
+name if you want a more human-readable input file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>
@@ -130,15 +130,21 @@ name if you want a more human-readable input file.</p></li>
 <li><p><strong>x</strong> (<em>float</em>) – The X coordinate.</p></li>
 <li><p><strong>y</strong> (<em>float</em>) – The Y coordinate.</p></li>
 <li><p><strong>z</strong> (<em>float</em>) – The Z coordinate.</p></li>
-<li><p><strong>gkey</strong> (<em>str, read-only</em>) – The geometric key.</p></li>
-<li><p><strong>dof</strong> (<em>dict</em>) – Dictionary with the active degrees of freedom</p></li>
-<li><p><strong>on_boundary</strong> (<em>bool | None</em>) – <cite>True</cite> it the node is on the boundary mesh of the part, <cite>False</cite>
+<li><p><strong>gkey</strong> (<em>str, read-only</em>) – The geometric key of the Node.</p></li>
+<li><p><strong>dof</strong> (<em>dict</em>) – Dictionary with the active degrees of freedom.</p></li>
+<li><p><strong>on_boundary</strong> (<em>bool | None, read-only</em>) – <cite>True</cite> if the node is on the boundary mesh of the part, <cite>False</cite>
 otherwise, by default <cite>None</cite>.</p></li>
+<li><p><strong>is_reference</strong> (<em>bool, read-only</em>) – <cite>True</cite> if the node is a reference point of <a class="reference internal" href="compas_fea2.model.RigidPart.html#compas_fea2.model.RigidPart" title="compas_fea2.model.RigidPart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.RigidPart</span></code></a>,
+<cite>False</cite> otherwise.</p></li>
+<li><p><strong>part</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Part</span></code>, read-only) – The Part where the element is assigned.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="compas_fea2.model.Model.html#compas_fea2.model.Model" title="compas_fea2.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Model</span></code></a>, read-only) – The Model where the element is assigned.</p></li>
+<li><p><strong>point</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">compas.geometry.Point</span></code>) – The Point equivalent of the Node.</p></li>
+<li><p><strong>temperature</strong> (<em>float</em>) – The temperature at the Node.</p></li>
 </ul>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest language-python notranslate"><div class="highlight"><pre><button class="btn copy"><i class="far fa-copy"></i></button><code><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">)</span>
+<div class="doctest language-python notranslate"><div class="highlight"><pre><button class="btn copy"><i class="far fa-copy"></i></button><code><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">))</span>
 </code></pre></div>
 </div>
 <p class="rubric">Inherited Methods</p>
@@ -165,22 +171,25 @@ otherwise, by default <cite>None</cite>.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Node.from_name.html#compas_fea2.model.Node.from_name" title="compas_fea2.model.Node.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
 <td><p>Create an instance of a class of the registered plugin from its name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Node.sha256.html#compas_fea2.model.Node.sha256" title="compas_fea2.model.Node.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Node.jobdata.html#compas_fea2.model.Node.jobdata" title="compas_fea2.model.Node.jobdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobdata</span></code></a></p></td>
+<td><p>Generate the job data for the backend-specific input file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Node.sha256.html#compas_fea2.model.Node.sha256" title="compas_fea2.model.Node.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
 <td><p>Compute a hash of the data for comparison during version control using the sha256 algorithm.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Node.to_data.html#compas_fea2.model.Node.to_data" title="compas_fea2.model.Node.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Node.to_data.html#compas_fea2.model.Node.to_data" title="compas_fea2.model.Node.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
 <td><p>Convert an object to its native data representation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Node.to_json.html#compas_fea2.model.Node.to_json" title="compas_fea2.model.Node.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Node.to_json.html#compas_fea2.model.Node.to_json" title="compas_fea2.model.Node.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Node.to_jsonstring.html#compas_fea2.model.Node.to_jsonstring" title="compas_fea2.model.Node.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Node.to_jsonstring.html#compas_fea2.model.Node.to_jsonstring" title="compas_fea2.model.Node.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Node.validate_data.html#compas_fea2.model.Node.validate_data" title="compas_fea2.model.Node.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Node.validate_data.html#compas_fea2.model.Node.validate_data" title="compas_fea2.model.Node.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
 <td><p>Validate the object's data against its data schema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Node.validate_json.html#compas_fea2.model.Node.validate_json" title="compas_fea2.model.Node.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Node.validate_json.html#compas_fea2.model.Node.validate_json" title="compas_fea2.model.Node.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
 <td><p>Validate the object's data against its json schema.</p></td>
 </tr>
 </tbody>

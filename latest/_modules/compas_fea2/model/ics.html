@@ -96,20 +96,51 @@
 
 
 <div class="viewcode-block" id="_InitialCondition"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._InitialCondition.html#compas_fea2.model._InitialCondition">[docs]</a><span class="k">class</span> <span class="nc">_InitialCondition</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for all predefined initial conditions.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all predefined initial conditions.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
 <span class="sd">    InitialConditions are registered to a :class:`compas_fea2.model.Model`. The</span>
 <span class="sd">    same InitialCondition can be assigned to Nodes or Elements in multiple Parts</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Uniqe identifier.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">_InitialCondition</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-
+<span class="c1">#FIXME this is not really a field in the sense that it is only applied to 1 node/element</span>
 <div class="viewcode-block" id="InitialTemperatureField"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.InitialTemperatureField.html#compas_fea2.model.InitialTemperatureField">[docs]</a><span class="k">class</span> <span class="nc">InitialTemperatureField</span><span class="p">(</span><span class="n">_InitialCondition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Temperature field</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Temperature field.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    InitialConditions are registered to a :class:`compas_fea2.model.Model`. The</span>
+<span class="sd">    same InitialCondition can be assigned to Nodes or Elements in multiple Parts</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    temperature : float</span>
+<span class="sd">        The temperature value.</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    temperature : float</span>
+<span class="sd">        The temperature value.</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Uniqe identifier.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -126,7 +157,27 @@
 
 
 <div class="viewcode-block" id="InitialStressField"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.InitialStressField.html#compas_fea2.model.InitialStressField">[docs]</a><span class="k">class</span> <span class="nc">InitialStressField</span><span class="p">(</span><span class="n">_InitialCondition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stress field</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stress field.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    InitialConditions are registered to a :class:`compas_fea2.model.Model`. The</span>
+<span class="sd">    same InitialCondition can be assigned to Nodes or Elements in multiple Parts</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stress : touple(float, float, float)</span>
+<span class="sd">        The stress values.</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stress : touple(float, float, float)</span>
+<span class="sd">        The stress values.</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Uniqe identifier.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>

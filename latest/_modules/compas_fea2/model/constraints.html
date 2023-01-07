@@ -96,8 +96,7 @@
 
 
 <div class="viewcode-block" id="_Constraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._Constraint.html#compas_fea2.model._Constraint">[docs]</a><span class="k">class</span> <span class="nc">_Constraint</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Initialises base Constraint object. A constraint removes degree of freedom</span>
-<span class="sd">    of nodes in the model.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A constraint removes degree of freedom of nodes in the model.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -125,20 +124,25 @@
 <span class="c1"># ------------------------------------------------------------------------------</span>
 
 
-<div class="viewcode-block" id="MultiPointConstraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.MultiPointConstraint.html#compas_fea2.model.MultiPointConstraint">[docs]</a><span class="k">class</span> <span class="nc">MultiPointConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A MPC constraint links a node (master) to other nodes (slaves) in the model.</span>
+<div class="viewcode-block" id="_MultiPointConstraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._MultiPointConstraint.html#compas_fea2.model._MultiPointConstraint">[docs]</a><span class="k">class</span> <span class="nc">_MultiPointConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A MultiPointContrstaint (MPC) links a node (master) to other nodes</span>
+<span class="sd">    (slaves) in the model.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    Constraints are registered to a :class:`compas_fea2.model.Model`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
+<span class="sd">    master : :class:`compas_fea2.model.Node`</span>
+<span class="sd">        Node that act as master.</span>
+<span class="sd">    slaves : [:class:`compas_fea2.model.Node`] | :class:`compas_fea2.model.NodesGroup`</span>
+<span class="sd">        List or Group of nodes that act as slaves.</span>
+<span class="sd">    tol : float</span>
+<span class="sd">        Constraint tolerance, distance limit between master and slaves.</span>
 <span class="sd">    name : str,optional</span>
 <span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
 <span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    master : :class:`compas_fea2.model.Node`</span>
-<span class="sd">        Node that act as master.</span>
-<span class="sd">    slaves : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Group of nodes that act as slaves.</span>
-<span class="sd">    tol : float</span>
-<span class="sd">        Constraint tolerance, distance limit between master and slaves.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -147,29 +151,64 @@
 <span class="sd">        name if you want a more human-readable input file.</span>
 <span class="sd">    master : :class:`compas_fea2.model.Node`</span>
 <span class="sd">        Node that act as master.</span>
-<span class="sd">    slaves : :class:`compas_fea2.model.NodesGroup`</span>
-<span class="sd">        Goup of nodes that act as slaves.</span>
+<span class="sd">    slaves : [:class:`compas_fea2.model.Node`] | :class:`compas_fea2.model.NodesGroup`</span>
+<span class="sd">        List or Group of nodes that act as slaves.</span>
 <span class="sd">    tol : float</span>
 <span class="sd">        Constraint tolerance, distance limit between master and slaves.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint_type</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">MultiPointConstraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">_MultiPointConstraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">constraint_type</span> <span class="o">=</span> <span class="n">constraint_type</span></div>
 
 
-<div class="viewcode-block" id="TieMPC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TieMPC.html#compas_fea2.model.TieMPC">[docs]</a><span class="k">class</span> <span class="nc">TieMPC</span><span class="p">(</span><span class="n">MultiPointConstraint</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A MPC constraint links a node (master) to other nodes (slaves) in the model.</span>
-<span class="sd">    &quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="TieMPC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TieMPC.html#compas_fea2.model.TieMPC">[docs]</a><span class="k">class</span> <span class="nc">TieMPC</span><span class="p">(</span><span class="n">_MultiPointConstraint</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tie MPC that constraints axial translations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_MultiPointConstraint</span><span class="o">.</span><span class="vm">__doc__</span></div>
 
 
-<div class="viewcode-block" id="BeamMPC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.BeamMPC.html#compas_fea2.model.BeamMPC">[docs]</a><span class="k">class</span> <span class="nc">BeamMPC</span><span class="p">(</span><span class="n">MultiPointConstraint</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A MPC constraint links a node (master) to other nodes (slaves) in the model.</span>
-<span class="sd">    &quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="BeamMPC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.BeamMPC.html#compas_fea2.model.BeamMPC">[docs]</a><span class="k">class</span> <span class="nc">BeamMPC</span><span class="p">(</span><span class="n">_MultiPointConstraint</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Beam MPC that constraints axial translations and rotations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_MultiPointConstraint</span><span class="o">.</span><span class="vm">__doc__</span></div>
 
-<div class="viewcode-block" id="TieConstraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TieConstraint.html#compas_fea2.model.TieConstraint">[docs]</a><span class="k">class</span> <span class="nc">TieConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Tie constraint between two surfaces.</span>
+<span class="c1">#TODO check!</span>
+<span class="k">class</span> <span class="nc">_SurfaceConstraint</span><span class="p">(</span><span class="n">_Constraint</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A SurfaceContrstaint links a surface (master) to another surface (slave)</span>
+<span class="sd">    in the model.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    Constraints are registered to a :class:`compas_fea2.model.Model`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    master : :class:`compas_fea2.model.Node`</span>
+<span class="sd">        Node that act as master.</span>
+<span class="sd">    slaves : [:class:`compas_fea2.model.Node`] | :class:`compas_fea2.model.NodesGroup`</span>
+<span class="sd">        List or Group of nodes that act as slaves.</span>
+<span class="sd">    tol : float</span>
+<span class="sd">        Constraint tolerance, distance limit between master and slaves.</span>
+<span class="sd">    name : str,optional</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
+<span class="sd">    master : :class:`compas_fea2.model.Node`</span>
+<span class="sd">        Node that act as master.</span>
+<span class="sd">    slaves : [:class:`compas_fea2.model.Node`] | :class:`compas_fea2.model.NodesGroup`</span>
+<span class="sd">        List or Group of nodes that act as slaves.</span>
+<span class="sd">    tol : float</span>
+<span class="sd">        Constraint tolerance, distance limit between master and slaves.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TieConstraint"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TieConstraint.html#compas_fea2.model.TieConstraint">[docs]</a><span class="k">class</span> <span class="nc">TieConstraint</span><span class="p">(</span><span class="n">_SurfaceConstraint</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tie constraint between two surfaces.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 </code></pre></div>
         

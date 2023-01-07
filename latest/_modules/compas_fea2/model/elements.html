@@ -103,16 +103,16 @@
 
 
 <div class="viewcode-block" id="_Element"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._Element.html#compas_fea2.model._Element">[docs]</a><span class="k">class</span> <span class="nc">_Element</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Initialises a base Element object.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialises a base Element object.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
-<span class="sd">    Elements are registered to the same :class:`compas_fea2.model.DeformablePart` as its nodes</span>
-<span class="sd">    and can belong to only one DeformablePart.</span>
+<span class="sd">    Elements are registered to the same :class:`compas_fea2.model._Part` as well</span>
+<span class="sd">    as its nodes and can belong to only one Part.</span>
 
 <span class="sd">    Warning</span>
 <span class="sd">    -------</span>
-<span class="sd">    When an Element is added to a DeformablePart, the nodes of the elements are also added</span>
+<span class="sd">    When an Element is added to a Part, the nodes of the elements are also added</span>
 <span class="sd">    and registered to the same part. This might change the original registration</span>
 <span class="sd">    of the nodes!</span>
 
@@ -134,8 +134,7 @@
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
-<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
-<span class="sd">        name if you want a more human-readable input file.</span>
+<span class="sd">        Uniqe identifier.</span>
 <span class="sd">    key : int, read-only</span>
 <span class="sd">        Identifier of the element in the parent part.</span>
 <span class="sd">    nodes : list[:class:`compas_fea2.model.Node`]</span>
@@ -147,14 +146,24 @@
 <span class="sd">    frame : :class:`compas.geometry.Frame`</span>
 <span class="sd">        The local coordinate system for property assignement.</span>
 <span class="sd">        Default to the global coordinate system.</span>
-<span class="sd">    implementation : str, optional</span>
+<span class="sd">    implementation : str</span>
 <span class="sd">        The name of the backend model implementation of the element.</span>
 <span class="sd">    part : :class:`compas_fea2.model.DeformablePart` | None</span>
 <span class="sd">        The parent part.</span>
 <span class="sd">    on_boundary : bool | None</span>
 <span class="sd">        `True` it the element has a face on the boundary mesh of the part, `False`</span>
 <span class="sd">        otherwise, by default `None`.</span>
-
+<span class="sd">    part : :class:`compas_fea2.model._Part`, read-only</span>
+<span class="sd">        The Part where the element is assigned.</span>
+<span class="sd">    model : :class:`compas_fea2.model.Model`, read-only</span>
+<span class="sd">        The Model where the element is assigned.</span>
+<span class="sd">    area : float, read-only</span>
+<span class="sd">        The area of the element.</span>
+<span class="sd">    volume : float, read-only</span>
+<span class="sd">        The volume of the element.</span>
+<span class="sd">    rigid : bool, read-only</span>
+<span class="sd">        Define the element as rigid (no deformations allowed) or not. For Rigid</span>
+<span class="sd">        elements sections are not needed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <span class="c1"># FIXME frame and orientations are a bit different concepts. find a way to unify them</span>
 
@@ -172,6 +181,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_volume</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rigid</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">part</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -242,7 +252,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rigid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rigid</span></div>
 
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># 0D elements</span>
@@ -250,7 +264,7 @@
 
 
 <div class="viewcode-block" id="MassElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.MassElement.html#compas_fea2.model.MassElement">[docs]</a><span class="k">class</span> <span class="nc">MassElement</span><span class="p">(</span><span class="n">_Element</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A 0D element for concentrated point mass.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 0D element for concentrated point mass.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
@@ -258,12 +272,12 @@
 <span class="c1"># 1D elements</span>
 <span class="c1"># ==============================================================================</span>
 <span class="k">class</span> <span class="nc">_Element1D</span><span class="p">(</span><span class="n">_Element</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element with 1 dimension.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="BeamElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.BeamElement.html#compas_fea2.model.BeamElement">[docs]</a><span class="k">class</span> <span class="nc">BeamElement</span><span class="p">(</span><span class="n">_Element1D</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A 1D element that resists axial, shear, bending and torsion.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 1D element that resists axial, shear, bending and torsion.</span>
 
 <span class="sd">    A beam element is a one-dimensional line element in three-dimensional space</span>
 <span class="sd">    whose stiffness is associated with deformation of the line (the beam&#39;s “axis”).</span>
@@ -274,22 +288,22 @@
 
 
 <div class="viewcode-block" id="SpringElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.SpringElement.html#compas_fea2.model.SpringElement">[docs]</a><span class="k">class</span> <span class="nc">SpringElement</span><span class="p">(</span><span class="n">_Element1D</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A 1D spring element.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 1D spring element.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="TrussElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TrussElement.html#compas_fea2.model.TrussElement">[docs]</a><span class="k">class</span> <span class="nc">TrussElement</span><span class="p">(</span><span class="n">_Element1D</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A 1D element that resists axial loads.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 1D element that resists axial loads.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="StrutElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.StrutElement.html#compas_fea2.model.StrutElement">[docs]</a><span class="k">class</span> <span class="nc">StrutElement</span><span class="p">(</span><span class="n">TrussElement</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A truss element that resists axial compressive loads.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A truss element that resists axial compressive loads.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="TieElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TieElement.html#compas_fea2.model.TieElement">[docs]</a><span class="k">class</span> <span class="nc">TieElement</span><span class="p">(</span><span class="n">TrussElement</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A truss element that resists axial tensile loads.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A truss element that resists axial tensile loads.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
@@ -297,22 +311,26 @@
 <span class="c1"># 2D elements</span>
 <span class="c1"># ==============================================================================</span>
 <span class="k">class</span> <span class="nc">_Element2D</span><span class="p">(</span><span class="n">_Element</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element with 2 dimensions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Element</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Additional Parameters</span>
+<span class="s2">    ---------------------</span>
+<span class="s2">    faces : [:class:`compas_fea2.model.elements.Face]</span>
+<span class="s2">        The faces of the element.</span>
+<span class="s2">    faces : dict</span>
+<span class="s2">        Dictionary providing for each face the node indices. For example:</span>
+<span class="s2">        {&#39;s1&#39;: (0,1,2), ...}</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">section</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rigid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">_Element2D</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">section</span><span class="o">=</span><span class="n">section</span><span class="p">,</span>
                                          <span class="n">frame</span><span class="o">=</span><span class="n">frame</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="n">implementation</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_face_indices</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_faces</span> <span class="o">=</span> <span class="kc">None</span>
-
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_face_indices</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rigid</span> <span class="o">=</span> <span class="n">rigid</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">section</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">rigid</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;A not-rigid element must have a section&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">section</span> <span class="ow">and</span> <span class="n">rigid</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;A rigid element cannot have a section&#39;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -332,7 +350,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_faces</span>
 
     <span class="k">def</span> <span class="nf">_construct_faces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">face_indices</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Construct the face-nodes dictionary.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct the face-nodes dictionary.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -347,14 +365,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">Face</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="o">*</span><span class="n">indices</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">),</span> <span class="n">tag</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">element</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">indices</span> <span class="ow">in</span> <span class="n">face_indices</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">rigid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rigid</span>
-
-
 
 <div class="viewcode-block" id="ShellElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ShellElement.html#compas_fea2.model.ShellElement">[docs]</a><span class="k">class</span> <span class="nc">ShellElement</span><span class="p">(</span><span class="n">_Element2D</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A 2D element that resists axial, shear, bending and torsion.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 2D element that resists axial, shear, bending and torsion.</span>
 
 <span class="sd">    Shell elements are used to model structures in which one dimension, the</span>
 <span class="sd">    thickness, is significantly smaller than the other dimensions.</span>
@@ -373,7 +386,7 @@
 
 
 <div class="viewcode-block" id="MembraneElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.MembraneElement.html#compas_fea2.model.MembraneElement">[docs]</a><span class="k">class</span> <span class="nc">MembraneElement</span><span class="p">(</span><span class="n">_Element2D</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A shell element that resists only axial loads.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A shell element that resists only axial loads.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -391,7 +404,7 @@
 <span class="c1"># ==============================================================================</span>
 
 <span class="k">class</span> <span class="nc">Face</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;_summary_</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;_summary_</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -430,7 +443,7 @@
 
 
 <div class="viewcode-block" id="_Element3D"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._Element3D.html#compas_fea2.model._Element3D">[docs]</a><span class="k">class</span> <span class="nc">_Element3D</span><span class="p">(</span><span class="n">_Element</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A 3D element that resists axial, shear, bending and torsion.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A 3D element that resists axial, shear, bending and torsion.</span>
 <span class="sd">    Solid (continuum) elements can be used for linear analysis</span>
 <span class="sd">    and for complex nonlinear analyses involving contact, plasticity, and large</span>
 <span class="sd">    deformations.</span>
@@ -465,7 +478,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_faces</span>
 
     <span class="k">def</span> <span class="nf">_construct_faces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">face_indices</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Construct the face-nodes dictionary.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct the face-nodes dictionary.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -493,7 +506,7 @@
 
 
 <div class="viewcode-block" id="TetrahedronElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TetrahedronElement.html#compas_fea2.model.TetrahedronElement">[docs]</a><span class="k">class</span> <span class="nc">TetrahedronElement</span><span class="p">(</span><span class="n">_Element3D</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A Solid element with 4 faces.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Solid element with 4 faces.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -530,7 +543,7 @@
     <span class="c1">#TODO use compas funcitons to compute differences and det</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">volume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The volume property.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The volume property.&quot;&quot;&quot;</span>
 
         <span class="k">def</span> <span class="nf">determinant_3x3</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">m</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span>
@@ -551,12 +564,12 @@
                                     <span class="p">)))</span> <span class="o">/</span> <span class="mf">6.0</span></div>
 
 <span class="k">class</span> <span class="nc">PentahedronElement</span><span class="p">(</span><span class="n">_Element3D</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A Solid element with 5 faces (extruded triangle).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Solid element with 5 faces (extruded triangle).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="HexahedronElement"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.HexahedronElement.html#compas_fea2.model.HexahedronElement">[docs]</a><span class="k">class</span> <span class="nc">HexahedronElement</span><span class="p">(</span><span class="n">_Element3D</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A Solid cuboid element with 6 faces (extruded rectangle).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Solid cuboid element with 6 faces (extruded rectangle).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>

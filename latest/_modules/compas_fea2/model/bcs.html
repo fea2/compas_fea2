@@ -95,51 +95,83 @@
 <span class="kn">from</span> <span class="nn">compas_fea2.base</span> <span class="kn">import</span> <span class="n">FEAData</span>
 
 <span class="n">docs</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Note</span>
+<span class="s2">----</span>
+<span class="s2">BoundaryConditions are registered to a :class:`compas_fea2.model.Model`.</span>
+
+<span class="s2">Warning</span>
+<span class="s2">-------</span>
+<span class="s2">The `axes` parameter is WIP. Currently only global axes can be used.</span>
+
 <span class="s2">Parameters</span>
 <span class="s2">----------</span>
 <span class="s2">name : str, optional</span>
 <span class="s2">    Uniqe identifier. If not provided it is automatically generated. Set a</span>
 <span class="s2">    name if you want a more human-readable input file.</span>
+<span class="s2">axes : str, optional</span>
+<span class="s2">    The refernce axes.</span>
 
 <span class="s2">Attributes</span>
 <span class="s2">----------</span>
 <span class="s2">name : str</span>
-<span class="s2">    Uniqe identifier. If not provided it is automatically generated. Set a</span>
-<span class="s2">    name if you want a more human-readable input file.</span>
+<span class="s2">    Uniqe identifier.</span>
 <span class="s2">x : bool</span>
-<span class="s2">    If True, tralations along global x are fixed.</span>
+<span class="s2">    Restrain translations along the x axis.</span>
 <span class="s2">y : bool</span>
-<span class="s2">    If True, tralations along global y are fixed.</span>
+<span class="s2">    Restrain translations along the y axis.</span>
 <span class="s2">z : bool</span>
-<span class="s2">    If True, tralations along global z are fixed.</span>
+<span class="s2">    Restrain translations along the z axis.</span>
 <span class="s2">xx : bool</span>
-<span class="s2">    If True, tralations around global xx are fixed.</span>
+<span class="s2">    Restrain rotations around the x axis.</span>
 <span class="s2">yy : bool</span>
-<span class="s2">    If True, tralations around global yy are fixed.</span>
+<span class="s2">    Restrain rotations around the y axis.</span>
 <span class="s2">zz : bool</span>
-<span class="s2">    If True, tralations around global zz are fixed.</span>
-
+<span class="s2">    Restrain rotations around the z axis.</span>
+<span class="s2">components : dict</span>
+<span class="s2">    Dictionary with component-value pairs summarizing the boundary condition.</span>
+<span class="s2">axes : str</span>
+<span class="s2">    The refernce axes.</span>
 <span class="s2">&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="_BoundaryCondition"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._BoundaryCondition.html#compas_fea2.model._BoundaryCondition">[docs]</a><span class="k">class</span> <span class="nc">_BoundaryCondition</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for all zero-valued boundary conditions.</span>
-
-<span class="sd">    Note</span>
-<span class="sd">    ----</span>
-<span class="sd">    BoundaryConditions are registered to a :class:`compas_fea2.model.Model`.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all zero-valued boundary conditions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">_BoundaryCondition</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span> <span class="o">=</span> <span class="n">axes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_z</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xx</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_yy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zz</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_z</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">xx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xx</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">yy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yy</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">zz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zz</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -155,138 +187,154 @@
 
 
 <div class="viewcode-block" id="GeneralBC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.GeneralBC.html#compas_fea2.model.GeneralBC">[docs]</a><span class="k">class</span> <span class="nc">GeneralBC</span><span class="p">(</span><span class="n">_BoundaryCondition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Costumized boundary condition.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Costumized boundary condition.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Additional Parameters</span>
+<span class="s2">---------------------</span>
+<span class="s2">x : bool</span>
+<span class="s2">    Restrain translations along the x axis.</span>
+<span class="s2">y : bool</span>
+<span class="s2">    Restrain translations along the y axis.</span>
+<span class="s2">z : bool</span>
+<span class="s2">    Restrain translations along the z axis.</span>
+<span class="s2">xx : bool</span>
+<span class="s2">    Restrain rotations around the x axis.</span>
+<span class="s2">yy : bool</span>
+<span class="s2">    Restrain rotations around the y axis.</span>
+<span class="s2">zz : bool</span>
+<span class="s2">    Restrain rotations around the z axis.</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">xx</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">yy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">zz</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">GeneralBC</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="n">xx</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="n">yy</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="n">zz</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_z</span> <span class="o">=</span> <span class="n">z</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xx</span> <span class="o">=</span> <span class="n">xx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_yy</span> <span class="o">=</span> <span class="n">yy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zz</span> <span class="o">=</span> <span class="n">zz</span></div>
 
 
 <div class="viewcode-block" id="FixedBC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.FixedBC.html#compas_fea2.model.FixedBC">[docs]</a><span class="k">class</span> <span class="nc">FixedBC</span><span class="p">(</span><span class="n">_BoundaryCondition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A fixed nodal displacement boundary condition.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A fixed nodal displacement boundary condition.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">FixedBC</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_z</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xx</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_yy</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zz</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="PinnedBC"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.PinnedBC.html#compas_fea2.model.PinnedBC">[docs]</a><span class="k">class</span> <span class="nc">PinnedBC</span><span class="p">(</span><span class="n">_BoundaryCondition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_z</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="ClampBCXX"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ClampBCXX.html#compas_fea2.model.ClampBCXX">[docs]</a><span class="k">class</span> <span class="nc">ClampBCXX</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in XX.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in XX.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ClampBCXX</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xx</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xx</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="ClampBCYY"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ClampBCYY.html#compas_fea2.model.ClampBCYY">[docs]</a><span class="k">class</span> <span class="nc">ClampBCYY</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in YY.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in YY.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ClampBCYY</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">yy</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_yy</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="ClampBCZZ"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ClampBCZZ.html#compas_fea2.model.ClampBCZZ">[docs]</a><span class="k">class</span> <span class="nc">ClampBCZZ</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in ZZ.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition clamped in ZZ.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ClampBCZZ</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">zz</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zz</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="RollerBCX"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.RollerBCX.html#compas_fea2.model.RollerBCX">[docs]</a><span class="k">class</span> <span class="nc">RollerBCX</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in X.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in X.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RollerBCX</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 <div class="viewcode-block" id="RollerBCY"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.RollerBCY.html#compas_fea2.model.RollerBCY">[docs]</a><span class="k">class</span> <span class="nc">RollerBCY</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in Y.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in Y.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RollerBCY</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 <div class="viewcode-block" id="RollerBCZ"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.RollerBCZ.html#compas_fea2.model.RollerBCZ">[docs]</a><span class="k">class</span> <span class="nc">RollerBCZ</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in Z.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in Z.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RollerBCZ</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_z</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 <div class="viewcode-block" id="RollerBCXY"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.RollerBCXY.html#compas_fea2.model.RollerBCXY">[docs]</a><span class="k">class</span> <span class="nc">RollerBCXY</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in X and Y.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in X and Y.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RollerBCXY</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 <div class="viewcode-block" id="RollerBCYZ"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.RollerBCYZ.html#compas_fea2.model.RollerBCYZ">[docs]</a><span class="k">class</span> <span class="nc">RollerBCYZ</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in Y and Z.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in Y and Z.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RollerBCYZ</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_z</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 <div class="viewcode-block" id="RollerBCXZ"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.RollerBCXZ.html#compas_fea2.model.RollerBCXZ">[docs]</a><span class="k">class</span> <span class="nc">RollerBCXZ</span><span class="p">(</span><span class="n">PinnedBC</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in X and Z.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pinned nodal displacement boundary condition released in X and Z.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">docs</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RollerBCXZ</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_z</span> <span class="o">=</span> <span class="kc">False</span></div>
 </code></pre></div>
         
       </main>

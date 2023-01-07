@@ -104,7 +104,15 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – Section name.</p></li>
+<li><p><strong>name</strong> (<em>str, optional</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
+name if you want a more human-readable input file.</p></li>
+<li><p><strong>mass</strong> (<em>float</em>) – Point mass value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Attributes<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Uniqe identifier.</p></li>
+<li><p><strong>key</strong> (<em>int, read-only</em>) – Identifier of the element in the parent part.</p></li>
 <li><p><strong>mass</strong> (<em>float</em>) – Point mass value.</p></li>
 </ul>
 </dd>
@@ -133,22 +141,25 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.from_name.html#compas_fea2.model.MassSection.from_name" title="compas_fea2.model.MassSection.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
 <td><p>Create an instance of a class of the registered plugin from its name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.sha256.html#compas_fea2.model.MassSection.sha256" title="compas_fea2.model.MassSection.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.jobdata.html#compas_fea2.model.MassSection.jobdata" title="compas_fea2.model.MassSection.jobdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobdata</span></code></a></p></td>
+<td><p>Generate the job data for the backend-specific input file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.sha256.html#compas_fea2.model.MassSection.sha256" title="compas_fea2.model.MassSection.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
 <td><p>Compute a hash of the data for comparison during version control using the sha256 algorithm.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.to_data.html#compas_fea2.model.MassSection.to_data" title="compas_fea2.model.MassSection.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.to_data.html#compas_fea2.model.MassSection.to_data" title="compas_fea2.model.MassSection.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
 <td><p>Convert an object to its native data representation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.to_json.html#compas_fea2.model.MassSection.to_json" title="compas_fea2.model.MassSection.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.to_json.html#compas_fea2.model.MassSection.to_json" title="compas_fea2.model.MassSection.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.to_jsonstring.html#compas_fea2.model.MassSection.to_jsonstring" title="compas_fea2.model.MassSection.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.to_jsonstring.html#compas_fea2.model.MassSection.to_jsonstring" title="compas_fea2.model.MassSection.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.validate_data.html#compas_fea2.model.MassSection.validate_data" title="compas_fea2.model.MassSection.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.validate_data.html#compas_fea2.model.MassSection.validate_data" title="compas_fea2.model.MassSection.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
 <td><p>Validate the object's data against its data schema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.validate_json.html#compas_fea2.model.MassSection.validate_json" title="compas_fea2.model.MassSection.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.MassSection.validate_json.html#compas_fea2.model.MassSection.validate_json" title="compas_fea2.model.MassSection.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
 <td><p>Validate the object's data against its json schema.</p></td>
 </tr>
 </tbody>

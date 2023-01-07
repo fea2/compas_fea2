@@ -99,7 +99,7 @@
 <h1>RigidPart</h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="compas_fea2.model.RigidPart">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compas_fea2.model.</span></span><span class="sig-name descname"><span class="pre">RigidPart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/compas_fea2/model/parts.html#RigidPart"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compas_fea2.model.</span></span><span class="sig-name descname"><span class="pre">RigidPart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span></dt>
 <dd><p>Rigid part.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -116,14 +116,18 @@ name if you want a more human-readable input file.</p>
 name if you want a more human-readable input file.</p></li>
 <li><p><strong>model</strong> (<a class="reference internal" href="compas_fea2.model.Model.html#compas_fea2.model.Model" title="compas_fea2.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Model</span></code></a>) – The parent model of the part.</p></li>
 <li><p><strong>nodes</strong> (Set[<a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a>]) – The nodes belonging to the part.</p></li>
+<li><p><strong>nodes_count</strong> (<em>int</em>) – Number of nodes in the part.</p></li>
+<li><p><strong>gkey_node</strong> ({gkey : <a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a>}) – Dictionary that associates each node and its geometric key}</p></li>
 <li><p><strong>materials</strong> (Set[<a class="reference internal" href="compas_fea2.model._Material.html#compas_fea2.model._Material" title="compas_fea2.model._Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Material</span></code></a>]) – The materials belonging to the part.</p></li>
 <li><p><strong>sections</strong> (Set[<a class="reference internal" href="compas_fea2.model._Section.html#compas_fea2.model._Section" title="compas_fea2.model._Section"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Section</span></code></a>]) – The sections belonging to the part.</p></li>
 <li><p><strong>elements</strong> (Set[<a class="reference internal" href="compas_fea2.model._Element.html#compas_fea2.model._Element" title="compas_fea2.model._Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Element</span></code></a>]) – The elements belonging to the part.</p></li>
-<li><p><strong>releases</strong> (Set[<a class="reference internal" href="compas_fea2.model._BeamEndRelease.html#compas_fea2.model._BeamEndRelease" title="compas_fea2.model._BeamEndRelease"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._BeamEndRelease</span></code></a>]) – The releases belonging to the part.</p></li>
+<li><p><strong>element_types</strong> ({<a class="reference internal" href="compas_fea2.model._Element.html#compas_fea2.model._Element" title="compas_fea2.model._Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Element</span></code></a> : [<a class="reference internal" href="compas_fea2.model._Element.html#compas_fea2.model._Element" title="compas_fea2.model._Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Element</span></code></a>]]) – Dictionary with the elements of the part for each element type.</p></li>
+<li><p><strong>element_count</strong> (<em>int</em>) – Number of elements in the part</p></li>
 <li><p><strong>nodesgroups</strong> (Set[<a class="reference internal" href="compas_fea2.model.NodesGroup.html#compas_fea2.model.NodesGroup" title="compas_fea2.model.NodesGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.NodesGroup</span></code></a>]) – The groups of nodes belonging to the part.</p></li>
 <li><p><strong>elementsgroups</strong> (Set[<a class="reference internal" href="compas_fea2.model.ElementsGroup.html#compas_fea2.model.ElementsGroup" title="compas_fea2.model.ElementsGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.ElementsGroup</span></code></a>]) – The groups of elements belonging to the part.</p></li>
 <li><p><strong>facesgroups</strong> (Set[<a class="reference internal" href="compas_fea2.model.FacesGroup.html#compas_fea2.model.FacesGroup" title="compas_fea2.model.FacesGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.FacesGroup</span></code></a>]) – The groups of element faces belonging to the part.</p></li>
-<li><p><strong>boundary_mesh</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">compas.datastructures.Mesh</span></code>) – The outer boundary mesh enveloping the DeformablePart.</p></li>
+<li><p><strong>boundary_mesh</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">compas.datastructures.Mesh</span></code>) – The outer boundary mesh enveloping the Part.</p></li>
+<li><p><strong>discretized_boundary_mesh</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">compas.datastructures.Mesh</span></code>) – The discretized outer boundary mesh enveloping the Part.</p></li>
 <li><p><strong>Addtional Attributes</strong></p></li>
 <li><p><strong>——————–</strong></p></li>
 <li><p><strong>reference_point</strong> (<a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a>) – A node acting as a reference point for the part, by default <cite>None</cite>. This
@@ -248,33 +252,48 @@ is required if the part is rigid as it controls its movement in space.</p></li>
 <td><p>Retrieve the node with the minimum displacement</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.is_element_on_boundary.html#compas_fea2.model.RigidPart.is_element_on_boundary" title="compas_fea2.model.RigidPart.is_element_on_boundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_element_on_boundary</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Check if the element belongs to the boundary mesh of the part.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.is_node_on_boundary.html#compas_fea2.model.RigidPart.is_node_on_boundary" title="compas_fea2.model.RigidPart.is_node_on_boundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_node_on_boundary</span></code></a></p></td>
 <td><p>Check if a node is on the boundary mesh of the DeformablePart.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.sha256.html#compas_fea2.model.RigidPart.sha256" title="compas_fea2.model.RigidPart.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.jobdata.html#compas_fea2.model.RigidPart.jobdata" title="compas_fea2.model.RigidPart.jobdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobdata</span></code></a></p></td>
+<td><p>Generate the job data for the backend-specific input file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.remove_element.html#compas_fea2.model.RigidPart.remove_element" title="compas_fea2.model.RigidPart.remove_element"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_element</span></code></a></p></td>
+<td><p>Remove a <a class="reference internal" href="compas_fea2.model._Element.html#compas_fea2.model._Element" title="compas_fea2.model._Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Element</span></code></a> from the part.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.remove_elements.html#compas_fea2.model.RigidPart.remove_elements" title="compas_fea2.model.RigidPart.remove_elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_elements</span></code></a></p></td>
+<td><p>Remove multiple <a class="reference internal" href="compas_fea2.model._Element.html#compas_fea2.model._Element" title="compas_fea2.model._Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Element</span></code></a> from the part.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.remove_node.html#compas_fea2.model.RigidPart.remove_node" title="compas_fea2.model.RigidPart.remove_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_node</span></code></a></p></td>
+<td><p>Remove a <a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a> from the part.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.remove_nodes.html#compas_fea2.model.RigidPart.remove_nodes" title="compas_fea2.model.RigidPart.remove_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_nodes</span></code></a></p></td>
+<td><p>Remove multiple <a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a> from the part.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.sha256.html#compas_fea2.model.RigidPart.sha256" title="compas_fea2.model.RigidPart.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
 <td><p>Compute a hash of the data for comparison during version control using the sha256 algorithm.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.shell_from_compas_mesh.html#compas_fea2.model.RigidPart.shell_from_compas_mesh" title="compas_fea2.model.RigidPart.shell_from_compas_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shell_from_compas_mesh</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.shell_from_compas_mesh.html#compas_fea2.model.RigidPart.shell_from_compas_mesh" title="compas_fea2.model.RigidPart.shell_from_compas_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shell_from_compas_mesh</span></code></a></p></td>
 <td><p>Creates a DeformablePart object from a <code class="xref py py-class docutils literal notranslate"><span class="pre">compas.datastructures.Mesh</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.sorted_nodes_by_displacement.html#compas_fea2.model.RigidPart.sorted_nodes_by_displacement" title="compas_fea2.model.RigidPart.sorted_nodes_by_displacement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sorted_nodes_by_displacement</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.sorted_nodes_by_displacement.html#compas_fea2.model.RigidPart.sorted_nodes_by_displacement" title="compas_fea2.model.RigidPart.sorted_nodes_by_displacement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sorted_nodes_by_displacement</span></code></a></p></td>
 <td><p>Return a list with the nodes sorted by their displacement</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.to_data.html#compas_fea2.model.RigidPart.to_data" title="compas_fea2.model.RigidPart.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.to_data.html#compas_fea2.model.RigidPart.to_data" title="compas_fea2.model.RigidPart.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
 <td><p>Convert an object to its native data representation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.to_json.html#compas_fea2.model.RigidPart.to_json" title="compas_fea2.model.RigidPart.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.to_json.html#compas_fea2.model.RigidPart.to_json" title="compas_fea2.model.RigidPart.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.to_jsonstring.html#compas_fea2.model.RigidPart.to_jsonstring" title="compas_fea2.model.RigidPart.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.to_jsonstring.html#compas_fea2.model.RigidPart.to_jsonstring" title="compas_fea2.model.RigidPart.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.validate_data.html#compas_fea2.model.RigidPart.validate_data" title="compas_fea2.model.RigidPart.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.validate_data.html#compas_fea2.model.RigidPart.validate_data" title="compas_fea2.model.RigidPart.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
 <td><p>Validate the object's data against its data schema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.validate_json.html#compas_fea2.model.RigidPart.validate_json" title="compas_fea2.model.RigidPart.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.RigidPart.validate_json.html#compas_fea2.model.RigidPart.validate_json" title="compas_fea2.model.RigidPart.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
 <td><p>Validate the object's data against its json schema.</p></td>
 </tr>
 </tbody>

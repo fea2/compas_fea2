@@ -101,7 +101,7 @@
 
 
 <div class="viewcode-block" id="_Section"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._Section.html#compas_fea2.model._Section">[docs]</a><span class="k">class</span> <span class="nc">_Section</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for sections.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for sections.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -121,9 +121,12 @@
 <span class="sd">    name : str</span>
 <span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
 <span class="sd">        name if you want a more human-readable input file.</span>
+<span class="sd">    key : int, read-only</span>
+<span class="sd">        Identifier index of the section in the parent Model.</span>
 <span class="sd">    material : :class:`~compas_fea2.model._Material`</span>
 <span class="sd">        The material associated with the section.</span>
-
+<span class="sd">    model : :class:`compas_fea2.model.Model`</span>
+<span class="sd">        The model where the section is assigned.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">material</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -152,15 +155,12 @@
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">Section</span>
-<span class="s2">-------</span>
-<span class="s2">name     : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">material : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-
-<div class="viewcode-block" id="_Section.jobdata"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._Section.jobdata.html#compas_fea2.model._Section.jobdata">[docs]</a>    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">jobdata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+<span class="s2">Section </span><span class="si">{}</span>
+<span class="s2">--------</span><span class="si">{}</span>
+<span class="s2">model    : </span><span class="si">{!r}</span>
+<span class="s2">key      : </span><span class="si">{}</span>
+<span class="s2">material : </span><span class="si">{!r}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">material</span><span class="p">)</span></div>
 
 
 <span class="c1"># ==============================================================================</span>
@@ -168,38 +168,52 @@
 <span class="c1"># ==============================================================================</span>
 
 <div class="viewcode-block" id="MassSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.MassSection.html#compas_fea2.model.MassSection">[docs]</a><span class="k">class</span> <span class="nc">MassSection</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Section for point mass elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Section for point mass elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Section name.</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
 <span class="sd">    mass : float</span>
 <span class="sd">        Point mass value.</span>
 
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Uniqe identifier.</span>
+<span class="sd">    key : int, read-only</span>
+<span class="sd">        Identifier of the element in the parent part.</span>
+<span class="sd">    mass : float</span>
+<span class="sd">        Point mass value.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MassSection</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mass</span> <span class="o">=</span> <span class="n">mass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">Mass Section</span>
-<span class="s2">------------</span>
-<span class="s2">name     : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">material : None</span>
-<span class="s2">mass     : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass</span><span class="p">)</span></div>
+<span class="s2">Mass Section  </span><span class="si">{}</span>
+<span class="s2">--------</span><span class="si">{}</span>
+<span class="s2">model    : </span><span class="si">{!r}</span>
+<span class="s2">mass     : </span><span class="si">{}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SpringSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.SpringSection.html#compas_fea2.model.SpringSection">[docs]</a><span class="k">class</span> <span class="nc">SpringSection</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Section for use with spring elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Section for use with spring elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Section name.</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
 <span class="sd">    forces : dict</span>
 <span class="sd">        Forces data for non-linear springs.</span>
 <span class="sd">    displacements : dict</span>
@@ -210,7 +224,9 @@
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
-<span class="sd">        Section object name.</span>
+<span class="sd">        Uniqe identifier.</span>
+<span class="sd">    key : int, read-only</span>
+<span class="sd">        Identifier of the element in the parent part.</span>
 <span class="sd">    forces : dict</span>
 <span class="sd">        Forces data for non-linear springs.</span>
 <span class="sd">    displacements : dict</span>
@@ -228,7 +244,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">forces</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">displacements</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stiffness</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SpringSection</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="c1"># would be good to know the structure of these dicts and validate</span>
+        <span class="c1">#TODO would be good to know the structure of these dicts and validate</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="n">forces</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">displacements</span> <span class="o">=</span> <span class="n">displacements</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stiffness</span> <span class="o">=</span> <span class="n">stiffness</span> <span class="ow">or</span> <span class="p">{}</span>
@@ -237,11 +253,11 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">Spring Section</span>
 <span class="s2">--------------</span>
-<span class="s2">name      : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">name      : </span><span class="si">{}</span>
 <span class="s2">material  : None</span>
-<span class="s2">forces    : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">displ     : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">stiffness : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">forces    : </span><span class="si">{}</span>
+<span class="s2">displ     : </span><span class="si">{}</span>
+<span class="s2">stiffness : </span><span class="si">{}</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">forces</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">displacements</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stiffness</span><span class="p">)</span></div>
 
 
@@ -250,7 +266,7 @@
 <span class="c1"># ==============================================================================</span>
 
 <div class="viewcode-block" id="BeamSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.BeamSection.html#compas_fea2.model.BeamSection">[docs]</a><span class="k">class</span> <span class="nc">BeamSection</span><span class="p">(</span><span class="n">_Section</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Custom section for beam elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom section for beam elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -320,10 +336,10 @@
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="si">{}</span><span class="s2"></span>
-<span class="si">{}</span><span class="s2"></span>
-<span class="s2">name     : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">material : </span><span class="si">{!r}</span><span class="s2"></span>
+<span class="si">{}</span>
+<span class="si">{}</span>
+<span class="s2">name     : </span><span class="si">{}</span>
+<span class="s2">material : </span><span class="si">{!r}</span>
 
 <span class="s2">A   : {:~.4g}</span>
 <span class="s2">Ixx : {:~.4g}</span>
@@ -331,9 +347,9 @@
 <span class="s2">Ixy : {:~.4g}</span>
 <span class="s2">Avx : {:~.2g}</span>
 <span class="s2">Avy : {:~.2g}</span>
-<span class="s2">J   : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">g0  : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">gw  : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">J   : </span><span class="si">{}</span>
+<span class="s2">g0  : </span><span class="si">{}</span>
+<span class="s2">gw  : </span><span class="si">{}</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span> <span class="o">*</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span>
            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
@@ -350,7 +366,7 @@
 
 
 <div class="viewcode-block" id="AngleSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.AngleSection.html#compas_fea2.model.AngleSection">[docs]</a><span class="k">class</span> <span class="nc">AngleSection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Uniform thickness angle cross-section for beam elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uniform thickness angle cross-section for beam elements.</span>
 
 <span class="sd">    Warning</span>
 <span class="sd">    -------</span>
@@ -429,7 +445,7 @@
 
 <span class="c1"># TODO implement different thickness along the 4 sides</span>
 <div class="viewcode-block" id="BoxSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.BoxSection.html#compas_fea2.model.BoxSection">[docs]</a><span class="k">class</span> <span class="nc">BoxSection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Hollow rectangular box cross-section for beam elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Hollow rectangular box cross-section for beam elements.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -515,7 +531,7 @@
 
 
 <div class="viewcode-block" id="CircularSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.CircularSection.html#compas_fea2.model.CircularSection">[docs]</a><span class="k">class</span> <span class="nc">CircularSection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Solid circular cross-section for beam elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solid circular cross-section for beam elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -574,7 +590,7 @@
 
 
 <div class="viewcode-block" id="HexSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.HexSection.html#compas_fea2.model.HexSection">[docs]</a><span class="k">class</span> <span class="nc">HexSection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Hexagonal hollow section.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Hexagonal hollow section.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -621,7 +637,7 @@
 
 
 <div class="viewcode-block" id="ISection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ISection.html#compas_fea2.model.ISection">[docs]</a><span class="k">class</span> <span class="nc">ISection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Equal flanged I-section for beam elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Equal flanged I-section for beam elements.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -699,7 +715,7 @@
 
 
 <div class="viewcode-block" id="PipeSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.PipeSection.html#compas_fea2.model.PipeSection">[docs]</a><span class="k">class</span> <span class="nc">PipeSection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Hollow circular cross-section for beam elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Hollow circular cross-section for beam elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -764,7 +780,7 @@
 
 
 <div class="viewcode-block" id="RectangularSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.RectangularSection.html#compas_fea2.model.RectangularSection">[docs]</a><span class="k">class</span> <span class="nc">RectangularSection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Solid rectangular cross-section for beam elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solid rectangular cross-section for beam elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -832,7 +848,7 @@
 
 
 <div class="viewcode-block" id="TrapezoidalSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TrapezoidalSection.html#compas_fea2.model.TrapezoidalSection">[docs]</a><span class="k">class</span> <span class="nc">TrapezoidalSection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Solid trapezoidal cross-section for beam elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solid trapezoidal cross-section for beam elements.</span>
 
 <span class="sd">    Warning</span>
 <span class="sd">    -------</span>
@@ -908,7 +924,7 @@
 
 
 <div class="viewcode-block" id="TrussSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TrussSection.html#compas_fea2.model.TrussSection">[docs]</a><span class="k">class</span> <span class="nc">TrussSection</span><span class="p">(</span><span class="n">BeamSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;For use with truss elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;For use with truss elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -962,7 +978,7 @@
 
 
 <div class="viewcode-block" id="StrutSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.StrutSection.html#compas_fea2.model.StrutSection">[docs]</a><span class="k">class</span> <span class="nc">StrutSection</span><span class="p">(</span><span class="n">TrussSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;For use with strut elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;For use with strut elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1007,7 +1023,7 @@
 
 
 <div class="viewcode-block" id="TieSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.TieSection.html#compas_fea2.model.TieSection">[docs]</a><span class="k">class</span> <span class="nc">TieSection</span><span class="p">(</span><span class="n">TrussSection</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;For use with tie elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;For use with tie elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1055,7 +1071,7 @@
 <span class="c1"># ==============================================================================</span>
 
 <div class="viewcode-block" id="ShellSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ShellSection.html#compas_fea2.model.ShellSection">[docs]</a><span class="k">class</span> <span class="nc">ShellSection</span><span class="p">(</span><span class="n">_Section</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Section for shell elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Section for shell elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1085,7 +1101,7 @@
 
 
 <div class="viewcode-block" id="MembraneSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.MembraneSection.html#compas_fea2.model.MembraneSection">[docs]</a><span class="k">class</span> <span class="nc">MembraneSection</span><span class="p">(</span><span class="n">_Section</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Section for membrane elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Section for membrane elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -1119,7 +1135,7 @@
 <span class="c1"># ==============================================================================</span>
 
 <div class="viewcode-block" id="SolidSection"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.SolidSection.html#compas_fea2.model.SolidSection">[docs]</a><span class="k">class</span> <span class="nc">SolidSection</span><span class="p">(</span><span class="n">_Section</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Section for solid elements.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Section for solid elements.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>

@@ -123,10 +123,13 @@ This will be added to the input file and can be useful for future reference.</p>
 <li><p><strong>parts</strong> (Set[<a class="reference internal" href="compas_fea2.model.DeformablePart.html#compas_fea2.model.DeformablePart" title="compas_fea2.model.DeformablePart"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.DeformablePart</span></code></a>]) – The parts of the model.</p></li>
 <li><p><strong>bcs</strong> (<em>dict</em>) – Dictionary with the boundary conditions of the model and the nodes where
 these are applied.</p></li>
-<li><p><strong>ics</strong> (<em>dict</em>) – The initial conditions of the model.</p></li>
+<li><p><strong>ics</strong> (<em>dict</em>) – Dictionary with the initial conditions of the model and the nodes/elements
+where these are applied.</p></li>
 <li><p><strong>constraints</strong> (Set[<a class="reference internal" href="compas_fea2.model._Constraint.html#compas_fea2.model._Constraint" title="compas_fea2.model._Constraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model._Constraint</span></code></a>]) – The constraints of the model.</p></li>
 <li><p><strong>partgroups</strong> (Set[<a class="reference internal" href="compas_fea2.model.PartsGroup.html#compas_fea2.model.PartsGroup" title="compas_fea2.model.PartsGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.PartsGroup</span></code></a>]) – The part groups of the model.</p></li>
-<li><p><strong>facesgroups</strong> (Set[<a class="reference internal" href="compas_fea2.model.FacesGroup.html#compas_fea2.model.FacesGroup" title="compas_fea2.model.FacesGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.FacesGroup</span></code></a>]) – The surfaces of the model.</p></li>
+<li><p><strong>materials</strong> (Set[:class:<a href="#id1"><span class="problematic" id="id2">`</span></a>compas_fea2.model.materials._Material]) – The materials assigned in the model.</p></li>
+<li><p><strong>sections</strong> (Set[:class:<a href="#id3"><span class="problematic" id="id4">`</span></a>compas_fea2.model._Section]) – The sections assigned in the model.</p></li>
+<li><p><strong>problems</strong> (Set[:class:<a href="#id5"><span class="problematic" id="id6">`</span></a>compas_fea2.problem._Problem]) – The problems added to the model.</p></li>
 </ul>
 </dd>
 </dl>
@@ -333,19 +336,22 @@ these are applied.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.from_name.html#compas_fea2.model.Model.from_name" title="compas_fea2.model.Model.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
 <td><p>Create an instance of a class of the registered plugin from its name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.sha256.html#compas_fea2.model.Model.sha256" title="compas_fea2.model.Model.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.jobdata.html#compas_fea2.model.Model.jobdata" title="compas_fea2.model.Model.jobdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobdata</span></code></a></p></td>
+<td><p>Generate the job data for the backend-specific input file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.sha256.html#compas_fea2.model.Model.sha256" title="compas_fea2.model.Model.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
 <td><p>Compute a hash of the data for comparison during version control using the sha256 algorithm.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_data.html#compas_fea2.model.Model.to_data" title="compas_fea2.model.Model.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_data.html#compas_fea2.model.Model.to_data" title="compas_fea2.model.Model.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
 <td><p>Convert an object to its native data representation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_jsonstring.html#compas_fea2.model.Model.to_jsonstring" title="compas_fea2.model.Model.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.to_jsonstring.html#compas_fea2.model.Model.to_jsonstring" title="compas_fea2.model.Model.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.validate_data.html#compas_fea2.model.Model.validate_data" title="compas_fea2.model.Model.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.validate_data.html#compas_fea2.model.Model.validate_data" title="compas_fea2.model.Model.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
 <td><p>Validate the object's data against its data schema.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.Model.validate_json.html#compas_fea2.model.Model.validate_json" title="compas_fea2.model.Model.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.Model.validate_json.html#compas_fea2.model.Model.validate_json" title="compas_fea2.model.Model.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
 <td><p>Validate the object's data against its json schema.</p></td>
 </tr>
 </tbody>

@@ -115,17 +115,10 @@
 <span class="kn">from</span> <span class="nn">compas_fea2.model.groups</span> <span class="kn">import</span> <span class="n">_Group</span><span class="p">,</span> <span class="n">NodesGroup</span><span class="p">,</span> <span class="n">PartsGroup</span><span class="p">,</span> <span class="n">ElementsGroup</span><span class="p">,</span> <span class="n">FacesGroup</span>
 <span class="kn">from</span> <span class="nn">compas_fea2.model.constraints</span> <span class="kn">import</span> <span class="n">_Constraint</span><span class="p">,</span> <span class="n">TieMPC</span><span class="p">,</span> <span class="n">BeamMPC</span>
 
-<span class="c1"># from compas_fea2.problem.problem import Problem</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">compas_assembly</span>
-<span class="k">except</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">compas_fea2</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: compas_assembly was not found in your evironment. Some functionalities will not be available.&#39;</span><span class="p">)</span>
-
 <span class="kn">from</span> <span class="nn">compas_fea2.units</span> <span class="kn">import</span> <span class="n">units</span>
 
 <div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.html#compas_fea2.model.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Class representing an FEA model.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class representing an FEA model.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -156,14 +149,18 @@
 <span class="sd">        Dictionary with the boundary conditions of the model and the nodes where</span>
 <span class="sd">        these are applied.</span>
 <span class="sd">    ics : dict</span>
-<span class="sd">        The initial conditions of the model.</span>
+<span class="sd">        Dictionary with the initial conditions of the model and the nodes/elements</span>
+<span class="sd">        where these are applied.</span>
 <span class="sd">    constraints : Set[:class:`compas_fea2.model._Constraint`]</span>
 <span class="sd">        The constraints of the model.</span>
 <span class="sd">    partgroups : Set[:class:`compas_fea2.model.PartsGroup`]</span>
 <span class="sd">        The part groups of the model.</span>
-<span class="sd">    facesgroups : Set[:class:`compas_fea2.model.FacesGroup`]</span>
-<span class="sd">        The surfaces of the model.</span>
-
+<span class="sd">    materials : Set[:class:`compas_fea2.model.materials._Material]</span>
+<span class="sd">        The materials assigned in the model.</span>
+<span class="sd">    sections : Set[:class:`compas_fea2.model._Section]</span>
+<span class="sd">        The sections assigned in the model.</span>
+<span class="sd">    problems : Set[:class:`compas_fea2.problem._Problem]</span>
+<span class="sd">        The problems added to the model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -231,7 +228,7 @@
     <span class="nd">@timer</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="s1">&#39;Model loaded from cfm file in &#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">from_cfm</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
         <span class="c1"># type: (str) -&gt; Model</span>
-        <span class="sd">&quot;&quot;&quot;Imports a Problem object from an .cfm file through Pickle.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Imports a Problem object from an .cfm file through Pickle.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -264,7 +261,7 @@
 
 <div class="viewcode-block" id="Model.to_cfm"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.to_cfm.html#compas_fea2.model.Model.to_cfm">[docs]</a>    <span class="k">def</span> <span class="nf">to_cfm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="c1"># type: (Path) -&gt; None</span>
-        <span class="sd">&quot;&quot;&quot;Exports the Model object to an .cfm file through Pickle.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Exports the Model object to an .cfm file through Pickle.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -291,7 +288,7 @@
 
 <div class="viewcode-block" id="Model.find_part_by_name"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_part_by_name.html#compas_fea2.model.Model.find_part_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">find_part_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">casefold</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="c1"># type: (str, bool) -&gt; DeformablePart</span>
-        <span class="sd">&quot;&quot;&quot;Find if there is a part with a given name in the model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find if there is a part with a given name in the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -313,7 +310,7 @@
 
 <div class="viewcode-block" id="Model.contains_part"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.contains_part.html#compas_fea2.model.Model.contains_part">[docs]</a>    <span class="k">def</span> <span class="nf">contains_part</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">part</span><span class="p">):</span>
         <span class="c1"># type: (DeformablePart) -&gt; DeformablePart</span>
-        <span class="sd">&quot;&quot;&quot;Verify that the model contains a specific part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify that the model contains a specific part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -328,7 +325,7 @@
 
 <div class="viewcode-block" id="Model.add_part"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_part.html#compas_fea2.model.Model.add_part">[docs]</a>    <span class="k">def</span> <span class="nf">add_part</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">part</span><span class="p">):</span>
         <span class="c1"># type: (DeformablePart) -&gt; DeformablePart</span>
-        <span class="sd">&quot;&quot;&quot;Adds a DeformablePart to the Model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds a DeformablePart to the Model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -372,7 +369,7 @@
 
 <div class="viewcode-block" id="Model.add_parts"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_parts.html#compas_fea2.model.Model.add_parts">[docs]</a>    <span class="k">def</span> <span class="nf">add_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parts</span><span class="p">):</span>
         <span class="c1"># type: (list) -&gt; list</span>
-        <span class="sd">&quot;&quot;&quot;Add multiple parts to the model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple parts to the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -462,7 +459,7 @@
     <span class="c1">#                           Groups methods</span>
     <span class="c1"># =========================================================================</span>
 <div class="viewcode-block" id="Model.add_parts_group"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_parts_group.html#compas_fea2.model.Model.add_parts_group">[docs]</a>    <span class="k">def</span> <span class="nf">add_parts_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add a PartsGroup object to the Model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a PartsGroup object to the Model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -481,7 +478,7 @@
         <span class="k">return</span> <span class="n">group</span></div>
 
 <div class="viewcode-block" id="Model.add_parts_groups"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_parts_groups.html#compas_fea2.model.Model.add_parts_groups">[docs]</a>    <span class="k">def</span> <span class="nf">add_parts_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add a multiple PartsGroup object to the Model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a multiple PartsGroup object to the Model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -496,7 +493,7 @@
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_parts_group</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="Model.group_parts_where"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.group_parts_where.html#compas_fea2.model.Model.group_parts_where">[docs]</a>    <span class="k">def</span> <span class="nf">group_parts_where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Group a set of parts with a give value of a given attribute.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Group a set of parts with a give value of a given attribute.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -519,7 +516,7 @@
 
 <div class="viewcode-block" id="Model.add_bcs"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_bcs.html#compas_fea2.model.Model.add_bcs">[docs]</a>    <span class="k">def</span> <span class="nf">add_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bc</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (_BoundaryCondition, Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._BoundaryCondition` to the model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._BoundaryCondition` to the model.</span>
 
 <span class="sd">        Note</span>
 <span class="sd">        ----</span>
@@ -565,7 +562,7 @@
 
     <span class="k">def</span> <span class="nf">_add_bc_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bc_type</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (str, Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._BoundaryCondition` by type.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._BoundaryCondition` by type.</span>
 
 <span class="sd">        Note</span>
 <span class="sd">        ----</span>
@@ -609,7 +606,7 @@
 
 <div class="viewcode-block" id="Model.add_fix_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_fix_bc.html#compas_fea2.model.Model.add_fix_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_fix_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model.FixedBC` to the nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model.FixedBC` to the nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -624,7 +621,7 @@
 
 <div class="viewcode-block" id="Model.add_pin_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_pin_bc.html#compas_fea2.model.Model.add_pin_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_pin_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a pinned boundary condition type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a pinned boundary condition type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -639,7 +636,7 @@
 
 <div class="viewcode-block" id="Model.add_clampXX_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_clampXX_bc.html#compas_fea2.model.Model.add_clampXX_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_clampXX_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a fixed boundary condition type free about XX to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a fixed boundary condition type free about XX to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -654,7 +651,7 @@
 
 <div class="viewcode-block" id="Model.add_clampYY_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_clampYY_bc.html#compas_fea2.model.Model.add_clampYY_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_clampYY_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a fixed boundary condition free about YY type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a fixed boundary condition free about YY type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -669,7 +666,7 @@
 
 <div class="viewcode-block" id="Model.add_clampZZ_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_clampZZ_bc.html#compas_fea2.model.Model.add_clampZZ_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_clampZZ_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a fixed boundary condition free about ZZ type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a fixed boundary condition free about ZZ type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -684,7 +681,7 @@
 
 <div class="viewcode-block" id="Model.add_rollerX_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_rollerX_bc.html#compas_fea2.model.Model.add_rollerX_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_rollerX_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a roller free on X boundary condition type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a roller free on X boundary condition type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -699,7 +696,7 @@
 
 <div class="viewcode-block" id="Model.add_rollerY_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_rollerY_bc.html#compas_fea2.model.Model.add_rollerY_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_rollerY_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a roller free on Y boundary condition type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a roller free on Y boundary condition type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -714,7 +711,7 @@
 
 <div class="viewcode-block" id="Model.add_rollerZ_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_rollerZ_bc.html#compas_fea2.model.Model.add_rollerZ_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_rollerZ_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a roller free on Z boundary condition type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a roller free on Z boundary condition type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -729,7 +726,7 @@
 
 <div class="viewcode-block" id="Model.add_rollerXY_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_rollerXY_bc.html#compas_fea2.model.Model.add_rollerXY_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_rollerXY_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a roller free on XY boundary condition type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a roller free on XY boundary condition type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -744,7 +741,7 @@
 
 <div class="viewcode-block" id="Model.add_rollerXZ_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_rollerXZ_bc.html#compas_fea2.model.Model.add_rollerXZ_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_rollerXZ_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a roller free on XZ boundary condition type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a roller free on XZ boundary condition type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -759,7 +756,7 @@
 
 <div class="viewcode-block" id="Model.add_rollerYZ_bc"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_rollerYZ_bc.html#compas_fea2.model.Model.add_rollerYZ_bc">[docs]</a>    <span class="k">def</span> <span class="nf">add_rollerYZ_bc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s1">&#39;global&#39;</span><span class="p">):</span>
         <span class="c1"># type: (Node, str) -&gt; _BoundaryCondition</span>
-        <span class="sd">&quot;&quot;&quot;Add a roller free on YZ boundary condition type to some nodes in a part.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a roller free on YZ boundary condition type to some nodes in a part.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -773,7 +770,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_bc_type</span><span class="p">(</span><span class="s1">&#39;rollerYZ&#39;</span><span class="p">,</span>  <span class="n">nodes</span><span class="p">,</span> <span class="n">axes</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Model.remove_bcs"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.remove_bcs.html#compas_fea2.model.Model.remove_bcs">[docs]</a>    <span class="k">def</span> <span class="nf">remove_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Release a node previously restrained.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Release a node previously restrained.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -797,7 +794,7 @@
 
 
 <div class="viewcode-block" id="Model.remove_all_bcs"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.remove_all_bcs.html#compas_fea2.model.Model.remove_all_bcs">[docs]</a>    <span class="k">def</span> <span class="nf">remove_all_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Removes all the boundary conditions from the Model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Removes all the boundary conditions from the Model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -817,7 +814,7 @@
 
     <span class="k">def</span> <span class="nf">_add_ics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
         <span class="c1"># type: (_InitialCondition, _Group, str) -&gt; list</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -852,7 +849,7 @@
 
 <div class="viewcode-block" id="Model.add_nodes_ics"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_nodes_ics.html#compas_fea2.model.Model.add_nodes_ics">[docs]</a>    <span class="k">def</span> <span class="nf">add_nodes_ics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
         <span class="c1"># type: (_InitialCondition, Node, str) -&gt; list</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -873,7 +870,7 @@
 
 <div class="viewcode-block" id="Model.add_elements_ics"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_elements_ics.html#compas_fea2.model.Model.add_elements_ics">[docs]</a>    <span class="k">def</span> <span class="nf">add_elements_ics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ic</span><span class="p">,</span> <span class="n">elements</span><span class="p">):</span>
         <span class="c1"># type: (_InitialCondition, Node, str) -&gt; list</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.model._InitialCondition` to the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -898,7 +895,7 @@
     <span class="c1"># TODO add shor/ long</span>
 <div class="viewcode-block" id="Model.summary"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.summary.html#compas_fea2.model.Model.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># type: () -&gt; str</span>
-        <span class="sd">&quot;&quot;&quot;Prints a summary of the Model object.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prints a summary of the Model object.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -930,27 +927,27 @@
 
         <span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</span>
-<span class="s2">compas_fea2 Model: </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">compas_fea2 Model: </span><span class="si">{}</span>
 <span class="s2">++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</span>
 
-<span class="s2">description: </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">author: </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">description: </span><span class="si">{}</span>
+<span class="s2">author: </span><span class="si">{}</span>
 
 <span class="s2">Parts</span>
 <span class="s2">-----</span>
-<span class="si">{}</span><span class="s2"></span>
+<span class="si">{}</span>
 
 <span class="s2">Constraints</span>
 <span class="s2">-----------</span>
-<span class="si">{}</span><span class="s2"></span>
+<span class="si">{}</span>
 
 <span class="s2">Boundary Conditions</span>
 <span class="s2">-------------------</span>
-<span class="si">{}</span><span class="s2"></span>
+<span class="si">{}</span>
 
 <span class="s2">Initial Conditions</span>
 <span class="s2">------------------</span>
-<span class="si">{}</span><span class="s2"></span>
+<span class="si">{}</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
            <span class="bp">self</span><span class="o">.</span><span class="n">author</span> <span class="ow">or</span> <span class="s1">&#39;N/A&#39;</span><span class="p">,</span>
@@ -967,7 +964,7 @@
     <span class="c1"># ==============================================================================</span>
 
 <div class="viewcode-block" id="Model.check"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.check.html#compas_fea2.model.Model.check">[docs]</a>    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;quick&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Check for possible problems in the model</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check for possible problems in the model</span>
 
 <span class="sd">            Warning</span>
 <span class="sd">            -------</span>
@@ -985,12 +982,12 @@
 <span class="sd">            &quot;&quot;&quot;</span>
 
         <span class="k">def</span> <span class="nf">_check_units</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Check if the units are consistent.</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Check if the units are consistent.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
         <span class="k">def</span> <span class="nf">_check_bcs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Check if the units are consistent.</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Check if the units are consistent.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
@@ -1002,7 +999,7 @@
 <div class="viewcode-block" id="Model.show"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.show.html#compas_fea2.model.Model.show">[docs]</a>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">1600</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">parts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">solid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">draw_nodes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">node_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
              <span class="n">draw_bcs</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">draw_constraints</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;WIP</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;WIP</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1051,7 +1048,7 @@
     <span class="c1"># =========================================================================</span>
 
 <div class="viewcode-block" id="Model.add_problem"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_problem.html#compas_fea2.model.Model.add_problem">[docs]</a>    <span class="k">def</span> <span class="nf">add_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.problem.Problem` object to the model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a :class:`compas_fea2.problem.Problem` object to the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1075,7 +1072,7 @@
         <span class="k">return</span> <span class="n">problem</span></div>
 
 <div class="viewcode-block" id="Model.add_problems"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.add_problems.html#compas_fea2.model.Model.add_problems">[docs]</a>    <span class="k">def</span> <span class="nf">add_problems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">problems</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add multiple :class:`compas_fea2.problem.Problem` objects to the model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple :class:`compas_fea2.problem.Problem` objects to the model.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1095,7 +1092,7 @@
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">add_problem</span><span class="p">(</span><span class="n">problem</span><span class="p">)</span> <span class="k">for</span> <span class="n">problem</span> <span class="ow">in</span> <span class="n">problems</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="Model.find_problem_by_name"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.Model.find_problem_by_name.html#compas_fea2.model.Model.find_problem_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">find_problem_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Find a problem in the model using its name.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find a problem in the model using its name.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>

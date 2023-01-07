@@ -101,21 +101,33 @@
 <dt class="sig sig-object py" id="compas_fea2.model.FixedBC">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compas_fea2.model.</span></span><span class="sig-name descname"><span class="pre">FixedBC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/compas_fea2/model/bcs.html#FixedBC"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>A fixed nodal displacement boundary condition.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>BoundaryConditions are registered to a <a class="reference internal" href="compas_fea2.model.Model.html#compas_fea2.model.Model" title="compas_fea2.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Model</span></code></a>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <cite>axes</cite> parameter is WIP. Currently only global axes can be used.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> (<em>str, optional</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
-name if you want a more human-readable input file.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str, optional</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
+name if you want a more human-readable input file.</p></li>
+<li><p><strong>axes</strong> (<em>str, optional</em>) – The refernce axes.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Attributes<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
-name if you want a more human-readable input file.</p></li>
-<li><p><strong>x</strong> (<em>bool</em>) – If True, tralations along global x are fixed.</p></li>
-<li><p><strong>y</strong> (<em>bool</em>) – If True, tralations along global y are fixed.</p></li>
-<li><p><strong>z</strong> (<em>bool</em>) – If True, tralations along global z are fixed.</p></li>
-<li><p><strong>xx</strong> (<em>bool</em>) – If True, tralations around global xx are fixed.</p></li>
-<li><p><strong>yy</strong> (<em>bool</em>) – If True, tralations around global yy are fixed.</p></li>
-<li><p><strong>zz</strong> (<em>bool</em>) – If True, tralations around global zz are fixed.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Uniqe identifier.</p></li>
+<li><p><strong>x</strong> (<em>bool</em>) – Restrain translations along the x axis.</p></li>
+<li><p><strong>y</strong> (<em>bool</em>) – Restrain translations along the y axis.</p></li>
+<li><p><strong>z</strong> (<em>bool</em>) – Restrain translations along the z axis.</p></li>
+<li><p><strong>xx</strong> (<em>bool</em>) – Restrain rotations around the x axis.</p></li>
+<li><p><strong>yy</strong> (<em>bool</em>) – Restrain rotations around the y axis.</p></li>
+<li><p><strong>zz</strong> (<em>bool</em>) – Restrain rotations around the z axis.</p></li>
+<li><p><strong>components</strong> (<em>dict</em>) – Dictionary with component-value pairs summarizing the boundary condition.</p></li>
+<li><p><strong>axes</strong> (<em>str</em>) – The refernce axes.</p></li>
 </ul>
 </dd>
 </dl>
@@ -143,22 +155,25 @@ name if you want a more human-readable input file.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.from_name.html#compas_fea2.model.FixedBC.from_name" title="compas_fea2.model.FixedBC.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
 <td><p>Create an instance of a class of the registered plugin from its name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.sha256.html#compas_fea2.model.FixedBC.sha256" title="compas_fea2.model.FixedBC.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.jobdata.html#compas_fea2.model.FixedBC.jobdata" title="compas_fea2.model.FixedBC.jobdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobdata</span></code></a></p></td>
+<td><p>Generate the job data for the backend-specific input file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.sha256.html#compas_fea2.model.FixedBC.sha256" title="compas_fea2.model.FixedBC.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
 <td><p>Compute a hash of the data for comparison during version control using the sha256 algorithm.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.to_data.html#compas_fea2.model.FixedBC.to_data" title="compas_fea2.model.FixedBC.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.to_data.html#compas_fea2.model.FixedBC.to_data" title="compas_fea2.model.FixedBC.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
 <td><p>Convert an object to its native data representation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.to_json.html#compas_fea2.model.FixedBC.to_json" title="compas_fea2.model.FixedBC.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.to_json.html#compas_fea2.model.FixedBC.to_json" title="compas_fea2.model.FixedBC.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.to_jsonstring.html#compas_fea2.model.FixedBC.to_jsonstring" title="compas_fea2.model.FixedBC.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.to_jsonstring.html#compas_fea2.model.FixedBC.to_jsonstring" title="compas_fea2.model.FixedBC.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.validate_data.html#compas_fea2.model.FixedBC.validate_data" title="compas_fea2.model.FixedBC.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.validate_data.html#compas_fea2.model.FixedBC.validate_data" title="compas_fea2.model.FixedBC.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
 <td><p>Validate the object's data against its data schema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.validate_json.html#compas_fea2.model.FixedBC.validate_json" title="compas_fea2.model.FixedBC.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model.FixedBC.validate_json.html#compas_fea2.model.FixedBC.validate_json" title="compas_fea2.model.FixedBC.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
 <td><p>Validate the object's data against its json schema.</p></td>
 </tr>
 </tbody>

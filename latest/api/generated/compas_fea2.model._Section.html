@@ -20,11 +20,11 @@
   <link rel="stylesheet" type="text/css" href="../../_static/css/compas-reference.css" />
 
   
-  <link rel="next" title="_Section.jobdata" href="compas_fea2.model._Section.jobdata.html" />
+  <link rel="next" title="_Section.ToString" href="compas_fea2.model._Section.ToString.html" />
   
 
   
-  <link rel="prev" title="Steel.validate_json" href="compas_fea2.model.Steel.validate_json.html" />
+  <link rel="prev" title="Timber.validate_json" href="compas_fea2.model.Timber.validate_json.html" />
   
 
   <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
@@ -118,18 +118,12 @@ name if you want a more human-readable input file.</p></li>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Uniqe identifier. If not provided it is automatically generated. Set a
 name if you want a more human-readable input file.</p></li>
+<li><p><strong>key</strong> (<em>int, read-only</em>) – Identifier index of the section in the parent Model.</p></li>
 <li><p><strong>material</strong> (<a class="reference internal" href="compas_fea2.model._Material.html#compas_fea2.model._Material" title="compas_fea2.model._Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">_Material</span></code></a>) – The material associated with the section.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="compas_fea2.model.Model.html#compas_fea2.model.Model" title="compas_fea2.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Model</span></code></a>) – The model where the section is assigned.</p></li>
 </ul>
 </dd>
 </dl>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model._Section.jobdata.html#compas_fea2.model._Section.jobdata" title="compas_fea2.model._Section.jobdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobdata</span></code></a></p></td>
-<td><p></p></td>
-</tr>
-</tbody>
-</table>
 <p class="rubric">Inherited Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -154,22 +148,25 @@ name if you want a more human-readable input file.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model._Section.from_name.html#compas_fea2.model._Section.from_name" title="compas_fea2.model._Section.from_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_name</span></code></a></p></td>
 <td><p>Create an instance of a class of the registered plugin from its name.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model._Section.sha256.html#compas_fea2.model._Section.sha256" title="compas_fea2.model._Section.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model._Section.jobdata.html#compas_fea2.model._Section.jobdata" title="compas_fea2.model._Section.jobdata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobdata</span></code></a></p></td>
+<td><p>Generate the job data for the backend-specific input file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model._Section.sha256.html#compas_fea2.model._Section.sha256" title="compas_fea2.model._Section.sha256"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sha256</span></code></a></p></td>
 <td><p>Compute a hash of the data for comparison during version control using the sha256 algorithm.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model._Section.to_data.html#compas_fea2.model._Section.to_data" title="compas_fea2.model._Section.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model._Section.to_data.html#compas_fea2.model._Section.to_data" title="compas_fea2.model._Section.to_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_data</span></code></a></p></td>
 <td><p>Convert an object to its native data representation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model._Section.to_json.html#compas_fea2.model._Section.to_json" title="compas_fea2.model._Section.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model._Section.to_json.html#compas_fea2.model._Section.to_json" title="compas_fea2.model._Section.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model._Section.to_jsonstring.html#compas_fea2.model._Section.to_jsonstring" title="compas_fea2.model._Section.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model._Section.to_jsonstring.html#compas_fea2.model._Section.to_jsonstring" title="compas_fea2.model._Section.to_jsonstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_jsonstring</span></code></a></p></td>
 <td><p>Serialize the data representation of an object to a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model._Section.validate_data.html#compas_fea2.model._Section.validate_data" title="compas_fea2.model._Section.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model._Section.validate_data.html#compas_fea2.model._Section.validate_data" title="compas_fea2.model._Section.validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_data</span></code></a></p></td>
 <td><p>Validate the object's data against its data schema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.model._Section.validate_json.html#compas_fea2.model._Section.validate_json" title="compas_fea2.model._Section.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.model._Section.validate_json.html#compas_fea2.model._Section.validate_json" title="compas_fea2.model._Section.validate_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_json</span></code></a></p></td>
 <td><p>Validate the object's data against its json schema.</p></td>
 </tr>
 </tbody>
@@ -242,20 +239,20 @@ name if you want a more human-readable input file.</p></li>
   <footer class="compas-footer">
     <nav class="nav p-2">
       
-      <a href="compas_fea2.model.Steel.validate_json.html" title="Steel.validate_json" class="nav-link footer-link float-start text-left d-flex w-50" rel="prev">
+      <a href="compas_fea2.model.Timber.validate_json.html" title="Timber.validate_json" class="nav-link footer-link float-start text-left d-flex w-50" rel="prev">
         <div class="nav-button p-2 m-2"><i class="fas fa-arrow-left"></i></div>
         <div class="nav-title flex-grow-1 align-self-center">
           <div class="nav-direction small font-weight-light">Previous</div>
-          Steel.validate_json
+          Timber.validate_json
         </div>
       </a>
       
 
       
-      <a href="compas_fea2.model._Section.jobdata.html" title="_Section.jobdata" class="nav-link footer-link float-end text-right d-flex w-50" rel="next">
+      <a href="compas_fea2.model._Section.ToString.html" title="_Section.ToString" class="nav-link footer-link float-end text-right d-flex w-50" rel="next">
         <div class="nav-title footer-link flex-grow-1 align-self-center">
           <div class="nav-direction small font-weight-light">Next</div>
-          _Section.jobdata
+          _Section.ToString
         </div>
         <div class="nav-button p-2 m-2"><i class="fas fa-arrow-right"></i></div>
       </a>

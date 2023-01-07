@@ -93,51 +93,45 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 
 <span class="kn">from</span> <span class="nn">compas_fea2</span> <span class="kn">import</span> <span class="n">units</span>
-<span class="kn">from</span> <span class="nn">.material</span> <span class="kn">import</span> <span class="n">ElasticIsotropic</span>
+<span class="kn">from</span> <span class="nn">.material</span> <span class="kn">import</span> <span class="n">_Material</span><span class="p">,</span> <span class="n">ElasticIsotropic</span>
 
 
 <div class="viewcode-block" id="Steel"><a class="viewcode-back" href="../../../../api/generated/compas_fea2.model.Steel.html#compas_fea2.model.Steel">[docs]</a><span class="k">class</span> <span class="nc">Steel</span><span class="p">(</span><span class="n">ElasticIsotropic</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Bi-linear steel with given yield stress.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Material name.</span>
-<span class="sd">    fy : float</span>
-<span class="sd">        Yield stress [MPa].</span>
-<span class="sd">    fu : float</span>
-<span class="sd">        Ultimate stress [MPa].</span>
-<span class="sd">    eu : float</span>
-<span class="sd">        Ultimate strain [%].</span>
-<span class="sd">    E : float</span>
-<span class="sd">        Young&#39;s modulus E [GPa].</span>
-<span class="sd">    v : float</span>
-<span class="sd">        Poisson&#39;s ratio v [-].</span>
-<span class="sd">    density : float</span>
-<span class="sd">        Density [kg/m3].</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Material name.</span>
-<span class="sd">    E : float</span>
-<span class="sd">        Young&#39;s modulus E [Pa].</span>
-<span class="sd">    v : float</span>
-<span class="sd">        Poisson&#39;s ratio v [-].</span>
-<span class="sd">    density : float</span>
-<span class="sd">        Density [kg/m3].</span>
-<span class="sd">    G : float</span>
-<span class="sd">        Shear modulus G [Pa].</span>
-<span class="sd">    fy : float</span>
-<span class="sd">        Yield stress [MPa].</span>
-<span class="sd">    fu : float</span>
-<span class="sd">        Ultimate stress [MPa].</span>
-<span class="sd">    eu : float</span>
-<span class="sd">        Ultimate strain [%].</span>
-<span class="sd">    ep : float</span>
-<span class="sd">        Plastic strain [%].</span>
-
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bi-linear steel with given yield stress.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Material</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Additional Parameters</span>
+<span class="s2">    ---------------------</span>
+<span class="s2">    E : float</span>
+<span class="s2">        Young&#39;s modulus E.</span>
+<span class="s2">    v : float</span>
+<span class="s2">        Poisson&#39;s ratio v.</span>
+<span class="s2">    fy : float</span>
+<span class="s2">        Yield stress.</span>
+<span class="s2">    fu : float</span>
+<span class="s2">        Ultimate stress.</span>
+<span class="s2">    eu : float</span>
+<span class="s2">        Ultimate strain.</span>
+
+<span class="s2">    Attributes</span>
+<span class="s2">    ----------</span>
+<span class="s2">    E : float</span>
+<span class="s2">        Young&#39;s modulus E.</span>
+<span class="s2">    v : float</span>
+<span class="s2">        Poisson&#39;s ratio v.</span>
+<span class="s2">    G : float</span>
+<span class="s2">        Shear modulus G.</span>
+<span class="s2">    fy : float</span>
+<span class="s2">        Yield stress.</span>
+<span class="s2">    fu : float</span>
+<span class="s2">        Ultimate stress.</span>
+<span class="s2">    eu : float</span>
+<span class="s2">        Ultimate strain.</span>
+<span class="s2">    ep : float</span>
+<span class="s2">        Plastic strain.</span>
+
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fy</span><span class="p">,</span> <span class="n">fu</span><span class="p">,</span> <span class="n">eu</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Steel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">E</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -168,16 +162,16 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">Steel Material</span>
 <span class="s2">--------------</span>
-<span class="s2">name    : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">name    : </span><span class="si">{}</span>
 <span class="s2">density : {:~.0f}</span>
 
 <span class="s2">E  : {:~.0f}</span>
 <span class="s2">G  : {:~.0f}</span>
 <span class="s2">fy : {:~.0f}</span>
 <span class="s2">fu : {:~.0f}</span>
-<span class="s2">v  : </span><span class="si">{:.2f}</span><span class="s2"></span>
-<span class="s2">eu : </span><span class="si">{:.2f}</span><span class="s2"></span>
-<span class="s2">ep : </span><span class="si">{:.2f}</span><span class="s2"></span>
+<span class="s2">v  : </span><span class="si">{:.2f}</span>
+<span class="s2">eu : </span><span class="si">{:.2f}</span>
+<span class="s2">ep : </span><span class="si">{:.2f}</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="n">units</span><span class="p">[</span><span class="s1">&#39;kg/m**2&#39;</span><span class="p">]),</span>
            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">pascal</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;GPa&#39;</span><span class="p">),</span>
@@ -188,9 +182,17 @@
            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eu</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">),</span>
            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ep</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">dimensionless</span><span class="p">))</span>
 
-<div class="viewcode-block" id="Steel.S355"><a class="viewcode-back" href="../../../../api/generated/compas_fea2.model.Steel.S355.html#compas_fea2.model.Steel.S355">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">S355</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;S355&#39;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Steel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">fy</span><span class="o">=</span><span class="mi">355</span><span class="p">,</span> <span class="n">fu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eu</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="mi">210</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">7850</span><span class="p">)</span></div></div>
+    <span class="c1">#TODO check values and make unit independent</span>
+<div class="viewcode-block" id="Steel.S355"><a class="viewcode-back" href="../../../../api/generated/compas_fea2.model.Steel.S355.html#compas_fea2.model.Steel.S355">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">S355</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Steel S355.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.model.material.Steel`</span>
+<span class="sd">            The precompiled steel material.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fy</span><span class="o">=</span><span class="mi">355</span><span class="p">,</span> <span class="n">fu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eu</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="mi">210</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">7850</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></div></div>
 </code></pre></div>
         
       </main>

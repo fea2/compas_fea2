@@ -99,19 +99,23 @@
 
 
 <div class="viewcode-block" id="_Group"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model._Group.html#compas_fea2.model._Group">[docs]</a><span class="k">class</span> <span class="nc">_Group</span><span class="p">(</span><span class="n">FEAData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for all groups.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all groups.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    members : set</span>
+<span class="sd">    members : set, optional</span>
 <span class="sd">        Set with the members belonging to the group. These can be either node,</span>
-<span class="sd">        elements, faces or parts.</span>
+<span class="sd">        elements, faces or parts. By default ``None``.</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    registration : :class:`compas_fea2.model.DeformablePart` | :class:`compas_fea2.model.Model`</span>
 <span class="sd">        The parent object where the members of the Group belong.</span>
-
+<span class="sd">    name : str</span>
+<span class="sd">        Uniqe identifier.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">members</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -120,10 +124,10 @@
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="si">{}</span><span class="s2"></span>
-<span class="si">{}</span><span class="s2"></span>
-<span class="s2">name            : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2"># of members    : </span><span class="si">{}</span><span class="s2"></span>
+<span class="si">{}</span>
+<span class="si">{}</span>
+<span class="s2">name            : </span><span class="si">{}</span>
+<span class="s2"># of members    : </span><span class="si">{}</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span> <span class="o">*</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span>
            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
@@ -162,10 +166,34 @@
         <span class="k">return</span> <span class="n">members</span>
 
     <span class="k">def</span> <span class="nf">_add_member</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a member to the group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        member : var</span>
+<span class="sd">            The member to add. This depends on the specific group type.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        var</span>
+<span class="sd">            The memeber.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_member</span><span class="p">(</span><span class="n">member</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">member</span>
 
     <span class="k">def</span> <span class="nf">_add_members</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">members</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple members to the group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        members : [var]</span>
+<span class="sd">            The members to add. These depend on the specific group type.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        [var]</span>
+<span class="sd">            The memebers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_members</span><span class="p">(</span><span class="n">members</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">member</span><span class="p">)</span>
@@ -173,12 +201,12 @@
 
 
 <div class="viewcode-block" id="NodesGroup"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.NodesGroup.html#compas_fea2.model.NodesGroup">[docs]</a><span class="k">class</span> <span class="nc">NodesGroup</span><span class="p">(</span><span class="n">_Group</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class nodes groups.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class nodes groups.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
-<span class="sd">    NodesGroups are registered to the same :class:`compas_fea2.model.DeformablePart` as its nodes</span>
-<span class="sd">    and can belong to only one DeformablePart.</span>
+<span class="sd">    NodesGroups are registered to the same :class:`compas_fea2.model._Part` as its nodes</span>
+<span class="sd">    and can belong to only one Part.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -187,19 +215,17 @@
 <span class="sd">        name if you want a more human-readable input file.</span>
 <span class="sd">    nodes : list[:class:`compas_fea2.model.Node`]</span>
 <span class="sd">        The nodes belonging to the group.</span>
-<span class="sd">    part : :class:`compas_fea2.model.DeformablePart` | :class:`compas_fea2.model.Model`, optional</span>
-<span class="sd">        The part where the members are located, by default `None`.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
-<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
-<span class="sd">        name if you want a more human-readable input file.</span>
+<span class="sd">        Uniqe identifier.</span>
 <span class="sd">    nodes : list[:class:`compas_fea2.model.Node`]</span>
 <span class="sd">        The nodes belonging to the group.</span>
-<span class="sd">    part : :class:`compas_fea2.model.DeformablePart`</span>
-<span class="sd">        The part where the members are located, by default `None`.</span>
-
+<span class="sd">    part : :class:`compas_fea2.model._Part`</span>
+<span class="sd">        The part where the group is registered, by default `None`.</span>
+<span class="sd">    model : :class:`compas_fea2.model.Model`</span>
+<span class="sd">        The model where the group is registered, by default `None`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -218,14 +244,38 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span>
 
 <div class="viewcode-block" id="NodesGroup.add_node"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.NodesGroup.add_node.html#compas_fea2.model.NodesGroup.add_node">[docs]</a>    <span class="k">def</span> <span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a node to the group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : :class:`compas_fea2.model.Node`</span>
+<span class="sd">            The node to add.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.model.Node`</span>
+<span class="sd">            The node added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_member</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="NodesGroup.add_nodes"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.NodesGroup.add_nodes.html#compas_fea2.model.NodesGroup.add_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">add_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple nodes to the group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nodes : [:class:`compas_fea2.model.Node`]</span>
+<span class="sd">            The nodes to add.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        [:class:`compas_fea2.model.Node`]</span>
+<span class="sd">            The nodes added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_members</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="ElementsGroup"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ElementsGroup.html#compas_fea2.model.ElementsGroup">[docs]</a><span class="k">class</span> <span class="nc">ElementsGroup</span><span class="p">(</span><span class="n">_Group</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for elements groups.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for elements groups.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -239,8 +289,6 @@
 <span class="sd">        name if you want a more human-readable input file.</span>
 <span class="sd">    elements : list[:class:`compas_fea2.model.Element`]</span>
 <span class="sd">        The elements belonging to the group.</span>
-<span class="sd">    part : :class:`compas_fea2.model.DeformablePart` | :class:`compas_fea2.model.Model`, optional</span>
-<span class="sd">        The part where the members are located, by default `None`.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -249,9 +297,10 @@
 <span class="sd">        name if you want a more human-readable input file.</span>
 <span class="sd">    elements : list[:class:`compas_fea2.model.Element`]</span>
 <span class="sd">        The elements belonging to the group.</span>
-<span class="sd">    part : :class:`compas_fea2.model.DeformablePart`</span>
-<span class="sd">        The part where the members are located, by default `None`.</span>
-
+<span class="sd">    part : :class:`compas_fea2.model._Part`</span>
+<span class="sd">        The part where the group is registered, by default `None`.</span>
+<span class="sd">    model : :class:`compas_fea2.model.Model`</span>
+<span class="sd">        The model where the group is registered, by default `None`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -270,14 +319,38 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span>
 
 <div class="viewcode-block" id="ElementsGroup.add_element"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ElementsGroup.add_element.html#compas_fea2.model.ElementsGroup.add_element">[docs]</a>    <span class="k">def</span> <span class="nf">add_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an element to the group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        element : :class:`compas_fea2.model._Element`</span>
+<span class="sd">            The element to add.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.model._Element`</span>
+<span class="sd">            The element added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_member</span><span class="p">(</span><span class="n">element</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ElementsGroup.add_elements"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.ElementsGroup.add_elements.html#compas_fea2.model.ElementsGroup.add_elements">[docs]</a>    <span class="k">def</span> <span class="nf">add_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple elements to the group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        elements : [:class:`compas_fea2.model._Element`]</span>
+<span class="sd">            The elements to add.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        [:class:`compas_fea2.model._Element`]</span>
+<span class="sd">            The elements added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_members</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="FacesGroup"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.FacesGroup.html#compas_fea2.model.FacesGroup">[docs]</a><span class="k">class</span> <span class="nc">FacesGroup</span><span class="p">(</span><span class="n">_Group</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class elements faces groups.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class elements faces groups.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -289,8 +362,22 @@
 <span class="sd">    name : str, optional</span>
 <span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
 <span class="sd">        name if you want a more human-readable input file.</span>
-<span class="sd">    faces : set</span>
-<span class="sd">        The faces of the Group.</span>
+<span class="sd">    faces : Set[:class:`compas_fea2.model.Face`]</span>
+<span class="sd">        The Faces belonging to the group.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Uniqe identifier. If not provided it is automatically generated. Set a</span>
+<span class="sd">        name if you want a more human-readable input file.</span>
+<span class="sd">    faces : Set[:class:`compas_fea2.model.Face`]</span>
+<span class="sd">        The Faces belonging to the group.</span>
+<span class="sd">    nodes : Set[:class:`compas_fea2.model.Node`]</span>
+<span class="sd">        The Nodes of the faces belonging to the group.</span>
+<span class="sd">    part : :class:`compas_fea2.model._Part`</span>
+<span class="sd">        The part where the group is registered, by default `None`.</span>
+<span class="sd">    model : :class:`compas_fea2.model.Model`</span>
+<span class="sd">        The model where the group is registered, by default `None`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">faces</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -310,11 +397,44 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">faces</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">face</span><span class="o">.</span><span class="n">nodes</span><span class="p">]</span></div>
+        <span class="n">nodes_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">faces</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">face</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                <span class="n">nodes_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">nodes_set</span>
 
+<div class="viewcode-block" id="FacesGroup.add_face"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.FacesGroup.add_face.html#compas_fea2.model.FacesGroup.add_face">[docs]</a>    <span class="k">def</span> <span class="nf">add_face</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">face</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a face to the group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        face : :class:`compas_fea2.model.Face`</span>
+<span class="sd">            The face to add.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`compas_fea2.model.Face`</span>
+<span class="sd">            The element added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_member</span><span class="p">(</span><span class="n">face</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FacesGroup.add_faces"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.FacesGroup.add_faces.html#compas_fea2.model.FacesGroup.add_faces">[docs]</a>    <span class="k">def</span> <span class="nf">add_faces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">faces</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add multiple faces to the group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        faces : [:class:`compas_fea2.model.Face`]</span>
+<span class="sd">            The faces to add.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        [:class:`compas_fea2.model.Face`]</span>
+<span class="sd">            The faces added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_members</span><span class="p">(</span><span class="n">faces</span><span class="p">)</span></div></div>
 
 <div class="viewcode-block" id="PartsGroup"><a class="viewcode-back" href="../../../api/generated/compas_fea2.model.PartsGroup.html#compas_fea2.model.PartsGroup">[docs]</a><span class="k">class</span> <span class="nc">PartsGroup</span><span class="p">(</span><span class="n">_Group</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for parts groups.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for parts groups.</span>
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
@@ -333,7 +453,8 @@
 <span class="sd">    ----------</span>
 <span class="sd">    parts : list[:class:`compas_fea2.model.DeformablePart`]</span>
 <span class="sd">        The parts belonging to the group.</span>
-
+<span class="sd">    model : :class:`compas_fea2.model.Model`</span>
+<span class="sd">        The model where the group is registered, by default `None`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>

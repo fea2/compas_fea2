@@ -97,47 +97,40 @@
 
 
 <div class="viewcode-block" id="Concrete"><a class="viewcode-back" href="../../../../api/generated/compas_fea2.model.Concrete.html#compas_fea2.model.Concrete">[docs]</a><span class="k">class</span> <span class="nc">Concrete</span><span class="p">(</span><span class="n">_Material</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Elastic and plastic-cracking Eurocode based concrete material.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Material name.</span>
-<span class="sd">    fck : float</span>
-<span class="sd">        Characteristic (5%) 28 day cylinder strength [MPa].</span>
-<span class="sd">    v : float</span>
-<span class="sd">        Poisson&#39;s ratio v [-].</span>
-<span class="sd">    density : float</span>
-<span class="sd">        Density [kg/m3].</span>
-<span class="sd">    fr : list</span>
-<span class="sd">        Failure ratios.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Material name.</span>
-<span class="sd">    E : float</span>
-<span class="sd">        Young&#39;s modulus E [Pa].</span>
-<span class="sd">    v : float</span>
-<span class="sd">        Poisson&#39;s ratio v [-].</span>
-<span class="sd">    density : float</span>
-<span class="sd">        Density [kg/m3].</span>
-<span class="sd">    G : float</span>
-<span class="sd">        Shear modulus G [Pa].</span>
-<span class="sd">    fck : float</span>
-<span class="sd">        Characteristic (5%) 28 day cylinder strength [MPa].</span>
-<span class="sd">    fr : list</span>
-<span class="sd">        Failure ratios.</span>
-<span class="sd">    tension : dict</span>
-<span class="sd">        Parameters for modelling the tension side of the stess--strain curve</span>
-<span class="sd">    compression : dict</span>
-<span class="sd">        Parameters for modelling the tension side of the stess--strain curve</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Elastic and plastic-cracking Eurocode based concrete material.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    - The concrete model is based on Eurocode 2 up to fck=90 MPa.</span>
-
+<span class="sd">    The concrete model is based on Eurocode 2 up to fck=90 MPa.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Material</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Additional Parameters</span>
+<span class="s2">    ---------------------</span>
+<span class="s2">    fck : float</span>
+<span class="s2">        Characteristic (5%) 28 day cylinder strength [MPa].</span>
+<span class="s2">    v : float</span>
+<span class="s2">        Poisson&#39;s ratio v [-].</span>
+<span class="s2">    fr : list</span>
+<span class="s2">        Failure ratios.</span>
+
+<span class="s2">    Additional Attributes</span>
+<span class="s2">    ---------------------</span>
+<span class="s2">    E : float</span>
+<span class="s2">        Young&#39;s modulus E.</span>
+<span class="s2">    v : float</span>
+<span class="s2">        Poisson&#39;s ratio v.</span>
+<span class="s2">    G : float</span>
+<span class="s2">        Shear modulus G.</span>
+<span class="s2">    fck : float</span>
+<span class="s2">        Characteristic (5%) 28 day cylinder strength.</span>
+<span class="s2">    fr : list</span>
+<span class="s2">        Failure ratios.</span>
+<span class="s2">    tension : dict</span>
+<span class="s2">        Parameters for modelling the tension side of the stess--strain curve</span>
+<span class="s2">    compression : dict</span>
+<span class="s2">        Parameters for modelling the tension side of the stess--strain curve</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fck</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">2400</span><span class="p">,</span> <span class="n">fr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Concrete</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span>  <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -167,7 +160,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ft</span> <span class="o">=</span> <span class="n">ft</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">et</span> <span class="o">=</span> <span class="n">et</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fr</span> <span class="o">=</span> <span class="n">fr</span>
-        <span class="c1"># these necessary if we have the above?</span>
+        <span class="c1"># TODO these necessary if we have the above?</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tension</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;f&#39;</span><span class="p">:</span> <span class="n">ft</span><span class="p">,</span> <span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="n">et</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;f&#39;</span><span class="p">:</span> <span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="n">ec</span><span class="p">}</span>
 
@@ -179,69 +172,62 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">Concrete Material</span>
 <span class="s2">-----------------</span>
-<span class="s2">name    : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">density : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">name    : </span><span class="si">{}</span>
+<span class="s2">density : </span><span class="si">{}</span>
 
-<span class="s2">E   : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">v   : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">G   : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">fck : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">fr  : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">E   : </span><span class="si">{}</span>
+<span class="s2">v   : </span><span class="si">{}</span>
+<span class="s2">G   : </span><span class="si">{}</span>
+<span class="s2">fck : </span><span class="si">{}</span>
+<span class="s2">fr  : </span><span class="si">{}</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fck</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fr</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ConcreteSmearedCrack"><a class="viewcode-back" href="../../../../api/generated/compas_fea2.model.ConcreteSmearedCrack.html#compas_fea2.model.ConcreteSmearedCrack">[docs]</a><span class="k">class</span> <span class="nc">ConcreteSmearedCrack</span><span class="p">(</span><span class="n">_Material</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Elastic and plastic, cracking concrete material.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Material name.</span>
-<span class="sd">    E : float</span>
-<span class="sd">        Young&#39;s modulus E [Pa].</span>
-<span class="sd">    v : float</span>
-<span class="sd">        Poisson&#39;s ratio v [-].</span>
-<span class="sd">    density : float</span>
-<span class="sd">        Density [kg/m3].</span>
-<span class="sd">    fc : list</span>
-<span class="sd">        Plastic stress data in compression [Pa].</span>
-<span class="sd">    ec : list</span>
-<span class="sd">        Plastic strain data in compression [-].</span>
-<span class="sd">    ft : list</span>
-<span class="sd">        Plastic stress data in tension [-].</span>
-<span class="sd">    et : list</span>
-<span class="sd">        Plastic strain data in tension [-].</span>
-<span class="sd">    fr : list</span>
-<span class="sd">        Failure ratios.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Material name.</span>
-<span class="sd">    E : float</span>
-<span class="sd">        Young&#39;s modulus E [Pa].</span>
-<span class="sd">    v : float</span>
-<span class="sd">        Poisson&#39;s ratio v [-].</span>
-<span class="sd">    density : float</span>
-<span class="sd">        Density [kg/m3].</span>
-<span class="sd">    G : float</span>
-<span class="sd">        Shear modulus G [Pa].</span>
-<span class="sd">    fc : list</span>
-<span class="sd">        Plastic stress data in compression [Pa].</span>
-<span class="sd">    ec : list</span>
-<span class="sd">        Plastic strain data in compression [-].</span>
-<span class="sd">    ft : list</span>
-<span class="sd">        Plastic stress data in tension [-].</span>
-<span class="sd">    et : list</span>
-<span class="sd">        Plastic strain data in tension [-].</span>
-<span class="sd">    fr : list</span>
-<span class="sd">        Failure ratios.</span>
-<span class="sd">    tension : dict</span>
-<span class="sd">        Parameters for modelling the tension side of the stess--strain curve</span>
-<span class="sd">    compression : dict</span>
-<span class="sd">        Parameters for modelling the tension side of the stess--strain curve</span>
-
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Elastic and plastic, cracking concrete material.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Material</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Additional Parameters</span>
+<span class="s2">    ---------------------</span>
+<span class="s2">    E : float</span>
+<span class="s2">        Young&#39;s modulus E.</span>
+<span class="s2">    v : float</span>
+<span class="s2">        Poisson&#39;s ratio v.</span>
+<span class="s2">    fc : list</span>
+<span class="s2">        Plastic stress data in compression.</span>
+<span class="s2">    ec : list</span>
+<span class="s2">        Plastic strain data in compression.</span>
+<span class="s2">    ft : list</span>
+<span class="s2">        Plastic stress data in tension.</span>
+<span class="s2">    et : list</span>
+<span class="s2">        Plastic strain data in tension.</span>
+<span class="s2">    fr : list</span>
+<span class="s2">        Failure ratios.</span>
+
+<span class="s2">    Additional Attributes</span>
+<span class="s2">    ---------------------</span>
+<span class="s2">    E : float</span>
+<span class="s2">        Young&#39;s modulus E.</span>
+<span class="s2">    v : float</span>
+<span class="s2">        Poisson&#39;s ratio v.</span>
+<span class="s2">    G : float</span>
+<span class="s2">        Shear modulus G.</span>
+<span class="s2">    fc : list</span>
+<span class="s2">        Plastic stress data in compression.</span>
+<span class="s2">    ec : list</span>
+<span class="s2">        Plastic strain data in compression.</span>
+<span class="s2">    ft : list</span>
+<span class="s2">        Plastic stress data in tension.</span>
+<span class="s2">    et : list</span>
+<span class="s2">        Plastic strain data in tension.</span>
+<span class="s2">    fr : list</span>
+<span class="s2">        Failure ratios.</span>
+<span class="s2">    tension : dict</span>
+<span class="s2">        Parameters for modelling the tension side of the stess--strain curve</span>
+<span class="s2">    compression : dict</span>
+<span class="s2">        Parameters for modelling the tension side of the stess--strain curve</span>
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">ec</span><span class="p">,</span> <span class="n">ft</span><span class="p">,</span> <span class="n">et</span><span class="p">,</span> <span class="n">fr</span><span class="o">=</span><span class="p">[</span><span class="mf">1.16</span><span class="p">,</span> <span class="mf">0.0836</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ConcreteSmearedCrack</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -265,60 +251,54 @@
         <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">Concrete Material</span>
 <span class="s2">-----------------</span>
-<span class="s2">name    : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">density : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">name    : </span><span class="si">{}</span>
+<span class="s2">density : </span><span class="si">{}</span>
 
-<span class="s2">E  : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">v  : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">G  : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">fc : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">ec : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">ft : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">et : </span><span class="si">{}</span><span class="s2"></span>
-<span class="s2">fr : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">E  : </span><span class="si">{}</span>
+<span class="s2">v  : </span><span class="si">{}</span>
+<span class="s2">G  : </span><span class="si">{}</span>
+<span class="s2">fc : </span><span class="si">{}</span>
+<span class="s2">ec : </span><span class="si">{}</span>
+<span class="s2">ft : </span><span class="si">{}</span>
+<span class="s2">et : </span><span class="si">{}</span>
+<span class="s2">fr : </span><span class="si">{}</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">E</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ft</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">et</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fr</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ConcreteDamagedPlasticity"><a class="viewcode-back" href="../../../../api/generated/compas_fea2.model.ConcreteDamagedPlasticity.html#compas_fea2.model.ConcreteDamagedPlasticity">[docs]</a><span class="k">class</span> <span class="nc">ConcreteDamagedPlasticity</span><span class="p">(</span><span class="n">_Material</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Damaged plasticity isotropic and homogeneous material.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Material name.</span>
-<span class="sd">    E : float</span>
-<span class="sd">        Young&#39;s modulus E [Pa].</span>
-<span class="sd">    v : float</span>
-<span class="sd">        Poisson&#39;s ratio v [-].</span>
-<span class="sd">    density : float</span>
-<span class="sd">        Density [kg/m3].</span>
-<span class="sd">    damage : list</span>
-<span class="sd">        Damage parameters.</span>
-<span class="sd">    hardening : list</span>
-<span class="sd">        Compression hardening parameters.</span>
-<span class="sd">    stiffening : list</span>
-<span class="sd">        Tension stiffening parameters.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        Material name.</span>
-<span class="sd">    E : float</span>
-<span class="sd">        Young&#39;s modulus E [Pa].</span>
-<span class="sd">    v : float</span>
-<span class="sd">        Poisson&#39;s ratio v [-].</span>
-<span class="sd">    density : float</span>
-<span class="sd">        Density [kg/m3].</span>
-<span class="sd">    G : float</span>
-<span class="sd">        Shear modulus G [Pa].</span>
-<span class="sd">    damage : list</span>
-<span class="sd">        Damage parameters.</span>
-<span class="sd">    hardening : list</span>
-<span class="sd">        Compression hardening parameters.</span>
-<span class="sd">    stiffening : list</span>
-<span class="sd">        Tension stiffening parameters.</span>
-
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Damaged plasticity isotropic and homogeneous material.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Material</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="vm">__doc__</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Additional Parameters</span>
+<span class="s2">    ---------------------</span>
+<span class="s2">    E : float</span>
+<span class="s2">        Young&#39;s modulus E.</span>
+<span class="s2">    v : float</span>
+<span class="s2">        Poisson&#39;s ratio v.</span>
+<span class="s2">    damage : list</span>
+<span class="s2">        Damage parameters.</span>
+<span class="s2">    hardening : list</span>
+<span class="s2">        Compression hardening parameters.</span>
+<span class="s2">    stiffening : list</span>
+<span class="s2">        Tension stiffening parameters.</span>
+
+<span class="s2">    Additional Attributes</span>
+<span class="s2">    ---------------------</span>
+<span class="s2">    E : float</span>
+<span class="s2">        Young&#39;s modulus E.</span>
+<span class="s2">    v : float</span>
+<span class="s2">        Poisson&#39;s ratio v.</span>
+<span class="s2">    G : float</span>
+<span class="s2">        Shear modulus G.</span>
+<span class="s2">    damage : list</span>
+<span class="s2">        Damage parameters.</span>
+<span class="s2">    hardening : list</span>
+<span class="s2">        Compression hardening parameters.</span>
+<span class="s2">    stiffening : list</span>
+<span class="s2">        Tension stiffening parameters.</span>
+
+<span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">damage</span><span class="p">,</span> <span class="n">hardening</span><span class="p">,</span> <span class="n">stiffening</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ConcreteDamagedPlasticity</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -326,7 +306,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="n">E</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">v</span>
 
-        <span class="c1"># would make sense to validate these inputs</span>
+        <span class="c1"># TODO would make sense to validate these inputs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">damage</span> <span class="o">=</span> <span class="n">damage</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hardening</span> <span class="o">=</span> <span class="n">hardening</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stiffening</span> <span class="o">=</span> <span class="n">stiffening</span>
