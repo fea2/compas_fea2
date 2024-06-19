@@ -475,6 +475,24 @@ color_palette = {
 
 
 class FEA2Viewer:
+    """
+    A viewer for FEA2 models.
+
+    Parameters
+    ----------
+    center : list of float, optional
+        The center of the model in 3D space. Default is [1, 1, 1].
+    camera : optional
+        Camera settings (not used in current implementation).
+    grid : optional
+        Grid settings (not used in current implementation).
+    scale_model : float, optional
+        Scaling factor for the model. Default is 1000.
+    args : tuple
+        Additional arguments.
+    kwargs : dict
+        Additional keyword arguments.
+    """
     def __init__(self, center=None, camera=None, grid=None, scale_model=1000, *args, **kwargs):
         if center is None:
             center = [1, 1, 1]
@@ -501,6 +519,22 @@ class FEA2Viewer:
 
 
 class FEA2ModelObject(GroupObject):
+    """
+    Represents an FEA2 model object in the Viewer.
+
+    Parameters
+    ----------
+    model : object
+        The FEA2 model.
+    show_bcs : bool, optional
+        Whether to show boundary conditions. Default is True.
+    show_parts : bool, optional
+        Whether to show parts of the model. Default is True.
+    show_interfaces : bool, optional
+        Whether to show interfaces in the model. Default is True.
+    kwargs : dict
+        Additional keyword arguments.
+    """
     def __init__(self, model, show_bcs=True, show_parts=True, show_interfaces=True, **kwargs):
         self.face_color = kwargs.get("face_color", color_palette["faces"])
         self.line_color = kwargs.get("line_color", color_palette["edges"])
@@ -519,6 +553,19 @@ class FEA2ModelObject(GroupObject):
         super().__init__([parts, interfaces, bcs], name=model.name, **kwargs)
 
     def _get_part_meshes(self, model):
+        """
+        Get meshes for the parts of the model.
+
+        Parameters
+        ----------
+        model : object
+            The FEA2 model.
+
+        Returns
+        -------
+        list
+            List of part meshes.
+        """
         part_meshes = []
         for part in model.parts:
             if part._discretized_boundary_mesh:
@@ -529,6 +576,19 @@ class FEA2ModelObject(GroupObject):
         return part_meshes
 
     def _get_bcs_meshes(self, model):
+        """
+        Get meshes for the boundary conditions (BCs) of the model.
+
+        Parameters
+        ----------
+        model : object
+            The FEA2 model.
+
+        Returns
+        -------
+        list
+            List of BC meshes.
+        """
         def _get_bc_shape(self, bc, node):
             if isinstance(bc, PinnedBC):
                 return PinBCShape(node.xyz, scale=self.show_bcs).shape
@@ -546,6 +606,19 @@ class FEA2ModelObject(GroupObject):
         return bcs_meshes
 
     def _get_interfaces_meshes(self, model):
+        """
+        Get meshes for the interfaces in the model.
+
+        Parameters
+        ----------
+        model : object
+            The FEA2 model.
+
+        Returns
+        -------
+        list
+            List of interface meshes.
+        """
         interfaces_meshes = []
         S = Scale.from_factors([1.1, 1.1, 1])
         for interface in model.interfaces:
@@ -554,6 +627,31 @@ class FEA2ModelObject(GroupObject):
         return interfaces_meshes
 
     def _create_mesh_entry(self, mesh, facecolor=None, linecolor=None, show_faces=None, show_lines=None, show_points=None, opacity=None):
+        """
+        Create a mesh entry for visualization.
+
+        Parameters
+        ----------
+        mesh : :class:`compas.datastructures.Mesh`
+            The mesh object.
+        facecolor : Color, optional
+            The face color. Default is None.
+        linecolor : Color, optional
+            The line color. Default is None.
+        show_faces : bool, optional
+            Whether to show faces. Default is None.
+        show_lines : bool, optional
+            Whether to show lines. Default is None.
+        show_points : bool, optional
+            Whether to show points. Default is None.
+        opacity : float, optional
+            The opacity of the mesh. Default is None.
+
+        Returns
+        -------
+        tuple
+            The mesh and its visualization properties.
+        """
         return (
             mesh,
             {
