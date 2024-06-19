@@ -176,6 +176,9 @@ rotational stiffness    : {}
     def stiffness(self):
         return {"Axial": self._axial, "Lateral": self._lateral, "Rotational": self._rotational}
 
+    @property
+    def components(self):
+        return {"Axial": self._axial, "Lateral": self._lateral, "Rotational": self._rotational}
 
 # ==============================================================================
 # 1D
@@ -683,6 +686,7 @@ class PipeSection(BeamSection):
     """
 
     def __init__(self, r, t, material, **kwargs):
+        raise NotImplementedError
         self.r = r
         self.t = t
 
@@ -808,6 +812,7 @@ class TrapezoidalSection(BeamSection):
     """
 
     def __init__(self, w1, w2, h, material, **kwargs):
+        raise NotImplementedError
         self.w1 = w1
         self.w2 = w2
         self.h = h
@@ -879,6 +884,7 @@ class TrussSection(BeamSection):
     """
 
     def __init__(self, A, material, **kwargs):
+        raise NotImplementedError
         Ixx = 0
         Iyy = 0
         Ixy = 0
@@ -939,6 +945,7 @@ class StrutSection(TrussSection):
 
     def __init__(self, A, material, **kwargs):
         super(StrutSection, self).__init__(A=A, material=material, **kwargs)
+        raise NotImplementedError
 
 
 class TieSection(TrussSection):
@@ -978,6 +985,7 @@ class TieSection(TrussSection):
 
     def __init__(self, A, material, **kwargs):
         super(TieSection, self).__init__(A=A, material=material, **kwargs)
+        raise NotImplementedError
 
 
 # ==============================================================================

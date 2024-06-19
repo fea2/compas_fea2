@@ -310,7 +310,7 @@ class GeneralStep(Step):
         try:
             if self.problem:
                 if self.model:
-                    if not list(load_pattern.distribution).pop().model == self.model:
+                    if not list(load_pattern._distribution).pop().model == self.model:
                         raise ValueError("The load pattern is not applied to a valid reagion of {!r}".format(self.model))
         except Exception:
             pass

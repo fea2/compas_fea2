@@ -80,7 +80,7 @@ class _Element(FEAData):
         self._registration = nodes[0]._registration
         self._section = section
         self._implementation = implementation
-        self._frame = None
+        self._frame = NotImplementedError
         self._on_boundary = None
         self._area = None
         self._volume = None
@@ -125,7 +125,7 @@ class _Element(FEAData):
 
     @property
     def frame(self):
-        raise NotImplementedError()
+        raise self._frame
 
     @property
     def implementation(self):
@@ -367,6 +367,7 @@ class _Element2D(_Element):
             rigid=rigid,
             **kwargs,
         )
+        self._frame = None
 
         self._faces = None
         self._face_indices = None
@@ -432,6 +433,7 @@ class ShellElement(_Element2D):
 
         self._face_indices = {"SPOS": tuple(range(len(nodes))), "SNEG": tuple(range(len(nodes)))[::-1]}
         self._faces = self._construct_faces(self._face_indices)
+        self._frame = None
 
 
 class MembraneElement(_Element2D):

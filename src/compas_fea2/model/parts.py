@@ -43,6 +43,13 @@ from .sections import _Section
 
 import timeit
 
+try:
+    import compas_assembly
+except:
+    if compas_fea2.VERBOSE:
+        print("WARNING: compas_assembly not installed")
+    pass
+
 class _Part(FEAData):
     """Base class for Parts.
 
@@ -475,6 +482,8 @@ class _Part(FEAData):
         part = cls.from_gmsh(gmshModel=gmshModel, name=name, **kwargs)
 
         del gmshModel
+
+        part.synchronise_boundary_elements()
 
         return part
 
@@ -1067,39 +1076,30 @@ class _Part(FEAData):
         for element in elements:
             self.remove_element(element)
 
-    def is_element_on_boundary(self, element):
-        """Check if the element belongs to the boundary mesh of the part.
+    def synchronise_boundary_elements(self):
+        centroid_faces = [TOL.geometric_key(self._discretized_boundary_mesh.face_centroid(face)) for face in self._discretized_boundary_mesh.faces()]
+        for element in self.elements:
+            if any([TOL.geometric_key(centroid_points([node.xyz for node in face.nodes])) in centroid_faces for face in element.faces]):
+                element.on_boundary = True
+            else:
+                element.on_boundary = False
 
-        Parameters
-        ----------
-        element : :class:`compas_fea2.model._Element`
-            The element to check.
+    def get_boundary_elements(self, sync=False):
+        if sync:
+            self.synchronise_boundary_elements()
+        return filter(lambda e: e.on_boudary==True, self.elements)
 
-        Returns
-        -------
-        bool
-            ``True`` if the element is on the boundary.
-
-        """
-        # type: (_Element) -> bool
-        from compas.geometry import centroid_points
-
-        if element.on_boundary is None:
-            if not self._discretized_boundary_mesh.centroid_face:
-                centroid_face = {}
-                for face in self._discretized_boundary_mesh.faces():
-                    centroid_face[TOL.geometric_key(self._discretized_boundary_mesh.face_centroid(face))] = face
-            if isinstance(element, _Element3D):
-                if any(TOL.geometric_key(centroid_points([node.xyz for node in face.nodes])) in self._discretized_boundary_mesh.centroid_face for face in element.faces):
-                    element.on_boundary = True
-                else:
-                    element.on_boundary = False
-            elif isinstance(element, _Element2D):
-                if TOL.geometric_key(centroid_points([node.xyz for node in element.nodes])) in self._discretized_boundary_mesh.centroid_face:
-                    element.on_boundary = True
-                else:
-                    element.on_boundary = False
-        return element.on_boundary
+        # if isinstance(element, _Element3D):
+        #     if any(TOL.geometric_key(centroid_points([node.xyz for node in face.nodes])) in centroid_faces for face in element.faces):
+        #         element.on_boundary = True
+        #     else:
+        #         element.on_boundary = False
+        # elif isinstance(element, _Element2D):
+        #     if TOL.geometric_key(centroid_points([node.xyz for node in element.nodes])) in centroid_faces:
+        #         element.on_boundary = True
+        #     else:
+        #         element.on_boundary = False
+        # return element.on_boundary
 
     # =========================================================================
     #                           Faces methods
@@ -1124,12 +1124,35 @@ class _Part(FEAData):
 
         """
         faces = []
-        for element in filter(lambda x: isinstance(x, (_Element2D, _Element3D)) and self.is_element_on_boundary(x), self._elements):
+        for element in filter(lambda x: isinstance(x, (_Element2D, _Element3D)) and x.on_boundary, self.elements):
             for face in element.faces:
                 if all([is_point_on_plane(node.xyz, plane) for node in face.nodes]):
                     faces.append(face)
         return faces
 
+    def find_faces_in_interface(self, interface, tolerance=1, boundary=False):
+        # type: (compas_assembly.datastructures.Interface, float, bool) -> list(Face)
+        """Return the face of the elements laying of a given interface.
+
+        Parameters
+        ----------
+        interface : :class:`compas_assembly.datastructures.Interface`
+            The interface where the faces must lay.
+
+        Returns
+        -------
+        :class:list[`compas_fea2.model.elements.Face`]
+            list of the faces on the interface.
+        """
+        faces = [face for face in self.find_faces_on_plane(Plane.from_frame(interface.frame))]
+        if boundary:
+            sub_faces = set()
+            nodes_in_interface_polygon = self.find_nodes_in_interface(interface, tolerance=tolerance)
+            for face in faces:
+                if any(node in nodes_in_interface_polygon for node in face.nodes):
+                    sub_faces.add(face)
+            faces = list(sub_faces)
+        return faces
     # =========================================================================
     #                           Groups methods
     # =========================================================================

@@ -69,7 +69,7 @@ def launch_process(cmd_args, cwd, verbose=False, **kwargs):
             line = p.stdout.readline()
             if not line:
                 break
-            yield line
+            yield line.strip().decode("utf-8")
 
         p.wait()
 

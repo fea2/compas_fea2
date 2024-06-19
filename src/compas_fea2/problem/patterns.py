@@ -87,6 +87,9 @@ class Pattern(FEAData):
     def model(self):
         return self.problem._registration
 
+    @property
+    def distribution(self):
+        return self._distribution
 
 class NodeLoadPattern(Pattern):
     """Nodal distribution of a load case.
@@ -105,10 +108,14 @@ class NodeLoadPattern(Pattern):
         return self._distribution
 
     @property
+    def load(self):
+        return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, name=self.name, axes=self.axes)
+
+    @property
     def node_load(self):
         n_nodes = len(self.nodes)
         # FIXME change to tributary load for each node
-        return zip(self.nodes, [NodeLoad(**{k: v if v else v for k, v in self.components.items()}, name=self.name, axes=self.axes)] * n_nodes)
+        return zip(self.nodes, [self.load] * n_nodes)
 
 
 class PointLoadPattern(NodeLoadPattern):

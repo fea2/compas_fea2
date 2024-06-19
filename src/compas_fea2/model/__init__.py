@@ -103,11 +103,22 @@ from .bcs import (
     RollerBCYZ,
     RollerBCXZ,
 )
-
 from .ics import (
     _InitialCondition,
     InitialTemperatureField,
     InitialStressField,
+)
+from .interactions import (
+    _Interaction,
+    Contact,
+    HardContactFrictionPenalty,
+    HardContactNoFriction,
+    HardContactRough,
+    LinearContactFrictionPenalty,
+)
+
+from .interfaces import (
+    Interface,
 )
 
 __all__ = [

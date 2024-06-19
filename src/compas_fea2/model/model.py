@@ -39,7 +39,9 @@ from .elements import BeamElement
 from .elements import ShellElement
 from .elements import _Element
 from .elements import _Element3D
-
+from .interfaces import Interface
+from .interactions import _Interaction
+from .constraints import _Constraint
 
 class Model(FEAData):
     """Class representing an FEA model.
@@ -96,6 +98,8 @@ class Model(FEAData):
         self._bcs = {}
         self._ics = {}
         self._connectors = set()
+        self._interfaces = set()
+        self._interactions = set()
         self._constraints = set()
         self._partsgroups = set()
         self._problems = set()
@@ -134,6 +138,14 @@ class Model(FEAData):
     @property
     def connectors(self):
         return self._connectors
+
+    @property
+    def interfaces(self):
+        return self._interfaces
+
+    @property
+    def interactions(self):
+        return self._interactions
 
     @property
     def materials(self):
@@ -234,6 +246,9 @@ class Model(FEAData):
         if not isinstance(value, UnitRegistry):
             return ValueError("Pint UnitRegistry required")
         self._units = value
+
+
+
 
     # =========================================================================
     #                       Constructor methods
@@ -945,6 +960,42 @@ class Model(FEAData):
         return connector
 
     # ==============================================================================
+    # Interfaces methods
+    # ==============================================================================
+
+    def add_interface(self, interface):
+        # type: (Interface) -> Interface
+        """Add a :class:`compas_fea2.model._Interface` object to the model.
+
+        Parameters
+        ----------
+        interface : :class:`compas_fea2.model._Interface`
+            Interface object to add to the model.
+
+        Returns
+        -------
+        :class:`compas_fea2.model._Interface`
+        """
+        if isinstance(interface, Interface):
+            self._interfaces.add(interface)
+            if not interface.master._registration:
+                raise ValueError('The master surface is not registered to any part')
+            if not interface.slave._registration:
+                raise ValueError('The slave surface is not registered to any part')
+        else:
+            raise TypeError('{!r} is not an interface.'.format(interface))
+
+        if isinstance(interface.behavior, _Interaction):
+            self._interactions.add(interface.behavior)
+        elif isinstance(interface.behavior, _Constraint):
+            self._constraints.add(interface.behavior)
+
+        interface.master.part.add_group(interface.master)
+        interface.slave.part.add_group(interface.slave)
+
+        interface._registration = self
+        return interface
+    # ==============================================================================
     # Summary
     # ==============================================================================
 
@@ -999,6 +1050,10 @@ Parts
 -----
 {}
 
+Interfaces
+----------
+{}
+
 Constraints
 -----------
 {}
@@ -1015,6 +1070,7 @@ Initial Conditions
             self.description or "N/A",
             self.author or "N/A",
             "\n".join(parts_info),
+            len(self.interfaces),
             constraints_info or "N/A",
             bc_info or "N/A",
             ic_info or "N/A",
