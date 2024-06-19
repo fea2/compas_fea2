@@ -11,6 +11,7 @@ from compas.geometry import Polyhedron
 from compas.geometry import Translation
 from compas.geometry import Vector
 from compas.geometry import sum_vectors
+from compas.geometry import Scale
 
 import compas_fea2
 from compas_fea2.model.bcs import FixedBC
@@ -492,7 +493,7 @@ class FEA2Viewer:
 
 
 class FEA2ModelObject(GroupObject):
-    def __init__(self, model, show_bcs=True, show_parts=True, **kwargs):
+    def __init__(self, model, show_bcs=True, show_parts=True, show_interfaces=True, **kwargs):
 
         face_color = kwargs.get("face_color", color_palette["faces"])
         line_color = kwargs.get("line_color", color_palette["edges"])
@@ -556,8 +557,26 @@ class FEA2ModelObject(GroupObject):
                             )
                         )
 
+        interfaces_meshes = []
+        S = Scale.from_factors([1.1, 1.1, 1])
+        if show_interfaces:
+            if model.interfaces:
+                for interface in model.interfaces:
+                        mesh = interface.master.mesh.transformed(S)
+                        interfaces_meshes.append(
+                            (
+                                mesh,
+                                {
+                                    "show_faces": show_faces,
+                                    "facecolor": Color.red(),
+                                    "linecolor": Color.red(),
+                                    "show_points": False,
+                                },
+                            )
+                        )
+
         parts = (part_meshes, {"name": "parts"})
-        interfaces = ([], {"name": "interfaces"})
+        interfaces = (interfaces_meshes, {"name": "interfaces"})
         bcs = (bcs_meshes, {"name": "bcs"})
         super().__init__([parts, interfaces, bcs], name=model.name, **kwargs)
 

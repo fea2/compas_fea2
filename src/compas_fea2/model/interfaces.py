@@ -46,6 +46,10 @@ class Interface(FEAData):
         self._behavior = behavior
 
     @property
+    def model(self):
+        return self._registration
+
+    @property
     def master(self):
         return self._master
 

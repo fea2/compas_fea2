@@ -4,6 +4,8 @@ from __future__ import print_function
 
 from typing import Iterable
 
+from compas.datastructures import Mesh
+
 from compas_fea2.base import FEAData
 
 # TODO change lists to sets
@@ -298,6 +300,10 @@ class FacesGroup(_Group):
             for node in face.nodes:
                 nodes_set.add(node)
         return nodes_set
+
+    @property
+    def mesh(self):
+        return Mesh.from_polygons([face.polygon for face in self.faces])
 
     def add_face(self, face):
         """Add a face to the group.
