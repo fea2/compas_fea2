@@ -7,6 +7,7 @@ from compas_fea2.problem.patterns import LineLoadPattern
 from compas_fea2.problem.patterns import NodeLoadPattern
 from compas_fea2.problem.patterns import PointLoadPattern
 from compas_fea2.problem.patterns import VolumeLoadPattern
+from compas_fea2.problem.patterns import GravityLoadPattern
 
 from .step import GeneralStep
 
@@ -251,7 +252,7 @@ class StaticStep(GeneralStep):
     def add_tributary_load(self):
         raise NotImplementedError
 
-    def add_gravity_load_pattern(self, parts, g=9.81, x=0.0, y=0.0, z=-1.0, name=None, load_case=None, **kwargs):
+    def add_gravity_load_pattern(self, parts=None, g=9.81, x=0.0, y=0.0, z=-1.0, name=None, load_case=None, **kwargs):
         """Add a :class:`compas_fea2.problem.GravityLoad` load to the ``Step``
 
         Parameters
@@ -279,7 +280,8 @@ class StaticStep(GeneralStep):
         model!
 
         """
-        return self.add_load_pattern(VolumeLoadPattern(parts=parts, x=g * x, y=g * y, z=g * z, name=name, load_case=load_case, **kwargs))
+        return self.add_load_pattern(GravityLoadPattern(parts=parts, g=g, x=x, y=y, z=z, name=name, load_case=load_case, **kwargs))
+        # return self.add_load_pattern(VolumeLoadPattern(parts=parts, x=g * x, y=g * y, z=g * z, name=name, load_case=load_case, **kwargs))
 
     # =========================================================================
     #                           Fields methods

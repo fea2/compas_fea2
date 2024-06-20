@@ -625,95 +625,95 @@ Analysis folder path : {}
         viewer.viewer.scene.add(collections, name="Principal Stresses")
         viewer.viewer.show()
 
-    def draw_field_vectors(self, field_locations, field_results, scale_results, translate=0):
-        """Display a given vector field.
-        """
-        from compas.geometry import Line
-        vectors = []
-        for pt, vector in zip(field_locations, field_results):
-            if vector.length == 0:
-                continue
-            else:
-                v = vector.scaled(scale_results)
-                vectors.append(Line.from_point_and_vector(pt, v).translated(v*translate))
-        return vectors
+    # def draw_field_vectors(self, field_locations, field_results, scale_results, translate=0):
+    #     """Display a given vector field.
+    #     """
+    #     from compas.geometry import Line
+    #     vectors = []
+    #     for pt, vector in zip(field_locations, field_results):
+    #         if vector.length == 0:
+    #             continue
+    #         else:
+    #             v = vector.scaled(scale_results)
+    #             vectors.append(Line.from_point_and_vector(pt, v).translated(v*translate))
+    #     return vectors
 
-    def draw_field_contour(self, field_locations, field_results, high=None, low=None, cmap=None, **kwargs):
-        """ """
-        from compas_fea2.model import BeamElement
-        # # Get values
-        min_value = high or min(field_results)
-        max_value = low or max(field_results)
-        cmap = cmap or ColorMap.from_palette("hawaii")
+    # def draw_field_contour(self, field_locations, field_results, high=None, low=None, cmap=None, **kwargs):
+    #     """ """
+    #     from compas_fea2.model import BeamElement
+    #     # # Get values
+    #     min_value = high or min(field_results)
+    #     max_value = low or max(field_results)
+    #     cmap = cmap or ColorMap.from_palette("hawaii")
 
-        # Get mesh
-        part_vertexcolor = {}
-        for part in self.model.parts:
-            if not part.discretized_boundary_mesh:
-                continue
-                # raise AttributeError("Discretized boundary mesh not found")
-            # Color the mesh
-            vertexcolor={}
-            gkey_vertex = part.discretized_boundary_mesh.gkey_vertex(3)
-            for n, v in zip(field_locations, field_results):
-                if not n.part == part:
-                    continue
-                if kwargs.get("bound", None):
-                    if v >= kwargs["bound"][1] or v <= kwargs["bound"][0]:
-                        color = Color.red()
-                    else:
-                        color = cmap(v, minval=min_value, maxval=max_value)
-                else:
-                    color = cmap(v, minval=min_value, maxval=max_value)
-                    vertex = gkey_vertex.get(n.gkey, None)
-                    vertexcolor[vertex] = color
-            part_vertexcolor[part] = vertexcolor
+    #     # Get mesh
+    #     part_vertexcolor = {}
+    #     for part in self.model.parts:
+    #         if not part.discretized_boundary_mesh:
+    #             continue
+    #             # raise AttributeError("Discretized boundary mesh not found")
+    #         # Color the mesh
+    #         vertexcolor={}
+    #         gkey_vertex = part.discretized_boundary_mesh.gkey_vertex(3)
+    #         for n, v in zip(field_locations, field_results):
+    #             if not n.part == part:
+    #                 continue
+    #             if kwargs.get("bound", None):
+    #                 if v >= kwargs["bound"][1] or v <= kwargs["bound"][0]:
+    #                     color = Color.red()
+    #                 else:
+    #                     color = cmap(v, minval=min_value, maxval=max_value)
+    #             else:
+    #                 color = cmap(v, minval=min_value, maxval=max_value)
+    #                 vertex = gkey_vertex.get(n.gkey, None)
+    #                 vertexcolor[vertex] = color
+    #         part_vertexcolor[part] = vertexcolor
 
-        return part_vertexcolor
+    #     return part_vertexcolor
 
 
-    def show_displacements_contour(self, step=None, show_bcs=1, scale_model=1, component=None, **kwargs):
+    # def show_displacements_contour(self, step=None, show_bcs=1, scale_model=1, component=None, **kwargs):
 
-        from compas_fea2.UI.viewer import FEA2Viewer, FEA2ModelObject
-        from compas.scene import register
-        from compas.scene import register_scene_objects
+    #     from compas_fea2.UI.viewer import FEA2Viewer, FEA2ModelObject
+    #     from compas.scene import register
+    #     from compas.scene import register_scene_objects
 
-        register_scene_objects()  # This has to be called before registering the model object
-        register(self.model.__class__.__bases__[-1], FEA2ModelObject, context="Viewer")
+    #     register_scene_objects()  # This has to be called before registering the model object
+    #     register(self.model.__class__.__bases__[-1], FEA2ModelObject, context="Viewer")
 
-        viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
-        viewer.viewer.scene.add(self.model, opacity=1, show_bcs=show_bcs, show_parts=False)
+    #     viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
+    #     viewer.viewer.scene.add(self.model, opacity=1, show_bcs=show_bcs, show_parts=False)
 
-        if not step:
-            step = self.steps_order[-1]
-        field_locations =list(self.displacement_field.locations(step))
-        field_results = list(self.displacement_field.component(step, component))
+    #     if not step:
+    #         step = self.steps_order[-1]
+    #     field_locations =list(self.displacement_field.locations(step))
+    #     field_results = list(self.displacement_field.component(step, component))
 
-        part_vertexcolor = self.draw_field_contour(field_locations, field_results)
-        colored_meshes = []
-        for part, vertexcolor in part_vertexcolor.items():
-            colored_meshes.append((part._discretized_boundary_mesh, {"name": part.name, "vertexcolor": vertexcolor, "use_vertexcolors":True}))
-        viewer.viewer.scene.add(colored_meshes, name=f"U{component} Contour")
+    #     part_vertexcolor = self.draw_field_contour(field_locations, field_results)
+    #     colored_meshes = []
+    #     for part, vertexcolor in part_vertexcolor.items():
+    #         colored_meshes.append((part._discretized_boundary_mesh, {"name": part.name, "vertexcolor": vertexcolor, "use_vertexcolors":True}))
+    #     viewer.viewer.scene.add(colored_meshes, name=f"U{component} Contour")
 
-        #TODO move to separate method
-        from compas_fea2.model import BeamElement
-        cmap = ColorMap.from_palette("hawaii")
-        min_value = min(field_results)
-        max_value = max(field_results)
-        for part in self.model.parts:
-            colored_meshes = []
-            for element in part.elements:
-                vertexcolor = {}
-                if isinstance(element, BeamElement):
-                    for c, n in enumerate(element.nodes):
-                        v = field_results[field_locations.index(n)]
-                        for p in range(len(element.section._shape.points)):
-                            vertexcolor[p+c*len(element.section._shape.points)] = cmap(v, minval=min_value, maxval=max_value)
-                    # vertexcolor = {c: Color.red() for c in range(2*len(element.section._shape.points))}
-                    colored_meshes.append((element.outermesh, {"name": element.name, "vertexcolor": vertexcolor, "use_vertexcolors":True}))
-            viewer.viewer.scene.add(colored_meshes, name=f"U{component} Contour")
+    #     #TODO move to separate method
+    #     from compas_fea2.model import BeamElement
+    #     cmap = ColorMap.from_palette("hawaii")
+    #     min_value = min(field_results)
+    #     max_value = max(field_results)
+    #     for part in self.model.parts:
+    #         colored_meshes = []
+    #         for element in part.elements:
+    #             vertexcolor = {}
+    #             if isinstance(element, BeamElement):
+    #                 for c, n in enumerate(element.nodes):
+    #                     v = field_results[field_locations.index(n)]
+    #                     for p in range(len(element.section._shape.points)):
+    #                         vertexcolor[p+c*len(element.section._shape.points)] = cmap(v, minval=min_value, maxval=max_value)
+    #                 # vertexcolor = {c: Color.red() for c in range(2*len(element.section._shape.points))}
+    #                 colored_meshes.append((element.outermesh, {"name": element.name, "vertexcolor": vertexcolor, "use_vertexcolors":True}))
+    #         viewer.viewer.scene.add(colored_meshes, name=f"U{component} Contour")
 
-        viewer.viewer.show()
+    #     viewer.viewer.show()
 
     def show_deformed(self, step=None, scale_results=100, original=0.5, opacity=0.5, scale_model=1, **kwargs):
         """Display the structure in its deformed configuration.

@@ -569,10 +569,10 @@ class Star(Shape):
 
 class Circle(Shape):
     def __init__(self, radius, segments=32):
-        super().__init__()
         self._radius = radius
         self._segments = segments
-        self._points = self._set_points()
+        points = self._set_points()
+        super().__init__(points)
 
     @property
     def radius(self):
@@ -697,11 +697,11 @@ class Trapezoid(Shape):
 
 
 if __name__ == "__main__":
-    r = Rectangle(w=100, h=300)
+    # r = Rectangle(w=100, h=300)
     # t = TShape(10, 20, 3, 5)
     # u = UShape(10, 20, 3, 5, 4)
     # s = Star(10, 10, 2)
-    # circle = Circle(5)
+    r = Circle(5)
     # ellipse = Ellipse(10, 5)
     # hexagon = Hexagon(3)
 

@@ -266,6 +266,9 @@ class GravityLoad(Load):
     def g(self):
         return self._g
 
+    def to_node_load(self, volume, density):
+        return NodeLoad(x=self.x*self.g*volume*density, y=self.y*self.g*volume*density, z=self.z*self.g*volume*density)
+
 
 class PrestressLoad(Load):
     """Prestress load"""

@@ -107,3 +107,25 @@ class ZeroLengthSpringConnector(SpringConnector):
     def directions(self):
         return self._directions
 
+
+class GroundSpringConnector(SpringConnector):
+    def __init__(self, nodes, section, direction, yielding=None, failure=None, **kwargs):
+        super(GroundSpringConnector, self).__init__(nodes, section, yielding, failure, **kwargs)
+        self.direction = direction
+
+    @property
+    def nodes(self):
+        return self._nodes
+
+    @nodes.setter
+    def nodes(self, nodes):
+        if isinstance(nodes, _Group):
+            nodes = nodes._members
+        if isinstance(nodes, Node):
+            nodes = [nodes]
+        for n in nodes:
+            if not isinstance(n, Node):
+                raise ValueError("You can only connect Nodes")
+            if isinstance(n.part, RigidPart) and not n.is_reference:
+                raise ValueError("Connections to rigid parts must be done to the reference point of the part.")
+        self._nodes = nodes

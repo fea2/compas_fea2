@@ -47,7 +47,7 @@ class _MultiPointConstraint(_Constraint):
 
     """
 
-    def __init__(self, constraint_type, **kwargs):
+    def __init__(self, constraint_type=None, **kwargs):
         super(_MultiPointConstraint, self).__init__(**kwargs)
         self.constraint_type = constraint_type
 

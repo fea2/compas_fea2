@@ -6,7 +6,7 @@ import itertools
 from typing import Iterable
 
 from compas_fea2.base import FEAData
-from compas_fea2.problem.loads import NodeLoad
+from compas_fea2.problem.loads import NodeLoad, GravityLoad
 
 # TODO implement __*__ magic method for combination
 
@@ -49,10 +49,9 @@ class Pattern(FEAData):
         zz=None,
         load_case=None,
         axes="global",
-        name=None,
         **kwargs,
     ):
-        super(Pattern, self).__init__(name, **kwargs)
+        super(Pattern, self).__init__(**kwargs)
         self._distribution = distribution if isinstance(distribution, Iterable) else [distribution]
         self._nodes = None
         self.x = x
@@ -100,8 +99,8 @@ class NodeLoadPattern(Pattern):
         _description_
     """
 
-    def __init__(self, nodes, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", name=None, **kwargs):
-        super(NodeLoadPattern, self).__init__(nodes, x, y, z, xx, yy, zz, load_case, axes, name, **kwargs)
+    def __init__(self, nodes, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", **kwargs):
+        super(NodeLoadPattern, self).__init__(nodes, x, y, z, xx, yy, zz, load_case, axes, **kwargs)
 
     @property
     def nodes(self):
@@ -109,7 +108,7 @@ class NodeLoadPattern(Pattern):
 
     @property
     def load(self):
-        return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, name=self.name, axes=self.axes)
+        return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
 
     @property
     def node_load(self):
@@ -127,8 +126,8 @@ class PointLoadPattern(NodeLoadPattern):
         _description_
     """
 
-    def __init__(self, points, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", name=None, tolerance=1, **kwargs):
-        super(PointLoadPattern, self).__init__(points, x, y, z, xx, yy, zz, load_case, axes, name, **kwargs)
+    def __init__(self, points, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", tolerance=1, **kwargs):
+        super(PointLoadPattern, self).__init__(points, x, y, z, xx, yy, zz, load_case, axes, **kwargs)
         self.tolerance = tolerance
 
     @property
@@ -149,10 +148,14 @@ class LineLoadPattern(Pattern):
         _description_
     """
 
-    def __init__(self, polyline, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", name=None, tolerance=1, discretization=10, **kwargs):
-        super(LineLoadPattern, self).__init__(polyline, x, y, z, xx, yy, zz, load_case, axes, name, **kwargs)
+    def __init__(self, polyline, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", tolerance=1, discretization=10, **kwargs):
+        super(LineLoadPattern, self).__init__(polyline, x, y, z, xx, yy, zz, load_case, axes, **kwargs)
         self.tolerance = tolerance
         self.discretization = discretization
+
+    @property
+    def load(self):
+        return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
 
     @property
     def polyline(self):
@@ -167,7 +170,7 @@ class LineLoadPattern(Pattern):
         n_nodes = len(self.nodes)
         length = self.polyline.length
         # FIXME change to tributary load for each node
-        return zip(self.nodes, [NodeLoad(**{k: v * length / n_nodes if v else v for k, v in self.components.items()}, name=self.name, axes=self.axes)] * n_nodes)
+        return zip(self.nodes, [NodeLoad(**{k: v * length / n_nodes if v else v for k, v in self.components.items()}, axes=self.axes)] * n_nodes)
 
 
 class AreaLoadPattern(Pattern):
@@ -192,10 +195,14 @@ class AreaLoadPattern(Pattern):
         return self.model.find_nodes_in_polygon(self.polygon, tolerance=self.tolerance)
 
     @property
+    def load(self):
+        return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
+
+    @property
     def node_load(self):
         n_nodes = len(self.nodes)
         area = self.polygon.area
-        return zip(self.nodes, [NodeLoad(**{k: v * area / n_nodes if v else v for k, v in self.components.items()}, name=self.name, axes=self.axes)] * n_nodes)
+        return zip(self.nodes, [NodeLoad(**{k: v * area / n_nodes if v else v for k, v in self.components.items()}, axes=self.axes)] * n_nodes)
 
 
 class VolumeLoadPattern(Pattern):
@@ -207,8 +214,8 @@ class VolumeLoadPattern(Pattern):
         _description_
     """
 
-    def __init__(self, parts, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", name=None, **kwargs):
-        super(VolumeLoadPattern, self).__init__(parts, x, y, z, xx, yy, zz, load_case, axes, name, **kwargs)
+    def __init__(self, parts, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", **kwargs):
+        super(VolumeLoadPattern, self).__init__(parts, x, y, z, xx, yy, zz, load_case, axes, **kwargs)
 
     @property
     def parts(self):
@@ -219,6 +226,10 @@ class VolumeLoadPattern(Pattern):
         return list(set(itertools.chain.from_iterable(self.parts)))
 
     @property
+    def load(self):
+        return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
+
+    @property
     def node_load(self):
         nodes_loads = {}
         for part in self.parts:
@@ -226,10 +237,43 @@ class VolumeLoadPattern(Pattern):
                 vol = element.volume
                 den = element.section.material.density
                 n_nodes = len(element.nodes)
-                load = NodeLoad(**{k: v * vol * den / n_nodes if v else v for k, v in self.components.items()}, name=self.name, axes=self.axes)
+                load = NodeLoad(**{k: v * vol * den / n_nodes if v else v for k, v in self.components.items()}, axes=self.axes)
                 for node in element.nodes:
                     if node in nodes_loads:
                         nodes_loads[node] += load
                     else:
                         nodes_loads[node] = load
         return zip(list(nodes_loads.keys()), list(nodes_loads.values()))
+
+class GravityLoadPattern(Pattern):
+    """Volume distribution of a load case (e.g., gravity load).
+
+    Parameters
+    ----------
+    Pattern : _type_
+        _description_
+    """
+
+    def __init__(self, parts=None, g=9810, x=0, y=0, z=-1, load_case=None, axes="global", **kwargs):
+        super(GravityLoadPattern, self).__init__(parts, x, y, z, xx=None, yy=None, zz=None, load_case=load_case, axes=axes, **kwargs)
+        self._g = g
+
+    @property
+    def g(self):
+        return self._g
+
+    @property
+    def parts(self):
+        return self._distribution
+
+    @property
+    def nodes(self):
+        return list(set(itertools.chain.from_iterable(self.parts)))
+
+    @property
+    def load(self):
+        return GravityLoad(self.g, self.x, self.y, self.z)
+
+    @property
+    def node_load(self):
+        return zip([None], [self.load])

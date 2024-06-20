@@ -10,6 +10,7 @@ import pickle
 from itertools import chain
 from itertools import groupby
 from pathlib import Path
+from typing import Iterable
 
 from compas.geometry import Box
 from compas.geometry import Plane
@@ -310,6 +311,7 @@ class Model(FEAData):
         None
 
         """
+        print("Saving the model. This might take a few seconds...")
         if not isinstance(path, Path):
             path = Path(path)
         if not path.suffix == ".cfm":
@@ -995,6 +997,23 @@ class Model(FEAData):
 
         interface._registration = self
         return interface
+
+    def add_interfaces(self, interfaces):
+        # type: (Iterable) -> list
+        """Add multiple :class:`compas_fea2.model._Interface` objects to the model.
+
+        Parameters
+        ----------
+        Iterable : (:class:`compas_fea2.model._Interface`)
+            Sequence of Interface objects to add to the model.
+
+        Returns
+        -------
+        [:class:`compas_fea2.model._Interface`]
+        """
+        if not isinstance(interfaces, Iterable):
+            raise ValueError("You must provide a sequence of interfaces.")
+        return [self.add_interface(interface) for interface in interfaces]
     # ==============================================================================
     # Summary
     # ==============================================================================
@@ -1275,6 +1294,7 @@ Initial Conditions
         node_labels=True,
         show_bcs=1.0,
         draw_constraints=True,
+        opacity=1,
         **kwargs,
     ):
         """Visualise the model in the viewer.
@@ -1311,5 +1331,5 @@ Initial Conditions
 
         # v = FEA2Viewer(self, scale_factor=scale_factor)
         viewer = FEA2Viewer(center=self.center, scale_model=scale_model)  # show_grid=False, show_gridz=True, gridsize=(1000.0, 10, 1000.0, 10)
-        viewer.viewer.scene.add(self, opacity=0.5, show_bcs=show_bcs)
+        viewer.viewer.scene.add(self, opacity=opacity, show_bcs=show_bcs)
         viewer.viewer.show()

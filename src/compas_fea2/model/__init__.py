@@ -72,6 +72,7 @@ from .connectors import (
     Connector,
     SpringConnector,
     ZeroLengthSpringConnector,
+    GroundSpringConnector,
 )
 from .groups import (
     _Group,

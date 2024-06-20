@@ -212,7 +212,7 @@ class _Element1D(_Element):
     def __init__(self, nodes, section, frame=None, implementation=None, rigid=False, **kwargs):
         super(_Element1D, self).__init__(nodes, section, implementation=implementation, rigid=rigid, **kwargs)
         self._frame = frame
-        self._curve = Line(nodes[0].point, nodes[-1].point)
+        self._curve = Line(start=nodes[0].point, end=nodes[-1].point)
 
 
         # self._shape = Brep.from_extrusion(curve=self.section._shape, vector=Vector.from_start_end(nodes[0].point, nodes[-1].point), cap_ends=False)

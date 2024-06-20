@@ -520,6 +520,8 @@ class _Part(FEAData):
 
         del gmshModel
 
+        part.synchronise_boundary_elements()
+
         return part
 
     # =========================================================================

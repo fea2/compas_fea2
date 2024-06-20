@@ -536,6 +536,9 @@ class FEA2ModelObject(GroupObject):
         Additional keyword arguments.
     """
     def __init__(self, model, show_bcs=True, show_parts=True, show_interfaces=True, **kwargs):
+        self.show_bcs = show_bcs
+        self.show_parts = show_parts
+        self.show_interfaces = show_interfaces
         self.face_color = kwargs.get("face_color", color_palette["faces"])
         self.line_color = kwargs.get("line_color", color_palette["edges"])
         self.show_faces = kwargs.get("show_faces", True)
@@ -589,7 +592,7 @@ class FEA2ModelObject(GroupObject):
         list
             List of BC meshes.
         """
-        def _get_bc_shape(self, bc, node):
+        def _get_bc_shape(bc, node):
             if isinstance(bc, PinnedBC):
                 return PinBCShape(node.xyz, scale=self.show_bcs).shape
             elif isinstance(bc, FixedBC):
@@ -619,11 +622,12 @@ class FEA2ModelObject(GroupObject):
         list
             List of interface meshes.
         """
+        from compas_fea2.model import FacesGroup
         interfaces_meshes = []
-        S = Scale.from_factors([1.1, 1.1, 1])
         for interface in model.interfaces:
-            mesh = interface.master.mesh.transformed(S)
-            interfaces_meshes.append(self._create_mesh_entry(mesh, facecolor=Color.red(), linecolor=Color.red(), show_points=False))
+            if isinstance(interface.master, FacesGroup):
+                mesh = interface.master.mesh
+                interfaces_meshes.append(self._create_mesh_entry(mesh, facecolor=Color.red(), linecolor=Color.red(), show_points=False))
         return interfaces_meshes
 
     def _create_mesh_entry(self, mesh, facecolor=None, linecolor=None, show_faces=None, show_lines=None, show_points=None, opacity=None):
