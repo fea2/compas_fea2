@@ -34,7 +34,6 @@ from compas_fea2.model.connectors import Connector
 from compas_fea2.utilities._utils import get_docstring
 from compas_fea2.utilities._utils import part_method
 from compas_fea2.utilities._utils import problem_method
-from compas_fea2.utilities._utils import timer
 
 from .elements import BeamElement
 from .elements import ShellElement
@@ -43,6 +42,7 @@ from .elements import _Element3D
 from .interfaces import Interface
 from .interactions import _Interaction
 from .constraints import _Constraint
+
 
 class Model(FEAData):
     """Class representing an FEA model.
@@ -96,7 +96,7 @@ class Model(FEAData):
         self._units = None
         self._parts = set()
         self._nodes = None
-        self._bcs = {}
+        self._bcs = set()
         self._ics = set()
         self._connectors = set()
         self._interfaces = set()
@@ -194,7 +194,7 @@ class Model(FEAData):
 
     @property
     def nodes(self):
-        n=[]
+        n = []
         for part in self.parts:
             n += list(part.nodes)
         return n
@@ -205,7 +205,7 @@ class Model(FEAData):
 
     @property
     def elements(self):
-        e=[]
+        e = []
         for part in self.parts:
             e += list(part.elements)
         return e
@@ -247,9 +247,6 @@ class Model(FEAData):
         if not isinstance(value, UnitRegistry):
             return ValueError("Pint UnitRegistry required")
         self._units = value
-
-
-
 
     # =========================================================================
     #                       Constructor methods
@@ -392,7 +389,7 @@ class Model(FEAData):
         if compas_fea2.VERBOSE:
             print("{!r} registered to {!r}.".format(part, self))
 
-        part._key = len(self._parts)*PART_NODES_LIMIT
+        part._key = len(self._parts) * PART_NODES_LIMIT
         self._parts.add(part)
 
         if not isinstance(part, RigidPart):
@@ -553,7 +550,7 @@ class Model(FEAData):
     #                           BCs methods
     # =========================================================================
 
-    def add_bcs(self, bc, nodes, axes="global"):
+    def add_bc(self, bc):
         """Add a :class:`compas_fea2.model._BoundaryCondition` to the model.
 
         Parameters
@@ -572,32 +569,22 @@ class Model(FEAData):
         Currently global axes are used in the Boundary Conditions definition.
 
         """
-        if isinstance(nodes, _Group):
-            nodes = nodes._members
-
-        if isinstance(nodes, Node):
-            nodes = [nodes]
-
         if not isinstance(bc, _BoundaryCondition):
             raise TypeError("{!r} is not a Boundary Condition.".format(bc))
 
-        for node in nodes:
-            if not isinstance(node, Node):
-                raise TypeError("{!r} is not a Node.".format(node))
-            if not node.part:
-                raise ValueError("{!r} is not registered to any part.".format(node))
-            elif node.part not in self.parts:
-                raise ValueError("{!r} belongs to a part not registered to this model.".format(node))
+        for node in bc.nodes:
             if isinstance(node.part, RigidPart):
-                if len(nodes) != 1 or not node.is_reference:
+                if not node.is_reference:
                     raise ValueError("For rigid parts bundary conditions can be assigned only to the reference point")
             node._bc = bc
 
         bc._key = len(self.bcs)
-        self._bcs[bc] = set(nodes)
+        self._bcs.add(bc)
         bc._registration = self
-
         return bc
+
+    def add_bcs(self, bcs):
+        return [self.add_bc(bc) for bc in bcs]
 
     def _add_bc_type(self, bc_type, nodes, axes="global"):
         """Add a :class:`compas_fea2.model.BoundaryCondition` by type.
@@ -647,8 +634,8 @@ class Model(FEAData):
             "rollerXZ": "RollerBCXZ",
         }
         m = importlib.import_module("compas_fea2.model.bcs")
-        bc = getattr(m, types[bc_type])()
-        return self.add_bcs(bc, nodes, axes)
+        bc = getattr(m, types[bc_type])(nodes, axes)
+        return self.add_bc(bc)
 
     def add_fix_bc(self, nodes, axes="global"):
         """Add a :class:`compas_fea2.model.FixedBC` to the nodes in a part.
@@ -904,11 +891,8 @@ class Model(FEAData):
     # Connectors methods
     # ==============================================================================
 
-
     def add_connector(self, connector):
-        """
-
-        """
+        """ """
         if not isinstance(connector, Connector):
             raise TypeError("{!r} is not a Connector.".format(connector))
         connector._key = len(self._connectors)
@@ -916,11 +900,8 @@ class Model(FEAData):
         connector._registration = self
         return connector
 
-
     def add_connectors(self, connectors):
-        """
-
-        """
+        """ """
         if not isinstance(connectors, Iterable):
             raise ValueError("You must provide a sequence of Connectors.")
         return [self.add_connector(connector) for connector in connectors]
@@ -945,11 +926,11 @@ class Model(FEAData):
         if isinstance(interface, Interface):
             self._interfaces.add(interface)
             if not interface.master._registration:
-                raise ValueError('The master surface is not registered to any part')
+                raise ValueError("The master surface is not registered to any part")
             if not interface.slave._registration:
-                raise ValueError('The slave surface is not registered to any part')
+                raise ValueError("The slave surface is not registered to any part")
         else:
-            raise TypeError('{!r} is not an interface.'.format(interface))
+            raise TypeError("{!r} is not an interface.".format(interface))
 
         if isinstance(interface.behavior, _Interaction):
             self._interactions.add(interface.behavior)
@@ -978,6 +959,7 @@ class Model(FEAData):
         if not isinstance(interfaces, Iterable):
             raise ValueError("You must provide a sequence of interfaces.")
         return [self.add_interface(interface) for interface in interfaces]
+
     # ==============================================================================
     # Summary
     # ==============================================================================
@@ -1010,8 +992,8 @@ class Model(FEAData):
         constraints_info = "\n".join([e.__repr__() for e in self.constraints])
 
         bc_info = []
-        for bc, nodes in self.bcs.items():
-            for part, part_nodes in groupby(nodes, lambda n: n.part):
+        for bc in self.bcs:
+            for part, part_nodes in groupby(bc.nodes, lambda n: n.part):
                 bc_info.append("{}: \n{}".format(part.name, "\n".join(["  {!r} - # of restrained nodes {}".format(bc, len(list(part_nodes)))])))
         bc_info = "\n".join(bc_info)
 
