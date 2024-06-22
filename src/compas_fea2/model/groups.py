@@ -31,6 +31,10 @@ class _Group(FEAData):
         super(_Group, self).__init__(**kwargs)
         self._members = set() if not members else self._check_members(members)
 
+    @property
+    def members(self):
+        return self._members
+
     def __str__(self):
         return """
 {}

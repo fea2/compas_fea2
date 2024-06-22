@@ -15,11 +15,19 @@ class _InitialCondition(FEAData):
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, field, field_value, **kwargs):
         super(_InitialCondition, self).__init__(**kwargs)
+        self._field = field
+        self._field_value = field_value
 
+    @property
+    def field(self):
+        return self._field
 
-# FIXME this is not really a field in the sense that it is only applied to 1 node/element
+    @property
+    def field_value(self):
+        return self._field_value
+
 class InitialTemperatureField(_InitialCondition):
     """Temperature field.
 
@@ -40,17 +48,20 @@ class InitialTemperatureField(_InitialCondition):
 
     """
 
-    def __init__(self, temperature, **kwargs):
-        super(InitialTemperatureField, self).__init__(**kwargs)
-        self._t = temperature
+    def __init__(self, nodes, temperature, **kwargs):
+        super(InitialTemperatureField, self).__init__(nodes, temperature, **kwargs)
+
+    @property
+    def nodes(self):
+        return self._field
 
     @property
     def temperature(self):
-        return self._t
+        return self._field_value
 
     @temperature.setter
     def temperature(self, value):
-        self._t = value
+        self._field_value = value
 
 
 class InitialStressField(_InitialCondition):
@@ -73,16 +84,19 @@ class InitialStressField(_InitialCondition):
 
     """
 
-    def __init__(self, stress, **kwargs):
-        super(InitialStressField, self).__init__(**kwargs)
-        self._s = stress
+    def __init__(self, elements, stress, **kwargs):
+        super(InitialStressField, self).__init__(elements, stress, **kwargs)
+
+    @property
+    def elements(self):
+        return self._field
 
     @property
     def stress(self):
-        return self._s
+        return self._field_value
 
     @stress.setter
     def stress(self, value):
         if not isinstance(value, tuple) or len(value) != 3:
             raise TypeError("you must provide a tuple with 3 elements")
-        self._s = value
+        self._field_value = value

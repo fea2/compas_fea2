@@ -131,7 +131,7 @@ class NodeLoad(Load):
             new_components = {k: (self.components[k] or 0) + (other.components[k] or 0) for k in self.components}
             return NodeLoad(**new_components, axes=self.axes)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"sum with {other} is not supported")
 
     def __radd__(self, other):
         return self.__add__(other)

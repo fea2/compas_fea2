@@ -170,7 +170,8 @@ class _Part(FEAData):
         try:
             return Box.from_bounding_box(bounding_box([n.xyz for n in self.nodes]))
         except Exception:
-            print("WARNING: BoundingBox not generated")
+            if compas_fea2.VERBOSE:
+                print("WARNING: BoundingBox not generated")
             return None
 
     @property

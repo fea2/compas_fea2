@@ -97,7 +97,7 @@ class Model(FEAData):
         self._parts = set()
         self._nodes = None
         self._bcs = {}
-        self._ics = {}
+        self._ics = set()
         self._connectors = set()
         self._interfaces = set()
         self._interactions = set()
@@ -859,14 +859,14 @@ class Model(FEAData):
     # Initial Conditions methods
     # ==============================================================================
 
-    def _add_ics(self, ic, group):
+    def add_ic(self, ic):
         """Add a :class:`compas_fea2.model._InitialCondition` to the model.
 
         Parameters
         ----------
         ic : :class:`compas_fea2.model._InitialCondition`
             Initial condition object to add to the model.
-        group : :class:`compas_fea2.model._Group`
+        field : :class:`compas_fea2.model._Group`
             Group of Nodes/Elements where the initial condition is assigned.
 
         Returns
@@ -874,64 +874,31 @@ class Model(FEAData):
         :class:`compas_fea2.model._InitialCondition`
 
         """
-        group.part.add_group(group)
-
         if not isinstance(ic, _InitialCondition):
-            raise TypeError("{!r} is not a InitialCondition.".format(ic))
-        for member in group.members:
-            if not isinstance(member, (Node, _Element)):
-                raise TypeError("{!r} is not a Node or an Element.".format(member))
-            if not member.part:
-                raise ValueError("{!r} is not registered to any part.".format(member))
-            elif member.part not in self.parts:
-                raise ValueError("{!r} belongs to a part not registered to this model.".format(member))
-            member._ic = ic
-
+            raise TypeError("{!r} is not an InitialCondition.".format(ic))
         ic._key = len(self._ics)
-        self._ics[ic] = group.members
+        self._ics.add(ic)
         ic._registration = self
-
         return ic
 
-    def add_nodes_ics(self, ic, nodes):
+    def add_ics(self, ics):
         """Add a :class:`compas_fea2.model._InitialCondition` to the model.
 
         Parameters
         ----------
         ic : :class:`compas_fea2.model._InitialCondition`
             Initial condition object to add to the model.
-        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
-            List or Group with the nodes where the initial condition is assigned.
-
-        Returns
-        -------
-        list[:class:`compas_fea2.model._InitialCondition`]
-
-        """
-        if not isinstance(nodes, NodesGroup):
-            raise TypeError("{} is not a group of nodes".format(nodes))
-        self._add_ics(ic, nodes)
-        return ic
-
-    def add_elements_ics(self, ic, elements):
-        """Add a :class:`compas_fea2.model._InitialCondition` to the model.
-
-        Parameters
-        ----------
-        ic : :class:`compas_fea2.model._InitialCondition`
-            Initial condition object to add to the model.
-        elements : :class:`compas_fea2.model.ElementsGroup`
-            List or Group with the elements where the initial condition is assigned.
+        field : :class:`compas_fea2.model._Group`
+            Group of Nodes/Elements where the initial condition is assigned.
 
         Returns
         -------
         :class:`compas_fea2.model._InitialCondition`
 
         """
-        if not isinstance(elements, ElementsGroup):
-            raise TypeError("{} is not a group of elements".format(elements))
-        self._add_ics(ic, elements)
-        return ic
+        if not isinstance(ics, Iterable):
+            raise ValueError("You must provide a sequence of InitialConditions.")
+        return [self.add_ic(ic) for ic in ics]
 
     # ==============================================================================
     # Connectors methods
@@ -939,18 +906,7 @@ class Model(FEAData):
 
 
     def add_connector(self, connector):
-        """Add a :class:`compas_fea2.model._InitialCondition` to the model.
-
-        Parameters
-        ----------
-        ic : :class:`compas_fea2.model._InitialCondition`
-            Initial condition object to add to the model.
-        group : :class:`compas_fea2.model._Group`
-            Group of Nodes/Elements where the initial condition is assigned.
-
-        Returns
-        -------
-        :class:`compas_fea2.model._InitialCondition`
+        """
 
         """
         if not isinstance(connector, Connector):
@@ -958,8 +914,16 @@ class Model(FEAData):
         connector._key = len(self._connectors)
         self._connectors.add(connector)
         connector._registration = self
-
         return connector
+
+
+    def add_connectors(self, connectors):
+        """
+
+        """
+        if not isinstance(connectors, Iterable):
+            raise ValueError("You must provide a sequence of Connectors.")
+        return [self.add_connector(connector) for connector in connectors]
 
     # ==============================================================================
     # Interfaces methods
@@ -1052,9 +1016,9 @@ class Model(FEAData):
         bc_info = "\n".join(bc_info)
 
         ic_info = []
-        for ic, nodes in self.ics.items():
-            for part, part_nodes in groupby(nodes, lambda n: n.part):
-                ic_info.append("{}: \n{}".format(part.name, "\n".join(["  {!r} - # of restrained nodes {}".format(ic, len(list(part_nodes)))])))
+        for ic in self.ics:
+            for part, part_filed in groupby(ic._field, lambda f: f.part):
+                ic_info.append("{}: \n{}".format(part.name, "\n".join(["  {!r} - # of restrained nodes {}".format(ic, len(list(part_filed)))])))
         ic_info = "\n".join(ic_info)
 
         data = """
