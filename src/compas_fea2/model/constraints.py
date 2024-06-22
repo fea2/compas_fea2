@@ -12,6 +12,14 @@ class _Constraint(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {}
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls()
+
     def __init__(self, **kwargs):
         super(_Constraint, self).__init__(**kwargs)
 

@@ -12,10 +12,12 @@ from itertools import groupby
 from pathlib import Path
 from typing import Iterable
 
-from compas.geometry import Box
-from compas.geometry import Plane
-from compas.geometry import bounding_box
-from compas.geometry import centroid_points
+from compas.geometry import (
+    Box,
+    Plane,
+    bounding_box,
+    centroid_points,
+)
 from pint import UnitRegistry
 
 import compas_fea2
@@ -28,17 +30,20 @@ from compas_fea2.model.groups import PartsGroup
 from compas_fea2.model.groups import _Group
 from compas_fea2.model.ics import _InitialCondition
 from compas_fea2.model.nodes import Node
-from compas_fea2.model.parts import RigidPart
-from compas_fea2.model.parts import _Part
+from compas_fea2.model.parts import _Part, RigidPart
 from compas_fea2.model.connectors import Connector
-from compas_fea2.utilities._utils import get_docstring
-from compas_fea2.utilities._utils import part_method
-from compas_fea2.utilities._utils import problem_method
+from compas_fea2.utilities._utils import (
+    get_docstring,
+    part_method,
+    problem_method
+)
 
-from .elements import BeamElement
-from .elements import ShellElement
-from .elements import _Element
-from .elements import _Element3D
+from .elements import (
+    _Element,
+    _Element3D,
+    BeamElement,
+    ShellElement,
+)
 from .interfaces import Interface
 from .interactions import _Interaction
 from .constraints import _Constraint
@@ -66,13 +71,11 @@ class Model(FEAData):
         This will be added to the input file and can be useful for future reference.
     parts : Set[:class:`compas_fea2.model.DeformablePart`]
         The parts of the model.
-    bcs : dict
-        Dictionary with the boundary conditions of the model and the nodes where
-        these are applied.
-    ics : dict
-        Dictionary with the initial conditions of the model and the nodes/elements
-        where these are applied.
-    constraints : Set[:class:`compas_fea2.model._Constraint`]
+    bcs : set[:class:`compas_fea2.model._BoundaryCondition`]
+        The boundary conditions of the model.
+    ics : set[:class:`compas_fea2.model._InitialCondition`]
+        The initial conditions of the model.
+    constraints : set[:class:`compas_fea2.model._Constraint`]
         The constraints of the model.
     partgroups : Set[:class:`compas_fea2.model.PartsGroup`]
         The part groups of the model.
@@ -87,13 +90,26 @@ class Model(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "description": self.description,
+            "author": self.author,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            master=data["master"],
+            slave=data["slave"],
+        )
+        
     def __init__(self, description=None, author=None, **kwargs):
         super(Model, self).__init__(**kwargs)
         self.description = description
         self.author = author
         self._key = 0
         self._starting_key = 0
-        self._units = None
         self._parts = set()
         self._nodes = None
         self._bcs = set()
@@ -104,17 +120,12 @@ class Model(FEAData):
         self._constraints = set()
         self._partsgroups = set()
         self._problems = set()
-        self._results = {}
-        self._loads = {}
         self._path = None
         self._bounding_box = None
         self._center = None
         self._bottom_plane = None
         self._top_plane = None
         self._volume = None
-
-    def __data__(self):
-        return None
 
     @property
     def parts(self):
@@ -238,16 +249,6 @@ class Model(FEAData):
     def volume(self):
         return sum(p.volume for p in self.parts)
 
-    @property
-    def units(self):
-        return self._units
-
-    @units.setter
-    def units(self, value):
-        if not isinstance(value, UnitRegistry):
-            return ValueError("Pint UnitRegistry required")
-        self._units = value
-
     # =========================================================================
     #                       Constructor methods
     # =========================================================================
@@ -291,9 +292,6 @@ class Model(FEAData):
     # =========================================================================
     #                       De-constructor methods
     # =========================================================================
-
-    def to_json(self):
-        raise NotImplementedError()
 
     def to_cfm(self, path):
         """Exports the Model object to an .cfm file through Pickle.

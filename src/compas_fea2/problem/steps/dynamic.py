@@ -8,6 +8,16 @@ from .step import GeneralStep
 class DynamicStep(GeneralStep):
     """Step for dynamic analysis."""
 
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
     def __init__(self, name=None, **kwargs):
         super(DynamicStep, self).__init__(name=name, **kwargs)
         raise NotImplementedError

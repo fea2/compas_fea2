@@ -4,8 +4,10 @@ from __future__ import print_function
 
 import importlib
 import uuid
+import json
 from abc import abstractmethod
 from typing import Iterable
+from datetime import datetime
 
 from compas.data import Data
 
@@ -68,25 +70,11 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         return super(FEAData, imp).__new__(imp)
 
     def __init__(self, name=None, **kwargs):
-        self.uid = uuid.uuid4()
+        # self.uid = uuid.uuid4()
         super().__init__(name=name, **kwargs)
         self._name = name or "".join([c for c in type(self).__name__ if c.isupper()]) + "_" + str(id(self))
         self._registration = None
         self._key = None
-
-    @property
-    def key(self):
-        return self._key
-
-    @property
-    def input_key(self):
-        if type(self._key)==type(None):
-            raise AttributeError(f"{self!r} does not have a key.")
-        if type(self._registration)==type(None):
-            raise AttributeError(f"{self!r} is not registered to any part.")
-        if type(self._registration._key)==type(None):
-            raise AttributeError(f"{self._registration!r} is not registered to a model.")
-        return self._key + self._registration._key + self.model._starting_key
 
     def __repr__(self):
         return "{0}({1})".format(self.__class__.__name__, id(self))
@@ -112,6 +100,21 @@ class FEAData(Data, metaclass=DimensionlessMeta):
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+
+    @property
+    def key(self):
+        return self._key
+
+    @property
+    def input_key(self):
+        if type(self._key)==type(None):
+            raise AttributeError(f"{self!r} does not have a key.")
+        if type(self._registration)==type(None):
+            raise AttributeError(f"{self!r} is not registered to any part.")
+        if type(self._registration._key)==type(None):
+            raise AttributeError(f"{self._registration!r} is not registered to a model.")
+        return self._key + self._registration._key + self.model._starting_key
+
 
     # def to_html(self):
     #     return highlight(str(self), PythonLexer(), HtmlFormatter(full=True, style="friendly"))
@@ -144,8 +147,3 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         module_info = obj.__module__.split(".")
         obj = getattr(importlib.import_module(".".join([*module_info[:-1]])), "_" + name)
         return obj(**kwargs)
-
-    def data(self):
-        pass
-
-

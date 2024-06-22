@@ -70,6 +70,32 @@ class Steel(ElasticIsotropic):
         self.tension = {"f": f, "e": e}
         self.compression = {"f": fc, "e": ec}
 
+    @property
+    def __data__(self):
+        return {
+            "fy": self.fy,
+            "fu": self.fu,
+            "eu": self.eu,
+            "E": self.E,
+            "v": self.v,
+            "density": self.density,
+            "name": self.name,
+            "tension": self.tension,
+            "compression": self.compression,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            fy=data["fy"],
+            fu=data["fu"],
+            eu=data["eu"],
+            E=data["E"],
+            v=data["v"],
+            density=data["density"],
+            name=data["name"],
+        )
+
     def __str__(self):
         return """
 Steel Material
@@ -96,7 +122,6 @@ ep : {:.2f}
             (self.ep * units.dimensionless),
         )
 
-    # TODO check values and make unit independent
     @classmethod
     def S355(cls):
         """Steel S355.

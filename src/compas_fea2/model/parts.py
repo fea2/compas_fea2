@@ -99,8 +99,18 @@ class _Part(FEAData):
 
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(_Part, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super(_Part, self).__init__(**kwargs)
         self._nodes = set()
         self._gkey_node = {}
         self._sections = set()
@@ -1403,8 +1413,8 @@ class DeformablePart(_Part):
 
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(DeformablePart, self).__init__(name=name, **kwargs)
+    def __init__(self, **kwargs):
+        super(DeformablePart, self).__init__(**kwargs)
         self._materials = set()
         self._sections = set()
         self._releases = set()
@@ -1671,8 +1681,20 @@ class RigidPart(_Part):
 
     """
 
-    def __init__(self, reference_point=None, name=None, **kwargs):
-        super(RigidPart, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "reference_point": self.reference_point,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            reference_point=data["reference_point"],
+        )
+
+    def __init__(self, reference_point=None, **kwargs):
+        super(RigidPart, self).__init__(**kwargs)
         self._reference_point = reference_point
 
     @property

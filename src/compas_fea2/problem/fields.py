@@ -14,15 +14,35 @@ class _PrescribedField(FEAData):
 
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(_PrescribedField, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {}
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls()
+
+    def __init__(self, **kwargs):
+        super(_PrescribedField, self).__init__(**kwargs)
 
 
 class PrescribedTemperatureField(_PrescribedField):
     """Temperature field"""
 
-    def __init__(self, temperature, name=None, **kwargs):
-        super(PrescribedTemperatureField, self).__init__(name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "temperature": self.temperature,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            temperature=data["temperature"],
+        )
+
+    def __init__(self, temperature, **kwargs):
+        super(PrescribedTemperatureField, self).__init__(**kwargs)
         self._t = temperature
 
     @property

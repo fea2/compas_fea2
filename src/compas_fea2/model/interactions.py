@@ -9,6 +9,16 @@ class _Interaction(FEAData):
     """Base class for all interactions.
     """
 
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
     def __init__(self, **kwargs):
         super(_Interaction, self).__init__(**kwargs)
 
@@ -53,6 +63,20 @@ class Contact(_Interaction):
         tangent to each face.
     """
 
+    @property
+    def __data__(self):
+        return {
+            "normal": self.normal,
+            "tangent": self.tangent,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            normal=data["normal"],
+            tangent=data["tangent"],
+        )
+
     def __init__(self, *, normal, tangent, **kwargs):
         super(Contact, self).__init__(**kwargs)
         self._tangent = tangent
@@ -89,9 +113,18 @@ class HardContactNoFriction(Contact):
         Slippage tollerance during contact.
     """
 
-    def __init__(self, mu, tolerance, **kwargs) -> None:
-        super(HardContactFrictionPenalty, self).__init__(normal='HARD', tangent=mu, **kwargs)
-        self.tolerance = tolerance
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs) -> None:
+        super(HardContactNoFriction, self).__init__(normal=None, tangent=None, **kwargs)
 
 
 class HardContactFrictionPenalty(Contact):
@@ -115,6 +148,21 @@ class HardContactFrictionPenalty(Contact):
     tollerance : float
         Slippage tollerance during contact.
     """
+
+
+    @property
+    def __data__(self):
+        return {
+            "mu": self.mu,
+            "tolerance": self.tolerance,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            mu=data["mu"],
+            tolerance=data["tolerance"],
+        )
 
     def __init__(self, *, mu, tolerance=0.1, **kwargs) -> None:
         super(HardContactFrictionPenalty, self).__init__(normal='HARD', tangent=mu, **kwargs)
@@ -152,6 +200,23 @@ class LinearContactFrictionPenalty(Contact):
     tollerance : float
         Slippage tollerance during contact.
     """
+
+
+    @property
+    def __data__(self):
+        return {
+            "stiffness": self.stiffness,
+            "mu": self.mu,
+            "tolerance": self.tolerance,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            stiffness=data["stiffness"],
+            mu=data["mu"],
+            tolerance=data["tolerance"],
+        )
 
     def __init__(self, *, stiffness, mu, tolerance, **kwargs) -> None:
         super(LinearContactFrictionPenalty, self).__init__(normal='Linear', tangent=mu, **kwargs)
@@ -193,6 +258,16 @@ class HardContactRough(Contact):
     tollerance : float
         Slippage tollerance during contact.
     """
+
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
 
     def __init__(self, **kwargs) -> None:
         super(HardContactRough, self).__init__(normal='HARD', tangent='ROUGH', **kwargs)

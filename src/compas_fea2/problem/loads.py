@@ -4,8 +4,6 @@ from __future__ import print_function
 
 from compas_fea2.base import FEAData
 
-# TODO: make units independent using the utilities function
-
 
 class Load(FEAData):
     """Initialises base Load object.
@@ -13,7 +11,7 @@ class Load(FEAData):
     Parameters
     ----------
     name : str
-        Uniqe identifier. If not provided it is automatically generated. Set a
+        Unique identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     components : dict
         Load components.
@@ -23,7 +21,7 @@ class Load(FEAData):
     Attributes
     ----------
     name : str
-        Uniqe identifier. If not provided it is automatically generated. Set a
+        Unique identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     components : dict
         Load components. These differ according to each Load type
@@ -35,6 +33,32 @@ class Load(FEAData):
     Loads are registered to a :class:`compas_fea2.problem.Pattern`.
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "x": self.x,
+            "y": self.y,
+            "z": self.z,
+            "xx": self.xx,
+            "yy": self.yy,
+            "zz": self.zz,
+            "axes": self.axes,
+            "name": self.name,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            xx=data["xx"],
+            yy=data["yy"],
+            zz=data["zz"],
+            axes=data["axes"],
+            name=data["name"],
+        )
 
     def __init__(self, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", name=None, **kwargs):
         super(Load, self).__init__(name=name, **kwargs)
@@ -52,7 +76,7 @@ class Load(FEAData):
 
     @components.setter
     def components(self, value):
-        for k, v in value:
+        for k, v in value.items():
             setattr(self, k, v)
 
     @property
@@ -144,7 +168,7 @@ class EdgeLoad(Load):
     ----------
     nodes : int or list(int), obj
         It can be either a key or a list of keys, or a ElementsGroup of the elements
-        where the load is apllied.
+        where the load is applied.
     x : float
         x component of force / length.
     y : float
@@ -182,7 +206,7 @@ class EdgeLoad(Load):
     """
 
     def __init__(self, x=0, y=0, z=0, xx=0, yy=0, zz=0, axes="global", name=None, **kwargs):
-        super(EdgeLoad, self).__init__(components={"x": x, "y": y, "z": z, "xx": xx, "yy": yy, "zz": zz}, axes=axes, name=name, **kwargs)
+        super(EdgeLoad, self).__init__(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes, name=name, **kwargs)
         raise NotImplementedError
 
 
@@ -216,7 +240,7 @@ class FaceLoad(Load):
     """
 
     def __init__(self, x=0, y=0, z=0, axes="local", name=None, **kwargs):
-        super(FaceLoad, self).__init__(components={"x": x, "y": y, "z": z}, axes=axes, name=name, **kwargs)
+        super(FaceLoad, self).__init__(x=x, y=y, z=z, axes=axes, name=name, **kwargs)
         raise NotImplementedError
 
 
@@ -258,6 +282,26 @@ class GravityLoad(Load):
 
     """
 
+    @property
+    def __data__(self):
+        data = super(GravityLoad, self).__data__
+        data.update(
+            {
+                "g": self.g,
+            }
+        )
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            g=data["g"],
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            name=data["name"],
+        )
+
     def __init__(self, g, x=0, y=0, z=-1, name=None, **kwargs):
         super(GravityLoad, self).__init__(x=x, y=y, z=z, axes="global", name=name, **kwargs)
         self._g = g
@@ -267,43 +311,108 @@ class GravityLoad(Load):
         return self._g
 
     def to_node_load(self, volume, density):
-        return NodeLoad(x=self.x*self.g*volume*density, y=self.y*self.g*volume*density, z=self.z*self.g*volume*density)
+        return NodeLoad(x=self.x * self.g * volume * density, y=self.y * self.g * volume * density, z=self.z * self.g * volume * density)
 
 
 class PrestressLoad(Load):
     """Prestress load"""
 
+    @property
+    def __data__(self):
+        data = super(PrestressLoad, self).__data__
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            components=data["components"],
+            axes=data["axes"],
+            name=data["name"],
+        )
+
     def __init__(self, components, axes="global", name=None, **kwargs):
-        super(TributaryLoad, self).__init__(components, axes, name, **kwargs)
+        super(PrestressLoad, self).__init__(**components, axes=axes, name=name, **kwargs)
         raise NotImplementedError
 
 
 class ThermalLoad(Load):
     """Thermal load"""
 
+    @property
+    def __data__(self):
+        data = super(ThermalLoad, self).__data__
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            components=data["components"],
+            axes=data["axes"],
+            name=data["name"],
+        )
+
     def __init__(self, components, axes="global", name=None, **kwargs):
-        super(ThermalLoad, self).__init__(components, axes, name, **kwargs)
+        super(ThermalLoad, self).__init__(**components, axes=axes, name=name, **kwargs)
 
 
 class TributaryLoad(Load):
     """Tributary load"""
 
+    @property
+    def __data__(self):
+        data = super(TributaryLoad, self).__data__
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            components=data["components"],
+            axes=data["axes"],
+            name=data["name"],
+        )
+
     def __init__(self, components, axes="global", name=None, **kwargs):
-        super(TributaryLoad, self).__init__(components, axes, name, **kwargs)
+        super(TributaryLoad, self).__init__(**components, axes=axes, name=name, **kwargs)
         raise NotImplementedError
 
 
 class HarmonicPointLoad(Load):
     """"""
 
+    @property
+    def __data__(self):
+        data = super(HarmonicPointLoad, self).__data__
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            components=data["components"],
+            axes=data["axes"],
+            name=data["name"],
+        )
+
     def __init__(self, components, axes="global", name=None, **kwargs):
-        super(HarmonicPointLoad, self).__init__(components, axes, name, **kwargs)
+        super(HarmonicPointLoad, self).__init__(**components, axes=axes, name=name, **kwargs)
         raise NotImplementedError
 
 
 class HarmonicPressureLoad(Load):
     """"""
 
+    @property
+    def __data__(self):
+        data = super(HarmonicPressureLoad, self).__data__
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            components=data["components"],
+            axes=data["axes"],
+            name=data["name"],
+        )
+
     def __init__(self, components, axes="global", name=None, **kwargs):
-        super(HarmonicPressureLoad, self).__init__(components, axes, name, **kwargs)
+        super(HarmonicPressureLoad, self).__init__(**components, axes=axes, name=name, **kwargs)
         raise NotImplementedError

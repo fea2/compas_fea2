@@ -16,8 +16,18 @@ class _Perturbation(Step):
         _description_
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(_Perturbation, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super(_Perturbation, self).__init__(**kwargs)
 
 
 class ModalAnalysis(_Perturbation):
@@ -33,24 +43,64 @@ class ModalAnalysis(_Perturbation):
 
     """
 
-    def __init__(self, modes=1, name=None, **kwargs):
-        super(ModalAnalysis, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "modes": self.modes,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            modes=data["modes"],
+        )
+
+    def __init__(self, modes=1, **kwargs):
+        super(ModalAnalysis, self).__init__( **kwargs)
         self.modes = modes
 
 
 class ComplexEigenValue(_Perturbation):
     """"""
 
-    def __init__(self, name=None, **kwargs):
-        super().__init__(name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         raise NotImplementedError
 
 
 class BucklingAnalysis(_Perturbation):
     """"""
 
-    def __init__(self, modes, vectors=None, iterations=30, algorithm=None, name=None, **kwargs):
-        super().__init__(name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "modes": self.modes,
+            "vectors": self.vectors,
+            "iterations": self.iterations,
+            "algorithm": self.algorithm,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            modes=data["modes"],
+            vectors=data["vectors"],
+            iterations=data["iterations"],
+            algorithm=data["algorithm"],
+        )
+
+    def __init__(self, modes, vectors=None, iterations=30, algorithm=None, **kwargs):
+        super().__init__(**kwargs)
         self._modes = modes
         self._vectors = vectors or self._compute_vectors(modes)
         self._iterations = iterations
@@ -73,22 +123,52 @@ class BucklingAnalysis(_Perturbation):
 class LinearStaticPerturbation(_Perturbation):
     """"""
 
-    def __init__(self, name=None, **kwargs):
-        super().__init__(name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         raise NotImplementedError
 
 
 class StedyStateDynamic(_Perturbation):
     """"""
 
-    def __init__(self, name=None, **kwargs):
-        super().__init__(name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         raise NotImplementedError
 
 
 class SubstructureGeneration(_Perturbation):
     """"""
 
-    def __init__(self, name=None, **kwargs):
-        super().__init__(name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         raise NotImplementedError

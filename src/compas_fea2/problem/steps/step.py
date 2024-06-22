@@ -49,8 +49,18 @@ class Step(FEAData):
 
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(Step, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+        
+    def __init__(self, **kwargs):
+        super(Step, self).__init__(**kwargs)
         self._field_outputs = set()
         self._history_outputs = set()
         self._results = None

@@ -27,6 +27,18 @@ class _Group(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "members": self.members,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            members=data["members"],
+        )
+
     def __init__(self, members=None, **kwargs):
         super(_Group, self).__init__(**kwargs)
         self._members = set() if not members else self._check_members(members)
@@ -132,6 +144,18 @@ class NodesGroup(_Group):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+        )
+
     def __init__(self, nodes, **kwargs):
         super(NodesGroup, self).__init__(members=nodes, **kwargs)
 
@@ -201,6 +225,19 @@ class ElementsGroup(_Group):
     its elements and can belong to only one DeformablePart.
 
     """
+
+
+    @property
+    def __data__(self):
+        return {
+            "elements": self.elements,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            elements=data["elements"],
+        )
 
     def __init__(self, elements, **kwargs):
         super(ElementsGroup, self).__init__(members=elements, **kwargs)
@@ -282,8 +319,21 @@ class FacesGroup(_Group):
 
     """
 
-    def __init__(self, *, faces, name=None, **kwargs):
-        super(FacesGroup, self).__init__(members=faces, name=name, **kwargs)
+
+    @property
+    def __data__(self):
+        return {
+            "faces": self.faces,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            faces=data["faces"],
+        )
+
+    def __init__(self, *, faces, **kwargs):
+        super(FacesGroup, self).__init__(members=faces, **kwargs)
 
     @property
     def part(self):
@@ -367,8 +417,20 @@ class PartsGroup(_Group):
 
     """
 
-    def __init__(self, *, parts, name=None, **kwargs):
-        super(PartsGroup, self).__init__(members=parts, name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "parts": self.faces,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            parts=data["parts"],
+        )
+
+    def __init__(self, *, parts, **kwargs):
+        super(PartsGroup, self).__init__(members=parts, **kwargs)
 
     @property
     def model(self):

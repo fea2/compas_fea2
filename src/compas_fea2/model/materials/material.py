@@ -10,7 +10,7 @@ class _Material(FEAData):
 
     Parameters
     ----------
-    denisty : float
+    density : float
         Density of the material.
     expansion : float, optional
         Thermal expansion coefficient, by default None.
@@ -41,15 +41,26 @@ class _Material(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "density": self.density,
+            "expansion": self.expansion,
+            "name": self.name,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            density=data["density"],
+            expansion=data["expansion"],
+            name=data["name"],
+        )
+
     def __init__(self, density, expansion=None, **kwargs):
         super(_Material, self).__init__(**kwargs)
         self.density = density
         self.expansion = expansion
-        self._key = None
-
-    @property
-    def key(self):
-        return self._key
 
     @property
     def model(self):
@@ -123,8 +134,40 @@ class ElasticOrthotropic(_Material):
         Shear modulus Gzx in z-x directions.
     """
 
-    def __init__(self, Ex, Ey, Ez, vxy, vyz, vzx, Gxy, Gyz, Gzx, density, expansion=None, name=None, **kwargs):
-        super(ElasticOrthotropic, self).__init__(density=density, expansion=expansion, name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "Ex": self.Ex,
+            "Ey": self.Ey,
+            "Ez": self.Ez,
+            "vxy": self.vxy,
+            "vyz": self.vyz,
+            "vzx": self.vzx,
+            "Gxy": self.Gxy,
+            "Gyz": self.Gyz,
+            "Gzx": self.Gzx,
+            "density": self.density,
+            "expansion": self.expansion,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            Ex=data["Ex"],
+            Ey=data["Ey"],
+            Ez=data["Ez"],
+            vxy=data["vxy"],
+            vyz=data["vyz"],
+            vzx=data["vzx"],
+            Gxy=data["Gxy"],
+            Gyz=data["Gyz"],
+            Gzx=data["Gzx"],
+            density=data["density"],
+            expansion=data["expansion"],
+        )
+
+    def __init__(self, Ex, Ey, Ez, vxy, vyz, vzx, Gxy, Gyz, Gzx, density, expansion=None, **kwargs):
+        super(ElasticOrthotropic, self).__init__(density=density, expansion=expansion, **kwargs)
         self.Ex = Ex
         self.Ey = Ey
         self.Ez = Ez
@@ -192,10 +235,32 @@ class ElasticIsotropic(_Material):
 
     """
 
-    def __init__(self, E, v, density, expansion=None, name=None, **kwargs):
-        super(ElasticIsotropic, self).__init__(density=density, expansion=expansion, name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "E": self.E,
+            "v": self.v,
+            "density": self.density,
+            "expansion": self.expansion,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            E=data["E"],
+            v=data["v"],
+            density=data["density"],
+            expansion=data["expansion"],
+        )
+
+    def __init__(self, E, v, density, expansion=None, **kwargs):
+        super(ElasticIsotropic, self).__init__(density=density, expansion=expansion, **kwargs)
         self.E = E
         self.v = v
+
+    @property
+    def G(self):
+        return 0.5 * self.E / (1 + self.v)
 
     def __str__(self):
         return """
@@ -212,16 +277,26 @@ G : {}
             self.name, self.density, self.expansion, self.E, self.v, self.G
         )
 
-    @property
-    def G(self):
-        return 0.5 * self.E / (1 + self.v)
-
 
 class Stiff(_Material):
     """Elastic, very stiff and massless material."""
 
-    def __init__(self, *, density, expansion=None, name=None, **kwargs):
-        raise NotImplementedError()
+    @property
+    def __data__(self):
+        return {
+            "density": self.density,
+            "expansion": self.expansion,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            density=data["density"],
+            expansion=data["expansion"],
+        )
+
+    def __init__(self, *, density, expansion=None, **kwargs):
+        super(Stiff, self).__init__(density=density, expansion=expansion, **kwargs)
 
 
 # ==============================================================================
@@ -254,6 +329,26 @@ class ElasticPlastic(ElasticIsotropic):
         in the form of strain/stress value pairs.
     """
 
+    @property
+    def __data__(self):
+        return {
+            "E": self.E,
+            "v": self.v,
+            "density": self.density,
+            "expansion": self.expansion,
+            "strain_stress": self.strain_stress,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            E=data["E"],
+            v=data["v"],
+            density=data["density"],
+            expansion=data["expansion"],
+            strain_stress=data["strain_stress"],
+        )
+
     def __init__(self, *, E, v, density, strain_stress, expansion=None, name=None, **kwargs):
         super(ElasticPlastic, self).__init__(E=E, v=v, density=density, expansion=expansion, name=name, **kwargs)
         self.strain_stress = strain_stress
@@ -284,9 +379,18 @@ strain_stress : {}
 class UserMaterial(FEAData):
     """User Defined Material. Tho implement this type of material, a
     separate subroutine is required
-
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(UserMaterial, self).__init__(self, name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super(UserMaterial, self).__init__(**kwargs)
         raise NotImplementedError("This class is not available for the selected backend plugin")

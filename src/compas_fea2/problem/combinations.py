@@ -10,12 +10,28 @@ class LoadCombination(FEAData):
 
     Parameters
     ----------
-    factors : dict()
+    factors : dict
         Dictionary with the factors for each load case: {"load case": factor}
     name : str, optional
-        Name to assign to the combination,  by default None (automatically assigned).
+        Name to assign to the combination, by default None (automatically assigned).
 
     """
+
+
+    @property
+    def __data__(self):
+        return {
+            "factors": self.factors,
+            "name": self.name,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            factors=data["factors"],
+            name=data["name"],
+        )
+
 
     def __init__(self, factors, name=None, **kwargs):
         super(LoadCombination, self).__init__(name, **kwargs)
@@ -36,7 +52,7 @@ class LoadCombination(FEAData):
 
     @property
     def model(self):
-        self.problem._registration
+        return self.problem._registration
 
     @classmethod
     def ULS(cls):
@@ -52,7 +68,7 @@ class LoadCombination(FEAData):
 
     @property
     def node_load(self):
-        """Generator returning each node and the correponding total factored
+        """Generator returning each node and the corresponding total factored
         load of the combination.
 
         Returns

@@ -22,15 +22,15 @@ class StaticStep(GeneralStep):
         (Typically 100 but you might have to increase it in highly non-linear
         problems. This might increase the analysis time.).
     initial_inc_size : float
-        Sets the the size of the increment for the first iteration.
-        (By default is equal to the total time, meaning that the software decrease
+        Sets the size of the increment for the first iteration.
+        (By default is equal to the total time, meaning that the software decreases
         the size automatically.)
     min_inc_size : float
         Minimum increment size before stopping the analysis.
         (By default is 1e-5, but you can set a smaller size for highly non-linear
         problems. This might increase the analysis time.)
     time : float
-        Total time of the case step. Note that this not actual 'time',
+        Total time of the case step. Note that this is not actual 'time',
         but rather a proportionality factor. (By default is 1, meaning that the
         analysis is complete when all the increments sum up to 1)
     nlgeom : bool
@@ -49,15 +49,15 @@ class StaticStep(GeneralStep):
         (Typically 100 but you might have to increase it in highly non-linear
         problems. This might increase the analysis time.).
     initial_inc_size : float
-        Sets the the size of the increment for the first iteration.
-        (By default is equal to the total time, meaning that the software decrease
+        Sets the size of the increment for the first iteration.
+        (By default is equal to the total time, meaning that the software decreases
         the size automatically.)
     min_inc_size : float
         Minimum increment size before stopping the analysis.
         (By default is 1e-5, but you can set a smaller size for highly non-linear
         problems. This might increase the analysis time.)
     time : float
-        Total time of the case step. Note that this not actual 'time',
+        Total time of the case step. Note that this is not actual 'time',
         but rather a proportionality factor. (By default is 1, meaning that the
         analysis is complete when all the increments sum up to 1)
     nlgeom : bool
@@ -68,12 +68,36 @@ class StaticStep(GeneralStep):
     loads : dict
         Dictionary of the loads assigned to each part in the model in the step.
     gravity : :class:`compas_fea2.problem.GravityLoad`
-        Gravity load to assing to the whole model.
+        Gravity load to assign to the whole model.
     displacements : dict
         Dictionary of the displacements assigned to each part in the model in the step.
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "max_increments": self.max_increments,
+            "initial_inc_size": self.initial_inc_size,
+            "min_inc_size": self.min_inc_size,
+            "time": self.time,
+            "nlgeom": self.nlgeom,
+            "modify": self.modify,
+            "name": self.name,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            max_increments=data["max_increments"],
+            initial_inc_size=data["initial_inc_size"],
+            min_inc_size=data["min_inc_size"],
+            time=data["time"],
+            nlgeom=data["nlgeom"],
+            modify=data["modify"],
+            name=data["name"],
+        )
+        
     def __init__(
         self,
         max_increments=100,

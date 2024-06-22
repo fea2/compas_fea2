@@ -49,6 +49,20 @@ class _BoundaryCondition(FEAData):
 
     __doc__ += docs
 
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+            "axes": self.axes,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+            axes=data["axes"],
+        )
+
     def __init__(self, nodes, axes="global", **kwargs):
         super(_BoundaryCondition, self).__init__(**kwargs)
         self.nodes = nodes

@@ -77,8 +77,20 @@ class Problem(FEAData):
 
     """
 
-    def __init__(self, name=None, description=None, **kwargs):
-        super(Problem, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "description": self.description,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            description=data["description"],
+        )
+
+    def __init__(self, description=None, **kwargs):
+        super(Problem, self).__init__(**kwargs)
         self.description = description
         self._path = None
         self._path_db = None

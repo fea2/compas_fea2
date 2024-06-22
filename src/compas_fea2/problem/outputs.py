@@ -21,8 +21,16 @@ class _Output(FEAData):
 
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(_Output, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {}
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls()
+
+    def __init__(self, **kwargs):
+        super(_Output, self).__init__(**kwargs)
 
     @property
     def step(self):
@@ -60,8 +68,24 @@ class FieldOutput(_Output):
 
     """
 
-    def __init__(self, node_outputs=None, element_outputs=None, contact_outputs=None, name=None, **kwargs):
-        super(FieldOutput, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "node_outputs": self.node_outputs,
+            "element_outputs": self.element_outputs,
+            "contact_outputs": self.contact_outputs,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            node_outputs=data["node_outputs"],
+            element_outputs=data["element_outputs"],
+            contact_outputs=data["contact_outputs"],
+        )
+
+    def __init__(self, node_outputs=None, element_outputs=None, contact_outputs=None, **kwargs):
+        super(FieldOutput, self).__init__(**kwargs)
         self._node_outputs = node_outputs
         self._element_outputs = element_outputs
         self._contact_outputs = contact_outputs
@@ -101,5 +125,13 @@ class HistoryOutput(_Output):
 
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(HistoryOutput, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {}
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls()
+
+    def __init__(self, **kwargs):
+        super(HistoryOutput, self).__init__(**kwargs)

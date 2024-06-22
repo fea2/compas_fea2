@@ -39,6 +39,23 @@ class Interface(FEAData):
 
     """
 
+
+    @property
+    def __data__(self):
+        return {
+            "master": self.master,
+            "slave": self.slave,
+            "behavior": self.behavior,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            master=data["master"],
+            slave=data["slave"],
+            behavior=data["behavior"],
+        )
+
     def __init__(self, master, slave, behavior, **kwargs):
         super(Interface, self).__init__(**kwargs)
         self._master = master

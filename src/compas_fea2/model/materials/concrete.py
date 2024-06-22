@@ -32,19 +32,18 @@ class Concrete(_Material):
     fr : list
         Failure ratios.
     tension : dict
-        Parameters for modelling the tension side of the stess--strain curve
+        Parameters for modelling the tension side of the stress--strain curve.
     compression : dict
-        Parameters for modelling the tension side of the stess--strain curve
+        Parameters for modelling the compression side of the stress--strain curve.
 
     Notes
     -----
     The concrete model is based on Eurocode 2 up to fck=90 MPa.
-
     """
 
     def __init__(self, *, fck, v=0.2, density=2400, fr=None, name=None, **kwargs):
         super(Concrete, self).__init__(density=density, name=name, **kwargs)
-
+        #FIXME: make units independent
         de = 0.0001
         fcm = fck + 8
         Ecm = 22 * 10**3 * (fcm / 10) ** 0.3
@@ -70,9 +69,30 @@ class Concrete(_Material):
         self.ft = ft
         self.et = et
         self.fr = fr
-        # TODO these necessary if we have the above?
         self.tension = {"f": ft, "e": et}
         self.compression = {"f": f[1:], "e": ec}
+
+    @property
+    def __data__(self):
+        return {
+            "fck": self.fck,
+            "v": self.v,
+            "density": self.density,
+            "fr": self.fr,
+            "name": self.name,
+            "tension": self.tension,
+            "compression": self.compression,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            fck=data["fck"],
+            v=data["v"],
+            density=data["density"],
+            fr=data["fr"],
+            name=data["name"],
+        )
 
     @property
     def G(self):
@@ -95,7 +115,6 @@ fr  : {}
         )
 
 
-# @extend_docstring(_Material)
 class ConcreteSmearedCrack(_Material):
     """Elastic and plastic, cracking concrete material.
 
@@ -135,9 +154,9 @@ class ConcreteSmearedCrack(_Material):
     fr : list
         Failure ratios.
     tension : dict
-        Parameters for modelling the tension side of the stess--strain curve
+        Parameters for modelling the tension side of the stress--strain curve.
     compression : dict
-        Parameters for modelling the tension side of the stess--strain curve
+        Parameters for modelling the compression side of the stress--strain curve.
 
     """
 
@@ -151,9 +170,36 @@ class ConcreteSmearedCrack(_Material):
         self.ft = ft
         self.et = et
         self.fr = fr
-        # are these necessary if we have the above?
         self.tension = {"f": ft, "e": et}
         self.compression = {"f": fc, "e": ec}
+
+    @property
+    def __data__(self):
+        return {
+            "E": self.E,
+            "v": self.v,
+            "density": self.density,
+            "fc": self.fc,
+            "ec": self.ec,
+            "ft": self.ft,
+            "et": self.et,
+            "fr": self.fr,
+            "name": self.name,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            E=data["E"],
+            v=data["v"],
+            density=data["density"],
+            fc=data["fc"],
+            ec=data["ec"],
+            ft=data["ft"],
+            et=data["et"],
+            fr=data["fr"],
+            name=data["name"],
+        )
 
     @property
     def G(self):
@@ -220,11 +266,52 @@ class ConcreteDamagedPlasticity(_Material):
         self.E = E
         self.v = v
 
-        # TODO would make sense to validate these inputs
+        # Validate these inputs
         self.damage = damage
         self.hardening = hardening
         self.stiffening = stiffening
 
     @property
+    def __data__(self):
+        return {
+            "E": self.E,
+            "v": self.v,
+            "density": self.density,
+            "damage": self.damage,
+            "hardening": self.hardening,
+            "stiffening": self.stiffening,
+            "name": self.name,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            E=data["E"],
+            v=data["v"],
+            density=data["density"],
+            damage=data["damage"],
+            hardening=data["hardening"],
+            stiffening=data["stiffening"],
+            name=data["name"],
+        )
+
+    @property
     def G(self):
         return 0.5 * self.E / (1 + self.v)
+
+    def __str__(self):
+        return """
+Concrete Material
+-----------------
+name       : {}
+density    : {}
+
+E          : {}
+v          : {}
+G          : {}
+damage     : {}
+hardening  : {}
+stiffening : {}
+""".format(
+            self.name, self.density, self.E, self.v, self.G, self.damage, self.hardening, self.stiffening
+        )

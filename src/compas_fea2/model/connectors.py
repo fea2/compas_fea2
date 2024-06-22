@@ -26,6 +26,20 @@ class Connector(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+            "section": self.section,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+            section=data["section"],
+        )
+
     def __init__(self, nodes, section, **kwargs):
         super(Connector, self).__init__(**kwargs)
         self._key = None
@@ -65,6 +79,24 @@ class Connector(FEAData):
 class SpringConnector(Connector):
     """Spring connector."""
 
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+            "section": self.section,
+            "yielding": self.yielding,
+            "failure": self.failure,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+            section=data["section"],
+            yielding=data["yielding"],
+            failure=data["failure"],
+        )
+
     def __init__(self, nodes, section, yielding=None, failure=None, **kwargs):
         super(SpringConnector, self).__init__(nodes, section, **kwargs)
         self._yielding = yielding
@@ -99,6 +131,26 @@ class SpringConnector(Connector):
 class ZeroLengthSpringConnector(SpringConnector):
     """Spring connector connecting overlapping nodes."""
 
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+            "section": self.section,
+            "yielding": self.yielding,
+            "failure": self.failure,
+            "directions": self.directions,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+            section=data["section"],
+            yielding=data["yielding"],
+            failure=data["falure"],
+            directions=data["directions"],
+        )
+
     def __init__(self, nodes, section, directions, yielding=None, failure=None, **kwargs):
         super(ZeroLengthSpringConnector, self).__init__(nodes, section, yielding, failure, **kwargs)
         self._directions = directions
@@ -109,6 +161,32 @@ class ZeroLengthSpringConnector(SpringConnector):
 
 
 class GroundSpringConnector(SpringConnector):
+    """_summary_
+
+    Args:
+        SpringConnector (_type_): _description_
+    """
+
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+            "section": self.section,
+            "yielding": self.yielding,
+            "failure": self.failure,
+            "direction": self.directions,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+            section=data["section"],
+            yielding=data["yielding"],
+            failure=data["falure"],
+            direction=data["directions"],
+        )
+
     def __init__(self, nodes, section, direction, yielding=None, failure=None, **kwargs):
         super(GroundSpringConnector, self).__init__(nodes, section, yielding, failure, **kwargs)
         self.direction = direction

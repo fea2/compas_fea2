@@ -12,10 +12,34 @@ from math import degrees, sqrt, atan2, pi
 
 
 class Shape(Polygon, FEAData):
+    """_summary_
+
+    Parameters
+    ----------
+    Polygon : _type_
+        _description_
+    FEAData : _type_
+        _description_
+    """
+
+    @property
+    def __data__(self):
+        return {
+            "points": self.points,
+            "frame": self.frame,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            points=data["points"],
+            frame=data["frame"],
+        )
+
     def __init__(self, points, frame=None):
         super().__init__(points)
         if not self.is_planar:
-            raise ValueError("The points mast belong to the same plane")
+            raise ValueError("The points must belong to the same plane")
         self._frame = frame or Frame.worldXY()
         self._T = Transformation.from_frame_to_frame(self._frame, Frame.worldXY())
         self._J = None
@@ -81,7 +105,7 @@ class Shape(Polygon, FEAData):
     @property
     def rx(self):
         """float : radius of inertia w.r.t. the x axis parallel to the global X axis and passing through the centroid.
-        This value reppresents the distance from x at which is possible to concentrate the entire mass to get the same
+        This value represents the distance from x at which is possible to concentrate the entire mass to get the same
         moment of inertia.
         """
         return self.radii[0]
@@ -94,19 +118,19 @@ class Shape(Polygon, FEAData):
     @property
     def ry(self):
         """float : radius of inertia w.r.t. the y axis parallel to the global Y axis and passing through the centroid.
-        This value reppresents the distance from x at which is possible to concentrate the entire mass to get the same
+        This value represents the distance from x at which is possible to concentrate the entire mass to get the same
         moment of inertia."""
         return self.radii[1]
 
     @property
     def Ixy(self):
         """float : product of inertia w.r.t. the x and y axes"""
-        self.inertia_xy[2]
+        return self.inertia_xy[2]
 
     @property
     def I1(self):
         """float : first principal moment of inertia."""
-        return self.principal[1]
+        return self.principal[0]
 
     @property
     def r1(self):
@@ -116,7 +140,7 @@ class Shape(Polygon, FEAData):
     @property
     def I2(self):
         """float : second principal moment of inertia."""
-        return self.principal[2]
+        return self.principal[1]
 
     @property
     def r2(self):
@@ -126,7 +150,7 @@ class Shape(Polygon, FEAData):
     @property
     def theta(self):
         """float : angle (in radians) between the first principal inertia axis ant the x axis."""
-        return self.principal[3]
+        return self.principal[2]
 
     @property
     def Avx(self):
@@ -168,9 +192,10 @@ class Shape(Polygon, FEAData):
         area = self.area
         centroid_x, centroid_y, _ = self.centroid_xy
         factor = 1 / 12
-        return (sum_x * factor - area * centroid_y**2,
-                sum_y * factor - area * centroid_x**2,
-                sum_xy / 24 - area * centroid_x * centroid_y)
+        inertia_x = sum_x * factor - area * centroid_y**2
+        inertia_y = sum_y * factor - area * centroid_x**2
+        product_inertia_xy = sum_xy * (1 / 24) - area * centroid_x * centroid_y
+        return inertia_x, inertia_y, product_inertia_xy
 
     @property
     def radii(self):
@@ -182,7 +207,7 @@ class Shape(Polygon, FEAData):
     def principal_radii(self):
         """Compute the radii of inertia."""
         I1, I2, _ = self.inertia_xy
-        return sqrt(I1/ self.area), sqrt(I2 / self.area)
+        return sqrt(I1 / self.area), sqrt(I2 / self.area)
 
     @property
     def principal(self):
@@ -206,12 +231,12 @@ class Shape(Polygon, FEAData):
         return Shape([point.transformed(T) for point in self._points], frame)
 
     # ==========================================================================
-    # Reppresentation
+    # Representation
     # ==========================================================================
 
     def summary(self):
         """Provide a text summary of cross-sectional properties."""
-        props = (self.area, self.centroid[0], self.centroid[1], self.Ixx, self.Iyy, self.Ixy, self.rx, self.ry, self.J1, self.J2, self.r1, self.r2, degrees(self.theta))
+        props = (self.area, self.centroid[0], self.centroid[1], self.Ixx, self.Iyy, self.Ixy, self.rx, self.ry, self.I1, self.I2, self.r1, self.r2, degrees(self.theta))
         props = [round(prop, 2) for prop in props]
 
         summ = """
@@ -242,17 +267,41 @@ class Shape(Polygon, FEAData):
 
 
 class Rectangle(Shape):
-    def __init__(self, w, h):
+    """_summary_
+
+    Parameters
+    ----------
+    Shape : _type_
+        _description_
+    """
+
+    @property
+    def __data__(self):
+        return {
+            "w": self.w,
+            "h": self.h,
+            "frame": self.frame,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            w=data["w"],
+            h=data["h"],
+            frame=data["frame"],
+        )
+
+    def __init__(self, w, h, frame=None):
         self.__name__ = "Rectangle"
         self._w = w
         self._h = h
         points = [Point(-self.w / 2, -self.h / 2.0, 0.0), Point(self.w / 2, -self.h / 2.0, 0.0), Point(self.w / 2, self.h / 2.0, 0.0), Point(-self.w / 2, self.h / 2.0, 0.0)]
-        super().__init__(points=points)
+        super().__init__(points=points, frame=frame)
         self._Avy = 0.833 * self.area
         self._Avx = 0.833 * self.area
         l1 = max([w, h])
         l2 = min([w, h])
-        self._J = (l1 * l2**3) * (0.33333 - 0.21 * (l2 / l1) * (1 - (l2**4) / (l2 * l1**4)))
+        self._J = (l1 * l2**3) * (0.33333 - 0.21 * (l2 / l1) * (1 - (l2**4) / (l2 * l1**4))) #FIXME
         self._g0 = 0  # FIXME
         self._gw = 0  # FIXME
 
@@ -266,6 +315,20 @@ class Rectangle(Shape):
 
 
 class Rhombus(Shape):
+    @property
+    def __data__(self):
+        return {
+            "a": self.a,
+            "b": self.b,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            a=data["a"],
+            b=data["b"],
+        )
+
     def __init__(self, a, b):
         self.__name__ = "Rhombus"
         self._a = a
@@ -283,6 +346,28 @@ class Rhombus(Shape):
 
 
 class UShape(Shape):
+    @property
+    def __data__(self):
+        return {
+            "a": self.a,
+            "b": self.b,
+            "t1": self.t1,
+            "t2": self.t2,
+            "t3": self.t3,
+            "direction": self._direction,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            a=data["a"],
+            b=data["b"],
+            t1=data["t1"],
+            t2=data["t2"],
+            t3=data["t3"],
+            direction=data["direction"],
+        )
+
     def __init__(self, a, b, t1, t2, t3, direction="up"):
         self.__name__ = "U-shape_" + direction
         self._a = a
@@ -330,14 +415,33 @@ class UShape(Shape):
 
 
 class TShape(Shape):
+    @property
+    def __data__(self):
+        return {
+            "a": self.a,
+            "b": self.b,
+            "t1": self.t1,
+            "t2": self.t2,
+            "direction": self._direction,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            a=data["a"],
+            b=data["b"],
+            t1=data["t1"],
+            t2=data["t2"],
+            direction=data["direction"],
+        )
+
     def __init__(self, a, b, t1, t2, direction="up"):
-        super(Shape, self).__init__()
+        self.__name__ = "T-shape_" + direction
         self._a = a
         self._b = b
         self._t1 = t1
         self._t2 = t2
         self._direction = direction
-        self._type = "U-shape_" + direction
         points = [
             Point(-a / 2, -b / 2, 0.0),
             Point(a / 2, -b / 2, 0.0),
@@ -368,14 +472,36 @@ class TShape(Shape):
 
 
 class IShape(Shape):
+    @property
+    def __data__(self):
+        return {
+            "w": self.w,
+            "h": self.h,
+            "tw": self.tw,
+            "tbf": self.tbf,
+            "ttf": self.ttf,
+            "direction": self._direction,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            w=data["w"],
+            h=data["h"],
+            tw=data["tw"],
+            tbf=data["tbf"],
+            ttf=data["ttf"],
+            direction=data["direction"],
+        )
+
     def __init__(self, w, h, tw, tbf, ttf, direction="up"):
+        self.__name__ = "I-shape_" + direction
         self._w = w
         self._h = h
         self._tw = tw
         self._tbf = tbf
         self._ttf = ttf
         self._direction = direction
-        self._type = "I-shape_" + direction
         points = [
             Point(-w/2, -h/2, 0.0),
             Point(w/2, -h/2, 0.0),
@@ -418,13 +544,33 @@ class IShape(Shape):
 
 
 class LShape(Shape):
+    @property
+    def __data__(self):
+        return {
+            "a": self.a,
+            "b": self.b,
+            "t1": self.t1,
+            "t2": self.t2,
+            "direction": self._direction,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            a=data["a"],
+            b=data["b"],
+            t1=data["t1"],
+            t2=data["t2"],
+            direction=data["direction"],
+        )
+
     def __init__(self, a, b, t1, t2, direction="up"):
+        self.__name__ = "L-shape_" + direction
         self._a = a
         self._b = b
         self._t1 = t1
         self._t2 = t2
         self._direction = direction
-        self._type = "L-shape_" + direction
         points = [
             Point(-a / 2, -b / 2, 0.0),
             Point(a / 2, -b / 2, 0.0),
@@ -453,8 +599,26 @@ class LShape(Shape):
 
 
 class CShape(Shape):
+    @property
+    def __data__(self):
+        return {
+            "height": self._height,
+            "flange_width": self._flange_width,
+            "web_thickness": self._web_thickness,
+            "flange_thickness": self._flange_thickness,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            height=data["height"],
+            flange_width=data["flange_width"],
+            web_thickness=data["web_thickness"],
+            flange_thickness=data["flange_thickness"],
+        )
+
     def __init__(self, height, flange_width, web_thickness, flange_thickness):
-        super().__init__()
+        self.__name__ = "C-shape"
         self._height = height
         self._flange_width = flange_width
         self._web_thickness = web_thickness
@@ -477,14 +641,36 @@ class CShape(Shape):
 
 
 class CustomI(Shape):
+    @property
+    def __data__(self):
+        return {
+            "height": self._height,
+            "top_flange_width": self._top_flange_width,
+            "bottom_flange_width": self._bottom_flange_width,
+            "web_thickness": self._web_thickness,
+            "top_flange_thickness": self._top_flange_thickness,
+            "bottom_flange_thickness": self._bottom_flange_thickness,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            height=data["height"],
+            top_flange_width=data["top_flange_width"],
+            bottom_flange_width=data["bottom_flange_width"],
+            web_thickness=data["web_thickness"],
+            top_flange_thickness=data["top_flange_thickness"],
+            bottom_flange_thickness=data["bottom_flange_thickness"],
+        )
+
     def __init__(self, height, top_flange_width, bottom_flange_width, web_thickness, top_flange_thickness, bottom_flange_thickness):
+        self.__name__ = "Custom-I-shape"
         self._height = height
         self._top_flange_width = top_flange_width
         self._bottom_flange_width = bottom_flange_width
         self._web_thickness = web_thickness
         self._top_flange_thickness = top_flange_thickness
         self._bottom_flange_thickness = bottom_flange_thickness
-        self._points = self._set_points()
 
         htf = self._top_flange_width / 2
         hbf = self._bottom_flange_width / 2
@@ -510,17 +696,27 @@ class CustomI(Shape):
 
 
 class Star(Shape):
-    def __init__(
-        self,
-        a,
-        b,
-        c,
-    ):
-        super(Shape, self).__init__()
+    @property
+    def __data__(self):
+        return {
+            "a": self.a,
+            "b": self.b,
+            "c": self.c,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            a=data["a"],
+            b=data["b"],
+            c=data["c"],
+        )
+
+    def __init__(self, a, b, c):
+        self.__name__ = "Star"
         self._a = a
         self._b = b
         self._c = c
-        self._type = "Star"
         self._points = self._set_points()
 
     @property
@@ -546,13 +742,9 @@ class Star(Shape):
         return self._c
 
     @c.setter
-    def t(self, c):
+    def c(self, c):
         self._c = c
         self.points = self._set_points()
-
-    @property
-    def points(self):
-        return self._points
 
     def _set_points(self):
         return [
@@ -568,7 +760,22 @@ class Star(Shape):
 
 
 class Circle(Shape):
+    @property
+    def __data__(self):
+        return {
+            "radius": self._radius,
+            "segments": self._segments,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            radius=data["radius"],
+            segments=data["segments"],
+        )
+
     def __init__(self, radius, segments=32):
+        self.__name__ = "Circle"
         self._radius = radius
         self._segments = segments
         points = self._set_points()
@@ -588,12 +795,29 @@ class Circle(Shape):
 
 
 class Ellipse(Shape):
+    @property
+    def __data__(self):
+        return {
+            "radius_a": self._radius_a,
+            "radius_b": self._radius_b,
+            "segments": self._segments,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            radius_a=data["radius_a"],
+            radius_b=data["radius_b"],
+            segments=data["segments"],
+        )
+
     def __init__(self, radius_a, radius_b, segments=32):
-        super().__init__()
+        self.__name__ = "Ellipse"
         self._radius_a = radius_a
         self._radius_b = radius_b
         self._segments = segments
-        self._points = self._set_points()
+        points = self._set_points()
+        super().__init__(points)
 
     @property
     def radius_a(self):
@@ -618,10 +842,23 @@ class Ellipse(Shape):
 
 
 class Hexagon(Shape):
+    @property
+    def __data__(self):
+        return {
+            "side_length": self._side_length,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            side_length=data["side_length"],
+        )
+
     def __init__(self, side_length):
-        super().__init__()
+        self.__name__ = "Hexagon"
         self._side_length = side_length
-        self._points = self._set_points()
+        points = self._set_points()
+        super().__init__(points)
 
     @property
     def side_length(self):
@@ -637,10 +874,23 @@ class Hexagon(Shape):
 
 
 class Pentagon(Shape):
+    @property
+    def __data__(self):
+        return {
+            "circumradius": self._circumradius,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            circumradius=data["circumradius"],
+        )
+
     def __init__(self, circumradius):
-        super().__init__()
+        self.__name__ = "Pentagon"
         self._circumradius = circumradius
-        self._points = self._set_points()
+        points = self._set_points()
+        super().__init__(points)
 
     def _set_points(self):
         angle = 2 * np.pi / 5  # 360 degrees / 5
@@ -648,10 +898,23 @@ class Pentagon(Shape):
 
 
 class Octagon(Shape):
+    @property
+    def __data__(self):
+        return {
+            "circumradius": self._circumradius,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            circumradius=data["circumradius"],
+        )
+
     def __init__(self, circumradius):
-        super().__init__()
+        self.__name__ = "Octagon"
         self._circumradius = circumradius
-        self._points = self._set_points()
+        points = self._set_points()
+        super().__init__(points)
 
     def _set_points(self):
         angle = 2 * np.pi / 8  # 360 degrees / 8
@@ -659,10 +922,23 @@ class Octagon(Shape):
 
 
 class Triangle(Shape):
+    @property
+    def __data__(self):
+        return {
+            "circumradius": self._circumradius,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            circumradius=data["circumradius"],
+        )
+
     def __init__(self, circumradius):
-        super().__init__()
+        self.__name__ = "Triangle"
         self._circumradius = circumradius
-        self._points = self._set_points()
+        points = self._set_points()
+        super().__init__(points)
 
     def _set_points(self):
         angle = 2 * np.pi / 3  # 360 degrees / 3
@@ -670,12 +946,29 @@ class Triangle(Shape):
 
 
 class Parallelogram(Shape):
+    @property
+    def __data__(self):
+        return {
+            "width": self._width,
+            "height": self._height,
+            "angle": self._angle,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            width=data["width"],
+            height=data["height"],
+            angle=data["angle"],
+        )
+
     def __init__(self, width, height, angle):
-        super().__init__()
+        self.__name__ = "Parallelogram"
         self._width = width
         self._height = height
         self._angle = angle  # Angle in radians between the base and the adjacent side
-        self._points = self._set_points()
+        points = self._set_points()
+        super().__init__(points)
 
     def _set_points(self):
         dx = self._height * np.sin(self._angle)
@@ -684,33 +977,31 @@ class Parallelogram(Shape):
 
 
 class Trapezoid(Shape):
+    @property
+    def __data__(self):
+        return {
+            "top_width": self._top_width,
+            "bottom_width": self._bottom_width,
+            "height": self._height,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            top_width=data["top_width"],
+            bottom_width=data["bottom_width"],
+            height=data["height"],
+        )
+
     def __init__(self, top_width, bottom_width, height):
-        super().__init__()
+        self.__name__ = "Trapezoid"
         self._top_width = top_width
         self._bottom_width = bottom_width
         self._height = height
-        self._points = self._set_points()
+        points = self._set_points()
+        super().__init__(points)
 
     def _set_points(self):
         dx = (self._bottom_width - self._top_width) / 2
         return [Point(dx, 0, 0), Point(dx + self._top_width, 0, 0), Point(self._bottom_width, self._height, 0), Point(0, self._height, 0)]
 
-
-if __name__ == "__main__":
-    # r = Rectangle(w=100, h=300)
-    # t = TShape(10, 20, 3, 5)
-    # u = UShape(10, 20, 3, 5, 4)
-    # s = Star(10, 10, 2)
-    r = Circle(5)
-    # ellipse = Ellipse(10, 5)
-    # hexagon = Hexagon(3)
-
-    # print(circle)
-    # print(ellipse)
-    # print(hexagon)
-
-    r_transf = r.oriented(Frame([0, 0, 1000], [1, 0, 0], [0, 1, 0]))
-    print(r_transf.points)
-
-    m1 = r.to_mesh()
-    m2 = r_transf.to_mesh()

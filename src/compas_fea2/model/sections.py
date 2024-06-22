@@ -51,6 +51,18 @@ class _Section(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            material=data["material"],
+        )
+
     def __init__(self, *, material, **kwargs):
         super(_Section, self).__init__(**kwargs)
         self._material = material
@@ -104,6 +116,18 @@ class MassSection(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "mass": self.mass,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            mass=data["mass"],
+        )
+
     def __init__(self, mass, **kwargs):
         super(MassSection, self).__init__(**kwargs)
         self.mass = mass
@@ -146,6 +170,22 @@ class SpringSection(FEAData):
     to elements in different Parts.
     """
 
+    @property
+    def __data__(self):
+        return {
+            "axial": self.axial,
+            "lateral": self.lateral,
+            "rotational": self.rotational,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            axial=data["axial"],
+            lateral=data["lateral"],
+            rotational=data["rotational"],
+        )
+
     def __init__(self, axial, lateral, rotational, **kwargs):
         super(SpringSection, self).__init__(**kwargs)
         self.axial = axial
@@ -176,6 +216,7 @@ rotational stiffness    : {}
     def components(self):
         return {"Axial": self._axial, "Lateral": self._lateral, "Rotational": self._rotational}
 
+
 # ==============================================================================
 # 1D
 # ==============================================================================
@@ -183,6 +224,7 @@ rotational stiffness    : {}
 # # ============================================================================
 # # 1D - beam cross-sections
 # # ============================================================================
+
 
 class BeamSection(_Section):
     """Custom section for beam elements.
@@ -234,6 +276,30 @@ class BeamSection(_Section):
         The section material.
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "A": self.A,
+            "Ixx": self.Ixx,
+            "Iyy": self.Iyy,
+            "Ixy": self.Ixy,
+            "Avx": self.Avx,
+            "Avy": self.Avy,
+            "J": self.J,
+            "g0": self.g0,
+            "gw": self.gw,
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            A=data["A"],
+            Ixx=data["Ixx"],
+            Iyy=data["Iyy"],
+            material=data["material"],
+        )
 
     def __init__(self, *, A, Ixx, Iyy, Ixy, Avx, Avy, J, g0, gw, material, **kwargs):
         super(BeamSection, self).__init__(material=material, **kwargs)
@@ -345,6 +411,24 @@ class AngleSection(BeamSection):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "w": self.w,
+            "h": self.h,
+            "t": self.t,
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            w=data["w"],
+            h=data["h"],
+            t=data["t"],
+            material=data["material"],
+        )
+
     def __init__(self, w, h, t, material, **kwargs):
         self.w = w
         self.h = h
@@ -437,6 +521,26 @@ class BoxSection(BeamSection):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "w": self.w,
+            "h": self.h,
+            "tw": self.tw,
+            "tf": self.tf,
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            w=data["w"],
+            h=data["h"],
+            tw=data["tw"],
+            tf=data["tf"],
+            material=data["material"],
+        )
+
     def __init__(self, w, h, tw, tf, material, **kwargs):
         self.w = w
         self.h = h
@@ -508,6 +612,20 @@ class CircularSection(BeamSection):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "r": self.r,
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            r=data["r"],
+            material=data["material"],
+        )
+
     def __init__(self, r, material, **kwargs):
         self._shape = Circle(r)
         super().__init__(**from_shape(self._shape, material, **kwargs))
@@ -553,6 +671,22 @@ class HexSection(BeamSection):
         The section material.
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "r": self.r,
+            "t": self.t,
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            r=data["r"],
+            t=data["t"],
+            material=data["material"],
+        )
 
     def __init__(self, r, t, material, **kwargs):
         raise NotImplementedError("This section is not available for the selected backend")
@@ -611,6 +745,26 @@ class ISection(BeamSection):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "w": self.w,
+            "h": self.h,
+            "tw": self.tw,
+            "tf": self.tf,
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            w=data["w"],
+            h=data["h"],
+            tw=data["tw"],
+            tf=data["tf"],
+            material=data["material"],
+        )
+
     def __init__(self, w, h, tw, tf, material, **kwargs):
         self._shape = IShape(w, h, tw, tf, tf)
         super().__init__(**from_shape(self._shape, material, **kwargs))
@@ -659,33 +813,6 @@ class PipeSection(BeamSection):
 
     def __init__(self, r, t, material, **kwargs):
         raise NotImplementedError
-        self.r = r
-        self.t = t
-
-        D = 2 * r
-
-        A = 0.25 * pi * (D**2 - (D - 2 * t) ** 2)
-        Ixx = Iyy = 0.25 * pi * (r**4 - (r - t) ** 4)
-        Ixy = 0
-        Avx = 0
-        Avy = 0
-        J = (2.0 / 3) * pi * (r + 0.5 * t) * t**3
-        g0 = 0
-        gw = 0
-
-        super(PipeSection, self).__init__(
-            A=A,
-            Ixx=Ixx,
-            Iyy=Iyy,
-            Ixy=Ixy,
-            Avx=Avx,
-            Avy=Avy,
-            J=J,
-            g0=g0,
-            gw=gw,
-            material=material,
-            **kwargs,
-        )
 
 
 class RectangularSection(BeamSection):
@@ -728,6 +855,22 @@ class RectangularSection(BeamSection):
         The section material.
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "w": self.w,
+            "h": self.h,
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            w=data["w"],
+            h=data["h"],
+            material=data["material"],
+        )
 
     def __init__(self, w, h, material, **kwargs):
         self._shape = Rectangle(w, h)
@@ -785,40 +928,12 @@ class TrapezoidalSection(BeamSection):
 
     def __init__(self, w1, w2, h, material, **kwargs):
         raise NotImplementedError
-        self.w1 = w1
-        self.w2 = w2
-        self.h = h
-
-        # c = (h * (2 * w2 + w1)) / (3. * (w1 + w2))  # NOTE: not used
-
-        A = 0.5 * (w1 + w2) * h
-        Ixx = (1 / 12.0) * (3 * w2 + w1) * h**3
-        Iyy = (1 / 48.0) * h * (w1 + w2) * (w2**2 + 7 * w1**2)
-        Ixy = 0
-        Avx = 0
-        Avy = 0
-        J = 0
-        g0 = 0
-        gw = 0
-
-        super(TrapezoidalSection, self).__init__(
-            A=A,
-            Ixx=Ixx,
-            Iyy=Iyy,
-            Ixy=Ixy,
-            Avx=Avx,
-            Avy=Avy,
-            J=J,
-            g0=g0,
-            gw=gw,
-            material=material,
-            **kwargs,
-        )
 
 
 # ==============================================================================
 # 1D - no cross-section
 # ==============================================================================
+
 
 class TrussSection(BeamSection):
     """For use with truss elements.
@@ -857,27 +972,6 @@ class TrussSection(BeamSection):
 
     def __init__(self, A, material, **kwargs):
         raise NotImplementedError
-        Ixx = 0
-        Iyy = 0
-        Ixy = 0
-        Avx = 0
-        Avy = 0
-        J = 0
-        g0 = 0
-        gw = 0
-        super(TrussSection, self).__init__(
-            A=A,
-            Ixx=Ixx,
-            Iyy=Iyy,
-            Ixy=Ixy,
-            Avx=Avx,
-            Avy=Avy,
-            J=J,
-            g0=g0,
-            gw=gw,
-            material=material,
-            **kwargs,
-        )
 
 
 class StrutSection(TrussSection):
@@ -1008,6 +1102,20 @@ class MembraneSection(_Section):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "t": self.t,
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            t=data["t"],
+            material=data["material"],
+        )
+
     def __init__(self, t, material, **kwargs):
         super(MembraneSection, self).__init__(material=material, **kwargs)
         self.t = t
@@ -1032,6 +1140,18 @@ class SolidSection(_Section):
         The section material.
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "material": self.material,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            material=data["material"],
+        )
 
     def __init__(self, material, **kwargs):
         super(SolidSection, self).__init__(material=material, **kwargs)

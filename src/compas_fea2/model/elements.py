@@ -72,6 +72,24 @@ class _Element(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+            "section": self.section,
+            "implementation": self.implementation,
+            "rigid": self.rigid,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+            section=data["section"],
+            implementation=data["implementation"],
+            rigid=data["rigid"],
+        )
+
     # FIXME frame and orientations are a bit different concepts. find a way to unify them
 
     def __init__(self, nodes, section, implementation=None, rigid=False, **kwargs):
@@ -186,9 +204,8 @@ class MassElement(_Element):
 class _Element0D(_Element):
     """Element with 1 dimension."""
 
-    def __init__(self, nodes, frame, implementation=None, rigid=False, **kwargs):
-        super(_Element0D, self).__init__(nodes, section=None, implementation=implementation, rigid=rigid, **kwargs)
-        self._frame = frame
+    def __init__(self, nodes, section, implementation=None, rigid=False, **kwargs):
+        super(_Element0D, self).__init__(nodes, section=section, implementation=implementation, rigid=rigid, **kwargs)
 
 
 class SpringElement(_Element0D):
@@ -209,15 +226,30 @@ class LinkElement(_Element0D):
 class _Element1D(_Element):
     """Element with 1 dimension."""
 
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+            "section": self.section,
+            "frame": self.frame,
+            "implementation": self.implementation,
+            "rigid": self.rigid,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+            section=data["section"],
+            frame=data["frame"],
+            implementation=data["implementation"],
+            rigid=data["rigid"],
+        )
+
     def __init__(self, nodes, section, frame=None, implementation=None, rigid=False, **kwargs):
         super(_Element1D, self).__init__(nodes, section, implementation=implementation, rigid=rigid, **kwargs)
         self._frame = frame
         self._curve = Line(start=nodes[0].point, end=nodes[-1].point)
-
-
-        # self._shape = Brep.from_extrusion(curve=self.section._shape, vector=Vector.from_start_end(nodes[0].point, nodes[-1].point), cap_ends=False)
-        # Brep.from_extrusion(curve=self.section._shape, vector=Vector.from_start_end(nodes[0].point, nodes[-1].point))
-        # self._shape = section._shape  # Box(self.length, self.section._w, self.section._h, frame=Frame(self.nodes[0].point, [1,0,0], [0,1,0]))
 
     @property
     def outermesh(self):

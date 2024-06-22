@@ -11,7 +11,7 @@ class GeneralDisplacement(FEAData):
     Parameters
     ----------
     name : str, optional
-        Uniqe identifier. If not provided it is automatically generated. Set a
+        Unique identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     x : float, optional
         x component of force, by default 0.
@@ -31,21 +31,21 @@ class GeneralDisplacement(FEAData):
     Attributes
     ----------
     name : str
-        Uniqe identifier. If not provided it is automatically generated. Set a
+        Unique identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
-    x : float, optional
+    x : float
         x component of force, by default 0.
-    y : float, optional
+    y : float
         y component of force, by default 0.
-    z : float, optional
+    z : float
         z component of force, by default 0.
-    xx : float, optional
+    xx : float
         xx component of moment, by default 0.
-    yy : float, optional
+    yy : float
         yy component of moment, by default 0.
-    zz : float, optional
+    zz : float
         zz component of moment, by default 0.
-    axes : str, optional
+    axes : str
         BC applied via 'local' or 'global' axes, by default 'global'.
 
     Notes
@@ -53,6 +53,32 @@ class GeneralDisplacement(FEAData):
     Displacements are registered to a :class:`compas_fea2.problem.Step`.
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "name": self.name,
+            "x": self.x,
+            "y": self.y,
+            "z": self.z,
+            "xx": self.xx,
+            "yy": self.yy,
+            "zz": self.zz,
+            "axes": self._axes,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            name=data["name"],
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            xx=data["xx"],
+            yy=data["yy"],
+            zz=data["zz"],
+            axes=data["axes"],
+        )
 
     def __init__(self, x=0, y=0, z=0, xx=0, yy=0, zz=0, axes="global", name=None, **kwargs):
         super(GeneralDisplacement, self).__init__(name=name, **kwargs)

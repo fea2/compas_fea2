@@ -8,14 +8,34 @@ from .step import GeneralStep
 class QuasiStaticStep(GeneralStep):
     """Step for quasi-static analysis."""
 
-    def __init__(self, name=None, **kwargs):
-        super(QuasiStaticStep, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         raise NotImplementedError
 
 
 class DirectCyclicStep(GeneralStep):
     """Step for a direct cyclic analysis."""
 
-    def __init__(self, name=None, **kwargs):
-        super(DirectCyclicStep, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         raise NotImplementedError

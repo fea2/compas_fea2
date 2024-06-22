@@ -8,8 +8,6 @@ from typing import Iterable
 from compas_fea2.base import FEAData
 from compas_fea2.problem.loads import NodeLoad, GravityLoad
 
-# TODO implement __*__ magic method for combination
-
 
 class Pattern(FEAData):
     """A pattern is the spatial distribution of a specific set of forces,
@@ -19,38 +17,46 @@ class Pattern(FEAData):
 
     Parameters
     ----------
-    value : :class:`compas_fea2.problem._Load` | :class:`compas_fea2.problem.GeneralDisplacement`
-        The load/displacement of the pattern
     distribution : list
         list of :class:`compas_fea2.model.Node` or :class:`compas_fea2.model._Element`
-    name : str
-        Uniqe identifier. If not provided it is automatically generated. Set a
-        name if you want a more human-readable input file.
 
     Attributes
     ----------
-    value : :class:`compas_fea2.problem._Load`
-        The load of the pattern
     distribution : list
         list of :class:`compas_fea2.model.Node` or :class:`compas_fea2.model._Element`
-    name : str
-        Uniqe identifier.
 
     """
 
-    def __init__(
-        self,
-        distribution,
-        x=None,
-        y=None,
-        z=None,
-        xx=None,
-        yy=None,
-        zz=None,
-        load_case=None,
-        axes="global",
-        **kwargs,
-    ):
+
+    @property
+    def __data__(self):
+        return {
+            "distribution": self._distribution,
+            "x": self.x,
+            "y": self.y,
+            "z": self.z,
+            "xx": self.xx,
+            "yy": self.yy,
+            "zz": self.zz,
+            "load_case": self.load_case,
+            "axes": self.axes,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            distribution=data["distribution"],
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            xx=data["xx"],
+            yy=data["yy"],
+            zz=data["zz"],
+            load_case=data["load_case"],
+            axes=data["axes"],
+        )
+
+    def __init__(self, distribution, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", **kwargs):
         super(Pattern, self).__init__(**kwargs)
         self._distribution = distribution if isinstance(distribution, Iterable) else [distribution]
         self._nodes = None
@@ -90,6 +96,8 @@ class Pattern(FEAData):
     def distribution(self):
         return self._distribution
 
+
+
 class NodeLoadPattern(Pattern):
     """Nodal distribution of a load case.
 
@@ -117,6 +125,7 @@ class NodeLoadPattern(Pattern):
         return zip(self.nodes, [self.load] * n_nodes)
 
 
+
 class PointLoadPattern(NodeLoadPattern):
     """Point distribution of a load case.
 
@@ -125,6 +134,30 @@ class PointLoadPattern(NodeLoadPattern):
     Pattern : _type_
         _description_
     """
+
+
+    @property
+    def __data__(self):
+        data = super(PointLoadPattern, self).__data__
+        data.update({
+            "tolerance": self.tolerance,
+        })
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            points=data["distribution"],
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            xx=data["xx"],
+            yy=data["yy"],
+            zz=data["zz"],
+            load_case=data["load_case"],
+            axes=data["axes"],
+            tolerance=data["tolerance"],
+        )
 
     def __init__(self, points, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", tolerance=1, **kwargs):
         super(PointLoadPattern, self).__init__(points, x, y, z, xx, yy, zz, load_case, axes, **kwargs)
@@ -153,6 +186,32 @@ class LineLoadPattern(Pattern):
         self.tolerance = tolerance
         self.discretization = discretization
 
+
+    @property
+    def __data__(self):
+        data = super(LineLoadPattern, self).__data__
+        data.update({
+            "tolerance": self.tolerance,
+            "discretization": self.discretization,
+        })
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            polyline=data["distribution"],
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            xx=data["xx"],
+            yy=data["yy"],
+            zz=data["zz"],
+            load_case=data["load_case"],
+            axes=data["axes"],
+            tolerance=data["tolerance"],
+            discretization=data["discretization"],
+        )
+
     @property
     def load(self):
         return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
@@ -173,6 +232,7 @@ class LineLoadPattern(Pattern):
         return zip(self.nodes, [NodeLoad(**{k: v * length / n_nodes if v else v for k, v in self.components.items()}, axes=self.axes)] * n_nodes)
 
 
+
 class AreaLoadPattern(Pattern):
     """Area distribution of a load case.
 
@@ -182,8 +242,32 @@ class AreaLoadPattern(Pattern):
         _description_
     """
 
-    def __init__(self, polygon, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", name=None, tolerance=1.05, **kwargs):
-        super(AreaLoadPattern, self).__init__(distribution=polygon, x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, load_case=load_case, axes=axes, name=name, **kwargs)
+
+    @property
+    def __data__(self):
+        data = super(AreaLoadPattern, self).__data__
+        data.update({
+            "tolerance": self.tolerance,
+        })
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            polygon=data["distribution"],
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            xx=data["xx"],
+            yy=data["yy"],
+            zz=data["zz"],
+            load_case=data["load_case"],
+            axes=data["axes"],
+            tolerance=data["tolerance"],
+        )
+
+    def __init__(self, polygon, x=None, y=None, z=None, xx=None, yy=None, zz=None, load_case=None, axes="global", tolerance=1.05, **kwargs):
+        super(AreaLoadPattern, self).__init__(distribution=polygon, x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, load_case=load_case, axes=axes, **kwargs)
         self.tolerance = tolerance
 
     @property
@@ -203,6 +287,7 @@ class AreaLoadPattern(Pattern):
         n_nodes = len(self.nodes)
         area = self.polygon.area
         return zip(self.nodes, [NodeLoad(**{k: v * area / n_nodes if v else v for k, v in self.components.items()}, axes=self.axes)] * n_nodes)
+
 
 
 class VolumeLoadPattern(Pattern):
@@ -245,6 +330,7 @@ class VolumeLoadPattern(Pattern):
                         nodes_loads[node] = load
         return zip(list(nodes_loads.keys()), list(nodes_loads.values()))
 
+
 class GravityLoadPattern(Pattern):
     """Volume distribution of a load case (e.g., gravity load).
 
@@ -253,6 +339,30 @@ class GravityLoadPattern(Pattern):
     Pattern : _type_
         _description_
     """
+
+    @property
+    def __data__(self):
+        return {
+            "parts": self.parts,
+            "g": self.g,
+            "x": self.x,
+            "y": self.y,
+            "z": self.z,
+            "load_case": self.load_case,
+            "axes": self.axes,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            parts=data["distribution"],
+            g=data["g"],
+            x=data["x"],
+            y=data["y"],
+            z=data["z"],
+            load_case=data["load_case"],
+            axes=data["axes"],
+        )
 
     def __init__(self, parts=None, g=9810, x=0, y=0, z=-1, load_case=None, axes="global", **kwargs):
         super(GravityLoadPattern, self).__init__(parts, x, y, z, xx=None, yy=None, zz=None, load_case=load_case, axes=axes, **kwargs)

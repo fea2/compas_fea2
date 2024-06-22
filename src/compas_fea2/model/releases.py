@@ -45,6 +45,28 @@ class _BeamEndRelease(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "n": self.n,
+            "v1": self.v1,
+            "v2": self.v2,
+            "m1": self.m1,
+            "m2": self.m2,
+            "t": self.t,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            n=data["n"],
+            v1=data["v1"],
+            v2=data["v2"],
+            m1=data["m1"],
+            m2=data["m2"],
+            t=data["t"],
+        )
+
     def __init__(self, n=False, v1=False, v2=False, m1=False, m2=False, t=False, **kwargs):
         super(_BeamEndRelease, self).__init__(**kwargs)
 
@@ -92,6 +114,22 @@ class BeamEndPinRelease(_BeamEndRelease):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "m1": self.m1,
+            "m2": self.m2,
+            "t": self.t,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            m1=data["m1"],
+            m2=data["m2"],
+            t=data["t"],
+        )
+
     def __init__(self, m1=False, m2=False, t=False, **kwargs):
         super(BeamEndPinRelease, self).__init__(n=False, v1=False, v2=False, m1=m1, m2=m2, t=t, **kwargs)
 
@@ -107,6 +145,25 @@ class BeamEndSliderRelease(_BeamEndRelease):
         Release displacements along local 2 direction, by default False
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "v1": self.v1,
+            "v2": self.v2,
+            "t": self.t,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            n=data["n"],
+            v1=data["v1"],
+            v2=data["v2"],
+            m1=data["m1"],
+            m2=data["m2"],
+            t=data["t"],
+        )
 
     def __init__(self, v1=False, v2=False, **kwargs):
         super(BeamEndSliderRelease, self).__init__(v1=v1, v2=v2, n=False, m1=False, m2=False, t=False, **kwargs)

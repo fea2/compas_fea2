@@ -15,6 +15,20 @@ class _InitialCondition(FEAData):
 
     """
 
+    @property
+    def __data__(self):
+        return {
+            "field": self.field,
+            "field_value": self.field_value,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            field=data["field"],
+            field_value=data["field_value"],
+        )
+
     def __init__(self, field, field_value, **kwargs):
         super(_InitialCondition, self).__init__(**kwargs)
         self._field = field
@@ -47,6 +61,20 @@ class InitialTemperatureField(_InitialCondition):
     same InitialCondition can be assigned to Nodes or Elements in multiple Parts
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "nodes": self.nodes,
+            "temperature": self.temperature,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            nodes=data["nodes"],
+            temperature=data["temperature"],
+        )
 
     def __init__(self, nodes, temperature, **kwargs):
         super(InitialTemperatureField, self).__init__(nodes, temperature, **kwargs)
@@ -83,6 +111,20 @@ class InitialStressField(_InitialCondition):
     The same InitialCondition can be assigned to Nodes or Elements in multiple Parts.
 
     """
+
+    @property
+    def __data__(self):
+        return {
+            "elements": self.elements,
+            "stress": self.stress,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            elements=data["element"],
+            stress=data["stress"],
+        )
 
     def __init__(self, elements, stress, **kwargs):
         super(InitialStressField, self).__init__(elements, stress, **kwargs)

@@ -75,8 +75,22 @@ class Node(FEAData):
 
     """
 
-    def __init__(self, xyz, mass=None, temperature=None, name=None, **kwargs):
-        super(Node, self).__init__(name=name, **kwargs)
+    @property
+    def __data__(self):
+        return {
+            "xyz": self.xyz,
+            "mass": self.mass,
+        }
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(
+            xyz=data["xyz"],
+            mass=data["mass"],
+        )
+
+    def __init__(self, xyz, mass=None, **kwargs):
+        super(Node, self).__init__(**kwargs)
         self._key = None
 
         self.xyz = xyz
@@ -88,7 +102,6 @@ class Node(FEAData):
         self._dof = {"x": True, "y": True, "z": True, "xx": True, "yy": True, "zz": True}
 
         self._mass = mass if isinstance(mass, tuple) else tuple([mass] * 3)
-        self._temperature = temperature
 
         self._on_boundary = None
         self._is_reference = False
@@ -196,4 +209,3 @@ class Node(FEAData):
     @property
     def point(self):
         return Point(*self.xyz)
-
