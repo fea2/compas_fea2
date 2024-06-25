@@ -106,6 +106,14 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         return self._key
 
     @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        self._name = name
+
+    @property
     def input_key(self):
         if type(self._key)==type(None):
             raise AttributeError(f"{self!r} does not have a key.")

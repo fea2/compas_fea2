@@ -13,15 +13,10 @@ class InputFile(FEAData):
 
     Parameters
     ----------
-    name : str, optional
-        Uniqe identifier. If not provided it is automatically generated. Set a
-        name if you want a more human-readable input file.
+    None
 
     Attributes
     ----------
-    name : str, optional
-        Uniqe identifier. If not provided it is automatically generated. Set a
-        name if you want a more human-readable input file.
     problem : :class:`compas_fea2.problem.Problem`
         The problem to generate the input file from.
     model : :class:`compas_fea2.model.Model`
@@ -31,8 +26,8 @@ class InputFile(FEAData):
 
     """
 
-    def __init__(self, name=None, **kwargs):
-        super(InputFile, self).__init__(name=name, **kwargs)
+    def __init__(self, **kwargs):
+        super(InputFile, self).__init__(**kwargs)
         self._job_name = None
         self._file_name = None
         self._extension = None
@@ -61,7 +56,7 @@ class InputFile(FEAData):
 
         Returns
         -------
-        obj
+        :class:`compas_fea2.job.InputFile`
             InputFile for the analysis.
 
         """
@@ -103,6 +98,6 @@ class InputFile(FEAData):
 class ParametersFile(InputFile):
     """"""
 
-    def __init__(self, name=None, **kwargs):
-        super(ParametersFile, self).__init__(name, **kwargs)
+    def __init__(self, **kwargs):
+        super(ParametersFile, self).__init__(**kwargs)
         raise NotImplementedError()

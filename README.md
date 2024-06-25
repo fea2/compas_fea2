@@ -1,16 +1,11 @@
 # compas_fea2
 
-2nd generation of compas_fea. Current Main changes:
-
-* Imporoved API for in-parallel development
-* Added User Material subroutines in Abaqus
-* Added Parts, Instances and Assembly to Abaqus
+2nd generation of the compas package for Finite Element Analysis.
 
 ## Package objectives
 
-This package aims to create a bridge between the generation of structural geometries and thei analysis
-using popular commercial FEA software. The geometry generation features of these software is usually
-limited, teduious and time-consuming.
+This package aims to create a bridge between the generation of structural geometries and their analysis
+using popular commercial and open-source FEA software.
 
 ### Users
 

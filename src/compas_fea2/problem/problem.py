@@ -121,7 +121,9 @@ class Problem(FEAData):
     @property
     def results_db(self):
         if os.path.exists(self.path_db):
-            return ResultsDatabase(self.path_db)
+            rdb = ResultsDatabase(self.path_db)
+            rdb._registration = self
+            return rdb
 
     @property
     def displacement_field(self):
@@ -756,7 +758,7 @@ Analysis folder path : {}
         #     viewer.viewer.scene.add(self.model, opacity=original, show_bcs=kwargs.get("show_bcs", True))
 
         # TODO create a copy of the model first
-        displacements = step.problem.displacement_field
+        displacements = self.displacement_field
         for displacement in displacements.results(step):
             vector = displacement.vector.scaled(scale_results)
             displacement.node.xyz = sum_vectors([Vector(*displacement.location.xyz), vector])

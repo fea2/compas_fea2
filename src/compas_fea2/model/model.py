@@ -100,16 +100,16 @@ class Model(FEAData):
     @classmethod
     def __from_data__(cls, data):
         return cls(
-            master=data["master"],
-            slave=data["slave"],
+            description=data["description"],
+            author=data["author"],
         )
-        
+
     def __init__(self, description=None, author=None, **kwargs):
         super(Model, self).__init__(**kwargs)
         self.description = description
         self.author = author
         self._key = 0
-        self._starting_key = 0
+        self._starting_key = 0 # To be implemented in each backend
         self._parts = set()
         self._nodes = None
         self._bcs = set()
