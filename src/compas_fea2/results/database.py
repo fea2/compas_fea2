@@ -420,8 +420,6 @@ class StressResultsTable(ResultsTable):
         super().__init__("S", metadata)
         self._components_names = ["S11", "S22", "S33", "S12", "S13", "S23"]
         self._invariants_names = ["magnitude"]
-        self._results_class = ReactionResult  # Replace with appropriate class
-        self._results_func = "find_node_by_key"  # Replace with appropriate function
 
 
 class StrainResultsTable(ResultsTable):
@@ -431,8 +429,6 @@ class StrainResultsTable(ResultsTable):
         super().__init__("E", metadata)
         self._components_names = ["E11", "E22", "E33", "E12", "E13", "E23"]
         self._invariants_names = ["magnitude"]
-        self._results_class = ReactionResult  # Replace with appropriate class
-        self._results_func = "find_node_by_key"  # Replace with appropriate function
 
 
 class ReactionResultsTable(ResultsTable):
@@ -442,8 +438,7 @@ class ReactionResultsTable(ResultsTable):
         super().__init__("RF", metadata)
         self._components_names = ["RF1", "RF2", "RF3"]
         self._invariants_names = ["magnitude"]
-        self._results_class = ReactionResult
-        self._results_func = "find_node_by_key"
+
 
 
 class ContactResultsTable(ResultsTable):
@@ -460,5 +455,4 @@ class DisplacementResultsTable(ResultsTable):
         super().__init__("U", metadata)
         self._components_names = ["U1", "U2", "U3"]
         self._invariants_names = ["magnitude"]
-        self._results_class = DisplacementResult
-        self._results_func = "find_node_by_key"
+
