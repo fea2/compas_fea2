@@ -158,7 +158,7 @@ class FieldResults(FEAData):
             else:
                 yield (l, r.vector)
 
-    def max_component(self, component, **kwargs):
+    def max_component(self, component, filters=None):
         """Get the result where a component is maximum for a given step.
 
         Parameters
@@ -173,10 +173,10 @@ class FieldResults(FEAData):
         :class:`compas_fea2.results.Result`
             The appriate Result object.
         """
-        results_set = self._table.get_func_row(self.field_name + str(component), "MAX", kwargs, self._table.all_columns)
+        results_set = self._table.get_func_row(self.field_name + str(component), "MAX", filters, self._table.all_columns)
         return self.to_fea2_results(results_set)[0]
 
-    def min_component(self, component, **kwargs):
+    def min_component(self, component, filters=None):
         """Get the result where a component is minimum for a given step.
 
         Parameters
@@ -191,7 +191,7 @@ class FieldResults(FEAData):
         :class:`compas_fea2.results.Result`
             The appriate Result object.
         """
-        results_set = self._table.get_func_row(self.field_name + str(component), "MIN", kwargs, self._table.all_columns)
+        results_set = self._table.get_func_row(self.field_name + str(component), "MIN", filters, self._table.all_columns)
         return self.to_fea2_results(results_set)[0]
 
     def to_fea2_results(self, results_set: List[Dict[str, Any]]) -> Dict[Any, List[Any]]:

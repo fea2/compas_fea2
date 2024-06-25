@@ -759,7 +759,7 @@ Analysis folder path : {}
 
         # TODO create a copy of the model first
         displacements = self.displacement_field
-        for displacement in displacements.results(step):
+        for displacement in displacements.results(filters={'step':step.name}):
             vector = displacement.vector.scaled(scale_results)
             displacement.node.xyz = sum_vectors([Vector(*displacement.location.xyz), vector])
         #NOTE it is not changeing the discretised boundary mesh
