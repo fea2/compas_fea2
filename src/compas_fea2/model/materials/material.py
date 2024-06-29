@@ -46,7 +46,6 @@ class _Material(FEAData):
         return {
             "density": self.density,
             "expansion": self.expansion,
-            "name": self.name,
         }
 
     @classmethod
@@ -54,7 +53,6 @@ class _Material(FEAData):
         return cls(
             density=data["density"],
             expansion=data["expansion"],
-            name=data["name"],
         )
 
     def __init__(self, density, expansion=None, **kwargs):

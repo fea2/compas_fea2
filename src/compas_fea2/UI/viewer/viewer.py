@@ -602,8 +602,8 @@ class FEA2ModelObject(GroupObject):
             else:
                 raise ValueError("Unsupported BC type")
         bcs_meshes = []
-        for bc, nodes in model.bcs.items():
-            for node in nodes:
+        for bc in model.bcs:
+            for node in bc.nodes:
                 shape = _get_bc_shape(bc, node)
                 bcs_meshes.append(self._create_mesh_entry(shape, facecolor=Color.red(), linecolor=Color.red(), show_points=False))
         return bcs_meshes

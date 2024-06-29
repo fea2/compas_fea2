@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from compas.geometry import Frame
 from compas_fea2.base import FEAData
 
 docs = """
@@ -11,20 +12,19 @@ BoundaryConditions are registered to a :class:`compas_fea2.model.Model`.
 
 Warning
 -------
-The `axes` parameter is WIP. Currently only global axes can be used.
+The `frame` parameter is WIP. Currently only WorldXY can be used.
 
 Parameters
 ----------
-name : str, optional
-    Uniqe identifier. If not provided it is automatically generated. Set a
-    name if you want a more human-readable input file.
-axes : str, optional
-    The refernce axes.
+nodes : List[`class:compas_fea2.elements.Node`]
+    The nodes to which the boundary condition is applied.
+frame : `class:compas.geotmery.Frame`, optional
+    The refernce frame.
 
 Attributes
 ----------
-name : str
-    Uniqe identifier.
+nodes : List[`class:compas_fea2.elements.Node`]
+    The nodes to which the boundary condition is applied.
 x : bool
     Restrain translations along the x axis.
 y : bool
@@ -39,8 +39,8 @@ zz : bool
     Restrain rotations around the z axis.
 components : dict
     Dictionary with component-value pairs summarizing the boundary condition.
-axes : str
-    The refernce axes.
+frame : str
+    The refernce frame.
 """
 
 
@@ -53,7 +53,7 @@ class _BoundaryCondition(FEAData):
     def __data__(self):
         return {
             "nodes": self.nodes,
-            "axes": self.axes,
+            "axes": self.frame,
         }
 
     @classmethod
@@ -63,10 +63,10 @@ class _BoundaryCondition(FEAData):
             axes=data["axes"],
         )
 
-    def __init__(self, nodes, axes="global", **kwargs):
+    def __init__(self, nodes, frame=Frame.worldXY(), **kwargs):
         super(_BoundaryCondition, self).__init__(**kwargs)
         self.nodes = nodes
-        self._axes = axes
+        self._frame = frame
         self._x = False
         self._y = False
         self._z = False
@@ -99,12 +99,12 @@ class _BoundaryCondition(FEAData):
         return self._zz
 
     @property
-    def axes(self):
-        return self._axes
+    def frame(self):
+        return self._frame
 
-    @axes.setter
-    def axes(self, value):
-        self._axes = value
+    @frame.setter
+    def frame(self, value):
+        self._frame = value
 
     @property
     def components(self):
