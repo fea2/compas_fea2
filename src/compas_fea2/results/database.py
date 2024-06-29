@@ -1,4 +1,3 @@
-from compas_fea2.results.results import DisplacementResult, ReactionResult
 from sqlalchemy import MetaData, Table, and_, asc, desc, create_engine, select, String
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import Select

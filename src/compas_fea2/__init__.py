@@ -78,7 +78,7 @@ def _register_backend():
     NotImplementedError
         This function is implemented within the backend plugin implementation.
     """
-    raise NotImplementedError
+    raise NotImplementedError("This function should be implemented within the backend plugin.")
 
 
 def set_backend(plugin):
