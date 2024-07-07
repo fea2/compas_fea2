@@ -8,6 +8,7 @@ from compas_fea2.problem.patterns import NodeLoadPattern
 from compas_fea2.problem.patterns import PointLoadPattern
 from compas_fea2.problem.patterns import VolumeLoadPattern
 from compas_fea2.problem.patterns import GravityLoadPattern
+from compas_feat.problem.displacements import GeneralDisplacement
 
 from .step import GeneralStep
 
@@ -97,7 +98,7 @@ class StaticStep(GeneralStep):
             modify=data["modify"],
             name=data["name"],
         )
-        
+
     def __init__(
         self,
         max_increments=100,
@@ -343,13 +344,13 @@ class StaticStep(GeneralStep):
         None
 
         """
-        raise NotImplementedError()
-        # if axes != "global":
-        #     raise NotImplementedError("local axes are not supported yet")
-        # displacement = GeneralDisplacement(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes, name=name, **kwargs)
-        # if not isinstance(nodes, Iterable):
-        #     nodes = [nodes]
-        # return self.add_load_pattern(Pattern(value=displacement, distribution=nodes))
+        # raise NotImplementedError()
+        if axes != "global":
+            raise NotImplementedError("local axes are not supported yet")
+        displacement = GeneralDisplacement(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes, name=name, **kwargs)
+        if not isinstance(nodes, Iterable):
+            nodes = [nodes]
+        return self.add_load_pattern(Pattern(value=displacement, distribution=nodes))
 
 
 class StaticRiksStep(StaticStep):

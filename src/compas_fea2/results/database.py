@@ -22,7 +22,8 @@ class ResultsDatabase:
             "U": DisplacementResultsTable,
             "RF": ReactionResultsTable,
             "C": ContactResultsTable,
-            "S": StressResultsTable,
+            "S3D": Stress3DResultsTable,
+            "S2D": Stress2DResultsTable,
         }
 
 
@@ -169,8 +170,6 @@ class ResultsTable:
         self._basic_components = ["step", "part", "key"]
         self._components_names = None
         self._invariants_names = None
-        self._results_class = None
-        self._results_func = None
 
     @property
     def db(self):
@@ -412,7 +411,7 @@ class ResultsTable:
         return limits
 
 
-class StressResultsTable(ResultsTable):
+class Stress3DResultsTable(ResultsTable):
     """Class representing a stress results table in the database."""
 
     def __init__(self, metadata):
@@ -420,6 +419,13 @@ class StressResultsTable(ResultsTable):
         self._components_names = ["S11", "S22", "S33", "S12", "S13", "S23"]
         self._invariants_names = ["magnitude"]
 
+class Stress2DResultsTable(ResultsTable):
+    """Class representing a stress results table in the database."""
+
+    def __init__(self, metadata):
+        super().__init__("S2D", metadata)
+        self._components_names = ['S11', 'S22', 'S12', 'M11', 'M22', 'M12']
+        self._invariants_names = []
 
 class StrainResultsTable(ResultsTable):
     """Class representing a strain results table in the database."""

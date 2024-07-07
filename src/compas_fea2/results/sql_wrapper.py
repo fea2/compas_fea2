@@ -1,5 +1,6 @@
 import sqlalchemy as db
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import Table, MetaData, Column, String, Float, Integer
 
 def create_connection(db_file=None):
     """Create a database connection to the SQLite database specified by db_file.
@@ -103,10 +104,10 @@ def create_field_description_table(connection):
     None
     """
     columns = [
-        db.Column('field', db.String, primary_key=True),
-        db.Column('description', db.String),
-        db.Column('components', db.String),
-        db.Column('invariants', db.String)
+        Column('field', String, primary_key=True),
+        Column('description', String),
+        Column('components', String),
+        Column('invariants', String)
     ]
     create_table(connection, 'fields', columns)
 
@@ -159,12 +160,12 @@ def create_field_table(connection, field, components_names):
     None
     """
     columns = [
-        db.Column('step', db.String),
-        db.Column('part', db.String),
-        db.Column('type', db.String),
-        db.Column('position', db.String),
-        db.Column('key', db.Integer)
-    ] + [db.Column(c, db.Float) for c in components_names]
+        Column('step', String),
+        Column('part', String),
+        Column('type', String),
+        Column('position', String),
+        Column('key', Integer)
+    ] + [Column(c, Float) for c in components_names]
     create_table(connection, field, columns)
 
 
@@ -274,18 +275,10 @@ def get_field_results(connection, table, test):
     return labels, results
 
 
-if __name__ == "__main__":
-    from pprint import pprint
-
-    engine, connection, metadata = create_connection(r"C:\Code\myRepos\swissdemo\data\q_5\output\1_0\ULS\ULS-results.db")
-    U = get_database_table(connection, "U")
-
-    sql = """
-SELECT step, part, key, MIN(U3)
-FROM U
-WHERE step IN ('udl') AND part || '#$' || key  in ('BLOCK_8#$1', 'BLOCK_9#$3')
-GROUP BY step, part;
-"""
-    result_proxy = connection.execute(sql)
-    result_set = result_proxy.fetchall()
-    pprint(result_set)
+def parse_results_file(filepath):
+    """Parse the results file and return the extracted data."""
+    with open(filepath, 'r') as file:
+        lines = file.readlines()
+        # Take the last analysis step and ignore the timestamp (first value)
+        data = [float(i) for i in lines[-1].split(' ')[1:]]
+    return data

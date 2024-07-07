@@ -545,8 +545,8 @@ class FEA2ModelObject(GroupObject):
         self.show_lines = kwargs.get("show_lines", True)
         self.show_points = kwargs.get("show_points", True)
 
-        part_meshes = self._get_part_meshes(model) if show_parts else []
-        bcs_meshes = self._get_bcs_meshes(model) if show_bcs else []
+        part_meshes = self._get_part_meshes(model, opacity=kwargs.get("opacity", 1.0)) if show_parts else []
+        bcs_meshes = self._get_bcs_meshes(model, opacity=kwargs.get("opacity", 1.0)) if show_bcs else []
         interfaces_meshes = self._get_interfaces_meshes(model) if show_interfaces else []
 
         parts = (part_meshes, {"name": "parts"})
@@ -555,7 +555,7 @@ class FEA2ModelObject(GroupObject):
 
         super().__init__([parts, interfaces, bcs], name=model.name, **kwargs)
 
-    def _get_part_meshes(self, model):
+    def _get_part_meshes(self, model, opacity):
         """
         Get meshes for the parts of the model.
 
@@ -572,13 +572,13 @@ class FEA2ModelObject(GroupObject):
         part_meshes = []
         for part in model.parts:
             if part._discretized_boundary_mesh:
-                part_meshes.append(self._create_mesh_entry(part._discretized_boundary_mesh))
+                part_meshes.append(self._create_mesh_entry(part._discretized_boundary_mesh, opacity=opacity))
             for element in part.elements:
                 if isinstance(element, _Element1D):
-                    part_meshes.append(self._create_mesh_entry(element.outermesh, opacity=1.0))
+                    part_meshes.append(self._create_mesh_entry(element.outermesh, opacity=opacity))
         return part_meshes
 
-    def _get_bcs_meshes(self, model):
+    def _get_bcs_meshes(self, model, opacity):
         """
         Get meshes for the boundary conditions (BCs) of the model.
 

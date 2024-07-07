@@ -2,11 +2,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import gc
 import importlib
 import os
 import pathlib
 import pickle
+import gc
 from itertools import chain
 from itertools import groupby
 from pathlib import Path
@@ -162,7 +162,7 @@ class Model(FEAData):
     @property
     def materials(self):
         materials = set()
-        for part in filter(lambda p: not isinstance(p, RigidPart), self.parts):
+        for part in self.parts:
             for material in part.materials:
                 materials.add(material)
         return materials
@@ -313,7 +313,15 @@ class Model(FEAData):
             raise ValueError("Please provide a valid path including the name of the file.")
         pathlib.Path(path.parent.absolute()).mkdir(parents=True, exist_ok=True)
         with open(path, "wb") as f:
-            pickle.dump(self, f)
+            try:
+                # disable garbage collector
+                gc.disable()
+                pickle.dump(self, f, protocol=-1)
+                # enable garbage collector again
+                gc.enable()
+            except Exception:
+                gc.enable()
+                raise RuntimeError("Model not created!")
         print("Model saved to: {}".format(path))
 
     # =========================================================================
@@ -1239,6 +1247,7 @@ Initial Conditions
         show_bcs=1.0,
         draw_constraints=True,
         opacity=1,
+        show_interfaces=True,
         **kwargs,
     ):
         """Visualise the model in the viewer.
@@ -1275,5 +1284,5 @@ Initial Conditions
 
         # v = FEA2Viewer(self, scale_factor=scale_factor)
         viewer = FEA2Viewer(center=self.center, scale_model=scale_model)  # show_grid=False, show_gridz=True, gridsize=(1000.0, 10, 1000.0, 10)
-        viewer.viewer.scene.add(self, opacity=opacity, show_bcs=show_bcs)
+        viewer.viewer.scene.add(self, opacity=opacity, show_bcs=show_bcs, show_interfaces=show_interfaces)
         viewer.viewer.show()

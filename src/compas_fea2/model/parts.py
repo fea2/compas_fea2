@@ -397,7 +397,12 @@ class _Part(FEAData):
 
         # add elements
         gmsh_elements = model.mesh.get_elements()
-        dimension = 2 if isinstance(section, SolidSection) else 1
+        if isinstance(section, SolidSection):
+            dimension = 2
+        elif isinstance(section, ShellSection):
+            dimension = 1
+        else:
+            raise NotImplementedError("Section not supported")
         ntags_per_element = np.split(gmsh_elements[2][dimension] - 1, len(gmsh_elements[1][dimension]))  # gmsh keys start from 1
 
         verbose = kwargs.get("verbose", False)
@@ -411,15 +416,15 @@ class _Part(FEAData):
             element_nodes = fea2_nodes[ntags]
 
             if ntags.size == 3:
-                k = part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=rigid, implementation=implementation))
+                k = part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=False, implementation=implementation))
             elif ntags.size == 4:
                 if isinstance(section, ShellSection):
-                    k = part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=rigid, implementation=implementation))
+                    k = part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=False, implementation=implementation))
                 else:
-                    k = part.add_element(TetrahedronElement(nodes=element_nodes, section=section))
+                    k = part.add_element(TetrahedronElement(nodes=element_nodes, section=section, rigid=False))
                     part.ndf = 3  # FIXME try to move outside the loop
             elif ntags.size == 8:
-                k = part.add_element(HexahedronElement(nodes=element_nodes, section=section))
+                k = part.add_element(HexahedronElement(nodes=element_nodes, section=section, rigid=False))
             else:
                 raise NotImplementedError("Element with {} nodes not supported".format(ntags.size))
             if verbose:
@@ -435,7 +440,7 @@ class _Part(FEAData):
 
         if rigid:
             point = part._discretized_boundary_mesh.centroid()
-            part.reference_point = Node(xyz=[point.x, point.y, point.z])
+            part.reference_point = Node(xyz=point)
 
         # FIXME get the planes on each face of the part and compute the centroid -> move to Part
         # centroid_face = {}
@@ -446,7 +451,7 @@ class _Part(FEAData):
         return part
 
     @classmethod
-    def from_boundary_mesh(cls, boundary_mesh, name=None, **kwargs):
+    def from_boundary_mesh(cls, boundary_mesh, **kwargs):
         """Create a Part object from a 3-dimensional :class:`compas.datastructures.Mesh`
         object reppresenting the boundary envelope of the Part. The Part is
         discretized uniformly in Thetrahedra of a given mesh size.
@@ -490,7 +495,7 @@ class _Part(FEAData):
         if meshsize_min:
             gmshModel.options.mesh.meshsize_min = meshsize_min
 
-        part = cls.from_gmsh(gmshModel=gmshModel, name=name, **kwargs)
+        part = cls.from_gmsh(gmshModel=gmshModel, **kwargs)
 
         del gmshModel
 
@@ -1023,6 +1028,7 @@ class _Part(FEAData):
             return
 
         self.add_nodes(element.nodes)
+
         if hasattr(element, "section"):
             if element.section:
                 self.add_section(element.section)
@@ -1257,6 +1263,170 @@ class _Part(FEAData):
         """
         return [self.add_group(group) for group in groups]
 
+    # =========================================================================
+    #                        Sections methods
+    # =========================================================================
+
+    def find_sections_by_name(self, name):
+        # type: (str) -> list
+        """Find all sections with a given name.
+
+        Parameters
+        ----------
+        name : str
+
+        Returns
+        -------
+        list[:class:`compas_fea2.model.Section`]
+
+        """
+        return [section for section in self.sections if section.name == name]
+
+    def contains_section(self, section):
+        # type: (_Section) -> _Section
+        """Verify that the part contains a specific section.
+
+        Parameters
+        ----------
+        section : :class:`compas_fea2.model.Section`
+
+        Returns
+        -------
+        bool
+
+        """
+        return section in self.sections
+
+    def add_section(self, section):
+        # type: (_Section) -> _Section
+        """Add a section to the part so that it can be referenced in element definitions.
+
+        Parameters
+        ----------
+        section : :class:`compas_fea2.model.Section`
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            If the section is not a section.
+
+        """
+        if not isinstance(section, _Section):
+            raise TypeError("{!r} is not a section.".format(section))
+
+        if self.contains_section(section):
+            if compas_fea2.VERBOSE:
+                print("SKIPPED: Section {!r} already in part.".format(section))
+            return
+
+        if isinstance(self, DeformablePart):
+            self.add_material(section.material)
+        section._key = len(self.sections)
+        self._sections.add(section)
+        section._registration = self._registration
+        return section
+
+    def add_sections(self, sections):
+        # type: (list) -> _Section
+        """Add multiple sections to the part.
+
+        Parameters
+        ----------
+        sections : list[:class:`compas_fea2.model.Section`]
+
+        Returns
+        -------
+        None
+
+        """
+        return [self.add_section(section) for section in sections]
+
+
+    # =========================================================================
+    #                           Materials methods
+    # =========================================================================
+
+    def find_materials_by_name(self, name):
+        # type: (str) -> list
+        """Find all materials with a given name.
+
+        Parameters
+        ----------
+        name : str
+
+        Returns
+        -------
+        list[:class:`compas_fea2.model.Material`]
+
+        """
+        return [material for material in self.materials if material.name == name]
+
+    def contains_material(self, material):
+        # type: (_Material) -> _Material
+        """Verify that the part contains a specific material.
+
+        Parameters
+        ----------
+        material : :class:`compas_fea2.model.Material`
+
+        Returns
+        -------
+        bool
+
+        """
+        return material in self.materials
+
+    def add_material(self, material):
+        # type: (_Material) -> _Material
+        """Add a material to the part so that it can be referenced in section and element definitions.
+
+        Parameters
+        ----------
+        material : :class:`compas_fea2.model.Material`
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            If the material is not a material.
+
+        """
+        if not isinstance(material, _Material):
+            raise TypeError("{!r} is not a material.".format(material))
+
+        if self.contains_material(material):
+            if compas_fea2.VERBOSE:
+                print("SKIPPED: Material {!r} already in part.".format(material))
+            return
+
+        material._key = len(self._materials)
+        self._materials.add(material)
+        material._registration = self._registration
+        return material
+
+    def add_materials(self, materials):
+        # type: (_Material) -> list
+        """Add multiple materials to the part.
+
+        Parameters
+        ----------
+        materials : list[:class:`compas_fea2.model.Material`]
+
+        Returns
+        -------
+        None
+
+        """
+        return [self.add_material(material) for material in materials]
+
+
     # ==============================================================================
     # Results methods
     # ==============================================================================
@@ -1481,166 +1651,6 @@ class DeformablePart(_Part):
         """ """
         return super().from_boundary_mesh(boundary_mesh, section=section, name=name, **kwargs)
 
-    # =========================================================================
-    #                           Materials methods
-    # =========================================================================
-
-    def find_materials_by_name(self, name):
-        # type: (str) -> list
-        """Find all materials with a given name.
-
-        Parameters
-        ----------
-        name : str
-
-        Returns
-        -------
-        list[:class:`compas_fea2.model.Material`]
-
-        """
-        return [material for material in self.materials if material.name == name]
-
-    def contains_material(self, material):
-        # type: (_Material) -> _Material
-        """Verify that the part contains a specific material.
-
-        Parameters
-        ----------
-        material : :class:`compas_fea2.model.Material`
-
-        Returns
-        -------
-        bool
-
-        """
-        return material in self.materials
-
-    def add_material(self, material):
-        # type: (_Material) -> _Material
-        """Add a material to the part so that it can be referenced in section and element definitions.
-
-        Parameters
-        ----------
-        material : :class:`compas_fea2.model.Material`
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        TypeError
-            If the material is not a material.
-
-        """
-        if not isinstance(material, _Material):
-            raise TypeError("{!r} is not a material.".format(material))
-
-        if self.contains_material(material):
-            if compas_fea2.VERBOSE:
-                print("SKIPPED: Material {!r} already in part.".format(material))
-            return
-
-        material._key = len(self._materials)
-        self._materials.add(material)
-        material._registration = self._registration
-        return material
-
-    def add_materials(self, materials):
-        # type: (_Material) -> list
-        """Add multiple materials to the part.
-
-        Parameters
-        ----------
-        materials : list[:class:`compas_fea2.model.Material`]
-
-        Returns
-        -------
-        None
-
-        """
-        return [self.add_material(material) for material in materials]
-
-    # =========================================================================
-    #                        Sections methods
-    # =========================================================================
-
-    def find_sections_by_name(self, name):
-        # type: (str) -> list
-        """Find all sections with a given name.
-
-        Parameters
-        ----------
-        name : str
-
-        Returns
-        -------
-        list[:class:`compas_fea2.model.Section`]
-
-        """
-        return [section for section in self.sections if section.name == name]
-
-    def contains_section(self, section):
-        # type: (_Section) -> _Section
-        """Verify that the part contains a specific section.
-
-        Parameters
-        ----------
-        section : :class:`compas_fea2.model.Section`
-
-        Returns
-        -------
-        bool
-
-        """
-        return section in self.sections
-
-    def add_section(self, section):
-        # type: (_Section) -> _Section
-        """Add a section to the part so that it can be referenced in element definitions.
-
-        Parameters
-        ----------
-        section : :class:`compas_fea2.model.Section`
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        TypeError
-            If the section is not a section.
-
-        """
-        if not isinstance(section, _Section):
-            raise TypeError("{!r} is not a section.".format(section))
-
-        if self.contains_section(section):
-            if compas_fea2.VERBOSE:
-                print("SKIPPED: Section {!r} already in part.".format(section))
-            return
-
-        self.add_material(section.material)
-        section._key = len(self.sections)
-        self._sections.add(section)
-        section._registration = self._registration
-        return section
-
-    def add_sections(self, sections):
-        # type: (list) -> _Section
-        """Add multiple sections to the part.
-
-        Parameters
-        ----------
-        sections : list[:class:`compas_fea2.model.Section`]
-
-        Returns
-        -------
-        None
-
-        """
-        return [self.add_section(section) for section in sections]
 
     # =========================================================================
     #                           Releases methods
@@ -1706,12 +1716,105 @@ class RigidPart(_Part):
         self._reference_point = self.add_node(value)
         value._is_reference = True
 
+    # @classmethod
+    # # @timer(message='part successfully imported from gmsh model in ')
+    # def from_gmsh(cls, gmshModel, section=None, name=None, **kwargs):
+    #     """Create a Part object from a gmshModel object.
+
+    #     According to the `section` type provided, :class:`compas_fea2.model._Element2D` or
+    #     :class:`compas_fea2.model._Element3D` elements are cretated.
+    #     The same section is applied to all the elements.
+
+    #     Parameters
+    #     ----------
+    #     name : str
+    #         Name of the new part.
+    #     gmshModel : obj
+    #         gmsh Model to convert. See [1]_
+    #     section : obj
+    #         `compas_fea2` :class:`SolidSection` or :class:`ShellSection` sub-class
+    #         object to to apply to the elements.
+    #     split : bool, optional
+    #         If ``True`` create an additional node in the middle of the edges of the
+    #         elements to implement more refined element types. Check for example [2]_.
+    #     verbose : bool, optional
+    #         If ``True`` print a log, by default False
+    #     check : bool, optional
+    #         If ``True`` performs sanity checks, by default False. This is a quite
+    #         resource-intense operation! Set to ``False`` for large models (>10000
+    #         nodes).
+
+    #     Returns
+    #     -------
+    #     :class:`compas_fea2.model._Part`
+    #         The part meshed.
+
+    #     Notes
+    #     -----
+    #     The gmshModel must have the right dimension corresponding to the section provided.
+
+    #     References
+    #     ----------
+    #     .. [1] https://gitlab.onelab.info/gmsh/gmsh/blob/gmsh_4_9_1/api/gmsh.py
+    #     .. [2] https://web.mit.edu/calculix_v2.7/CalculiX/ccx_2.7/doc/ccx/node33.html
+
+    #     Examples
+    #     --------
+    #     >>> mat = ElasticIsotropic(name="mat", E=29000, v=0.17, density=2.5e-9)
+    #     >>> sec = SolidSection("mysec", mat)
+    #     >>> part = DeformablePart.from_gmsh("part_gmsh", gmshModel, sec)
+
+    #     """
+    #     import numpy as np
+    #     import time
+
+    #     part = cls(name=name)
+
+    #     gmshModel.heal()
+    #     gmshModel.generate_mesh(3)
+    #     model = gmshModel.model
+
+    #     # add nodes
+    #     node_coords = model.mesh.get_nodes()[1].reshape((-1, 3), order="C")
+    #     fea2_nodes = np.array([part.add_node(Node(coords)) for coords in node_coords])
+
+    #     # add elements
+    #     gmsh_elements = model.mesh.get_elements()
+    #     dimension = 1
+    #     ntags_per_element = np.split(gmsh_elements[2][dimension] - 1, len(gmsh_elements[1][dimension]))  # gmsh keys start from 1
+
+    #     verbose = kwargs.get("verbose", False)
+    #     rigid = kwargs.get("rigid", False)
+    #     implementation = kwargs.get("implementation", None)
+
+    #     for ntags in ntags_per_element:
+    #         element_nodes = fea2_nodes[ntags]
+    #         if ntags.size != 3:
+    #             raise NotImplementedError("Element with {} nodes not supported".format(ntags.size))
+    #         k = part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=False, implementation=implementation))
+    #         k._on_boundary = True
+    #         if verbose:
+    #             print("element {} added".format(k))
+
+    #     if not part._boundary_mesh:
+    #         gmshModel.generate_mesh(2)  # FIXME Get the volumes without the mesh
+    #         part._boundary_mesh = gmshModel.mesh_to_compas()
+
+    #     if not part._discretized_boundary_mesh:
+    #         # gmshModel.generate_mesh(2)
+    #         part._discretized_boundary_mesh = part._boundary_mesh
+
+
+    #     point = part._discretized_boundary_mesh.centroid()
+    #     part.reference_point = Node(xyz=point)
+
+    #     return part
+
     @classmethod
-    # @timer(message='part successfully imported from gmsh model in ')
-    def from_gmsh(cls, gmshModel, name=None, **kwargs):
+    def from_gmsh(cls, gmshModel, section=None, name=None, **kwargs):
         """ """
         kwargs["rigid"] = True
-        return super().from_gmsh(gmshModel, name=name, **kwargs)
+        return super().from_gmsh(gmshModel, section, name, **kwargs)
 
     @classmethod
     def from_boundary_mesh(cls, boundary_mesh, name=None, **kwargs):
@@ -1722,29 +1825,29 @@ class RigidPart(_Part):
     # =========================================================================
     #                        Elements methods
     # =========================================================================
-    # TODO this can be removed and the checks on the rigid part can be done in _part
+    # # TODO this can be removed and the checks on the rigid part can be done in _part
 
-    def add_element(self, element):
-        # type: (_Element) -> _Element
-        """Add an element to the part.
+    # def add_element(self, element):
+    #     # type: (_Element) -> _Element
+    #     """Add an element to the part.
 
-        Parameters
-        ----------
-        element : :class:`compas_fea2.model._Element`
-            The element instance.
+    #     Parameters
+    #     ----------
+    #     element : :class:`compas_fea2.model._Element`
+    #         The element instance.
 
-        Returns
-        -------
-        :class:`compas_fea2.model._Element`
+    #     Returns
+    #     -------
+    #     :class:`compas_fea2.model._Element`
 
-        Raises
-        ------
-        TypeError
-            If the element is not an element.
+    #     Raises
+    #     ------
+    #     TypeError
+    #         If the element is not an element.
 
-        """
-        if not hasattr(element, "rigid"):
-            raise TypeError("The element type cannot be assigned to a RigidPart")
-        if not getattr(element, "rigid"):
-            raise TypeError("Rigid parts can only have rigid elements")
-        return super().add_element(element)
+    #     """
+    #     if not hasattr(element, "rigid"):
+    #         raise TypeError("The element type cannot be assigned to a RigidPart")
+    #     if not getattr(element, "rigid"):
+    #         raise TypeError("Rigid parts can only have rigid elements")
+    #     return super().add_element(element)

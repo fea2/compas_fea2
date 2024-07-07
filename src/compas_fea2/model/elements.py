@@ -501,11 +501,12 @@ class _Element3D(_Element):
 
     """
 
-    def __init__(self, nodes, section, implementation=None, **kwargs):
+    def __init__(self, nodes, section, implementation=None, rigid=False, **kwargs):
         super(_Element3D, self).__init__(
             nodes=nodes,
             section=section,
             implementation=implementation,
+            rigid=rigid,
             **kwargs,
         )
         self._face_indices = None
@@ -582,11 +583,12 @@ class TetrahedronElement(_Element3D):
 
     """
 
-    def __init__(self, *, nodes, section, implementation=None, **kwargs):
+    def __init__(self, *, nodes, section, implementation=None, rigid=False, **kwargs):
         super(TetrahedronElement, self).__init__(
             nodes=nodes,
             section=section,
             implementation=implementation,
+            rigid=rigid,
             **kwargs,
         )
         self._face_indices = {"s1": (0, 1, 2), "s2": (0, 1, 3), "s3": (1, 2, 3), "s4": (0, 2, 3)}
@@ -636,11 +638,12 @@ class PentahedronElement(_Element3D):
 class HexahedronElement(_Element3D):
     """A Solid cuboid element with 6 faces (extruded rectangle)."""
 
-    def __init__(self, nodes, section, implementation=None, **kwargs):
+    def __init__(self, nodes, section, implementation=None, rigid=False, **kwargs):
         super(HexahedronElement, self).__init__(
             nodes=nodes,
             section=section,
             implementation=implementation,
+            rigid=rigid,
             **kwargs,
         )
         self._faces_indices = {

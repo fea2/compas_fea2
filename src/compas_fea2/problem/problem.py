@@ -762,11 +762,17 @@ Analysis folder path : {}
         for displacement in displacements.results(filters={'step':step.name}):
             vector = displacement.vector.scaled(scale_results)
             displacement.node.xyz = sum_vectors([Vector(*displacement.location.xyz), vector])
+        for element in self.model.elements:
+            try:
+                element.frame.point = element.nodes[0].xyz
+            except:
+                pass
+
         #NOTE it is not changeing the discretised boundary mesh
         viewer.viewer.scene.add(self.model, opacity=0.5, show_bcs=kwargs.get("show_bcs", False))
         viewer.viewer.show()
 
-    def show_reactions(self, step=None, scale_results=1, components=None, translate=-1, scale_model=1, show_bcs=True):
+    def show_reactions(self, step=None, scale_results=1, components=None, translate=-1, scale_model=1, show_bcs=True, **kwargs):
         from compas_fea2.UI.viewer import FEA2Viewer, FEA2ModelObject
         from compas.scene import register
         from compas.scene import register_scene_objects
@@ -785,21 +791,6 @@ Analysis folder path : {}
         viewer.viewer.scene.add(collections, name="Principal Stresses")
         viewer.viewer.show()
 
-    def draw_reactions(self, step=None, scale_results=1, translate=0, components=None):
-        from compas_viewer.scene import Collection
-        if not step:
-            step = self.steps_order[-1]
-        field_locations =list( self.reaction_field.locations(step, point=True))
-        field_results = list(self.reaction_field.vectors(step))
-
-        if not components:
-            components = [0,1,2]
-
-        collections = []
-        for component in components:
-            lines = self.draw_field_vectors(field_locations, field_results, scale_results, translate=translate)
-            collections.append((Collection(lines), {"name": f"RF-{component}", "linecolor": Color.green(), "linewidth":3}))
-        return collections
 
     def show_stress_contour(self, step=None, stresstype="vonmieses", high=None, low=None, cmap=None, side=None, scale_model=1.0, show_bcs=True, **kwargs):
         from compas_fea2.UI.viewer import FEA2Viewer, FEA2ModelObject

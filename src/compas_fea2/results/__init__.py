@@ -6,7 +6,8 @@ from .database import (
     ResultsDatabase,
     DisplacementResultsTable,
     ReactionResultsTable,
-    StressResultsTable,
+    Stress2DResultsTable,
+    Stress3DResultsTable,
 )
 from .results import Result, DisplacementResult, StressResult, MembraneStressResult, ShellStressResult, SolidStressResult
 from .fields import (

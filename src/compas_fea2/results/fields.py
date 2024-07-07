@@ -113,11 +113,11 @@ class FieldResults(FEAData):
             The location where the field is defined.
         """
         step = step or self.problem.steps_order[-1]
-        for r in self.results(filters={'step': step.name}):
+        for r in self.results(filters={"step": step.name}):
             if point:
-                yield r.node.point
+                yield r.location.point
             else:
-                yield r.node
+                yield r.location
 
     def vectors(self, step=None):
         """Return the locations where the field is defined.
@@ -133,9 +133,8 @@ class FieldResults(FEAData):
             The location where the field is defined.
         """
         step = step or self.problem.steps_order[-1]
-        for r in self.results(step):
+        for r in self.results(filters={"step": step.name}):
             yield r.vector
-
 
     def vector_field(self, step=None, component=None, point=False):
         """Return the locations where the field is defined.
@@ -151,9 +150,9 @@ class FieldResults(FEAData):
             The location where the field is defined.
         """
         step = step or self.problem.steps_order[-1]
-        for l, r in zip(self.locations(step, point), self.results(filters={'step': step.name})):
+        for l, r in zip(self.locations(step, point), self.results(filters={"step": step.name})):
             if component:
-                vector_components = {c: r.vector[component] if component==n else 0. for n, c in enumerate(["x", "y", "z"], 1)}
+                vector_components = {c: r.vector[component] if component == n else 0.0 for n, c in enumerate(["x", "y", "z"], 1)}
                 yield (l, Vector(**vector_components))
             else:
                 yield (l, r.vector)
@@ -245,7 +244,6 @@ class _NodeFieldResults(FieldResults):
         super(_NodeFieldResults, self).__init__(problem=problem, field_name=field_name, *args, **kwargs)
         self._results_func = "find_node_by_key"
 
-
     def get_results_at_node(self, node, steps=None):
         """"""
         if not node:
@@ -301,7 +299,6 @@ class DisplacementFieldResults(_NodeFieldResults):
         self._results_class = DisplacementResult
 
 
-
 class ReactionFieldResults(_NodeFieldResults):
     """Reaction field.
 
@@ -316,8 +313,7 @@ class ReactionFieldResults(_NodeFieldResults):
         self._results_class = ReactionResult
 
 
-
-class StressFieldResults(FEAData):
+class StressFieldResults(FieldResults):
     """_summary_
 
     Parameters
@@ -327,7 +323,7 @@ class StressFieldResults(FEAData):
     """
 
     def __init__(self, problem, *args, **kwargs):
-        super(StressFieldResults, self).__init__(*args, **kwargs)
+        super(StressFieldResults, self).__init__(problem, field_name="S2D", *args, **kwargs)
         self._registration = problem
         self._components_names_2d = ["S11", "S22", "S12", "M11", "M22", "M12"]
         self._components_names_3d = ["S11", "S22", "S23", "S12", "S13", "S33"]
@@ -336,10 +332,6 @@ class StressFieldResults(FEAData):
         self._results_class_2d = ShellStressResult
         self._results_class_3d = SolidStressResult
         self._results_func = "find_element_by_key"
-
-    @property
-    def field_name(self):
-        return self._field_name
 
     @property
     def problem(self):
@@ -401,7 +393,6 @@ class StressFieldResults(FEAData):
     #     results_set = self.rdb.get_rows(field_name, columns, {"key": members_keys, "part": parts_names, "step": steps_names})
     #     return self._to_fea2_results(results_set, members_keys, steps_names)
 
-
     def get_results_at_point(self, point, distance, plane=None, steps=None):
         """Get the displacement of the model around a location (point).
 
@@ -423,7 +414,6 @@ class StressFieldResults(FEAData):
         for step in steps:
             results.append(self.get_results(nodes, steps)[step])
 
-
     def locations(self, step=None, point=False):
         """Return the locations where the field is defined.
 
@@ -438,7 +428,7 @@ class StressFieldResults(FEAData):
             The location where the field is defined.
         """
         step = step or self.problem.steps_order[-1]
-        for s in self.results(step):
+        for s in self.results(filters={"step": step.name}):
             if point:
                 yield Point(*s.reference_point)
             else:
