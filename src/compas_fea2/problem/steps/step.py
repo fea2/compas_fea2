@@ -58,7 +58,7 @@ class Step(FEAData):
     def __from_data__(cls, data):
         return cls(
         )
-        
+
     def __init__(self, **kwargs):
         super(Step, self).__init__(**kwargs)
         self._field_outputs = set()
@@ -253,15 +253,15 @@ class GeneralStep(Step):
 
     @property
     def displacements(self):
-        return list(filter(lambda p: isinstance(p.load, GeneralDisplacement), self._patterns))
+        return list(filter(lambda p: isinstance(p.value, GeneralDisplacement), self._patterns))
 
     @property
     def loads(self):
-        return list(filter(lambda p: isinstance(p.load, Load), self._patterns))
+        return list(filter(lambda p: isinstance(p.value, Load), self._patterns))
 
     @property
     def fields(self):
-        return list(filter(lambda p: isinstance(p.load, _PrescribedField), self._patterns))
+        return list(filter(lambda p: isinstance(p.value, _PrescribedField), self._patterns))
 
     @property
     def max_increments(self):

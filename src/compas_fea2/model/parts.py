@@ -1124,7 +1124,7 @@ class _Part(FEAData):
     #                           Faces methods
     # =========================================================================
 
-    def find_faces_on_plane(self, plane):
+    def find_faces_on_plane(self, plane, tolerance):
         """Find the face of the elements that belongs to a given plane, if any.
 
         Parameters
@@ -1145,7 +1145,7 @@ class _Part(FEAData):
         faces = []
         for element in filter(lambda x: isinstance(x, (_Element2D, _Element3D)) and x.on_boundary, self.elements):
             for face in element.faces:
-                if all([is_point_on_plane(node.xyz, plane) for node in face.nodes]):
+                if all([is_point_on_plane(node.xyz, plane, tolerance) for node in face.nodes]):
                     faces.append(face)
         return faces
 
@@ -1157,13 +1157,15 @@ class _Part(FEAData):
         ----------
         interface : :class:`compas_assembly.datastructures.Interface`
             The interface where the faces must lay.
+        boundary : bool, optional
+            If True, only the faces within the boundary of the interface are returned.
 
         Returns
         -------
         :class:list[`compas_fea2.model.elements.Face`]
             list of the faces on the interface.
         """
-        faces = [face for face in self.find_faces_on_plane(Plane.from_frame(interface.frame))]
+        faces = [face for face in self.find_faces_on_plane(Plane.from_frame(interface.frame), tolerance)]
         if boundary:
             sub_faces = set()
             nodes_in_interface_polygon = self.find_nodes_in_interface(interface, tolerance=tolerance)

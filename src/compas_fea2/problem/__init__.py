@@ -3,7 +3,9 @@ from __future__ import division
 from __future__ import print_function
 
 from .problem import Problem
+
 from .displacements import GeneralDisplacement
+
 from .loads import (
     Load,
     PrestressLoad,
@@ -21,7 +23,15 @@ from .fields import (
     PrescribedTemperatureField,
 )
 
-from .patterns import Pattern, NodeLoadPattern, PointLoadPattern, LineLoadPattern, AreaLoadPattern, VolumeLoadPattern
+from .patterns import (
+    Pattern,
+    NodeLoadPattern,
+    NodeDisplacementPattern,
+    PointLoadPattern,
+    LineLoadPattern,
+    AreaLoadPattern,
+    VolumeLoadPattern
+    )
 
 from .combinations import LoadCombination
 

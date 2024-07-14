@@ -8,6 +8,7 @@ from typing import Iterable
 from compas_fea2.base import FEAData
 from compas_fea2.problem.loads import NodeLoad, GravityLoad
 
+from compas_fea2.problem.displacements import GeneralDisplacement
 
 class Pattern(FEAData):
     """A pattern is the spatial distribution of a specific set of forces,
@@ -96,6 +97,9 @@ class Pattern(FEAData):
     def distribution(self):
         return self._distribution
 
+    @property
+    def value(self):
+        raise NotImplementedError("This method should be implemented in a subclass")
 
 
 class NodeLoadPattern(Pattern):
@@ -115,8 +119,12 @@ class NodeLoadPattern(Pattern):
         return self._distribution
 
     @property
-    def load(self):
+    def value(self):
         return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
+
+    @property
+    def load(self):
+        return self.value
 
     @property
     def node_load(self):
@@ -124,7 +132,34 @@ class NodeLoadPattern(Pattern):
         # FIXME change to tributary load for each node
         return zip(self.nodes, [self.load] * n_nodes)
 
+class NodeDisplacementPattern(Pattern):
+    """Nodal distribution of a load case.
 
+    Parameters
+    ----------
+    Pattern : _type_
+        _description_
+    """
+
+    def __init__(self, nodes, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
+        super(NodeDisplacementPattern, self).__init__(distribution=nodes, x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, load_case=None, axes=axes, **kwargs)
+
+    @property
+    def nodes(self):
+        return self._distribution
+
+    @property
+    def value(self):
+        return GeneralDisplacement(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
+
+    @property
+    def displacement(self):
+        return self.value
+
+    @property
+    def node_displacement(self):
+        n_nodes = len(self.nodes)
+        return zip(self.nodes, [self.displacement] * n_nodes)
 
 class PointLoadPattern(NodeLoadPattern):
     """Point distribution of a load case.
@@ -213,8 +248,12 @@ class LineLoadPattern(Pattern):
         )
 
     @property
-    def load(self):
+    def value(self):
         return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
+
+    @property
+    def load(self):
+        return self.value
 
     @property
     def polyline(self):
@@ -279,14 +318,19 @@ class AreaLoadPattern(Pattern):
         return self.model.find_nodes_in_polygon(self.polygon, tolerance=self.tolerance)
 
     @property
+    def value(self):
+        #FIXME change to tributary load for each node
+        area = self.polygon.area
+        n_nodes = len(self.nodes)
+        return NodeLoad(**{k: v*area/n_nodes if v else v for k, v in self.components.items()}, axes=self.axes)
+
+    @property
     def load(self):
-        return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
+        return self.value
 
     @property
     def node_load(self):
-        n_nodes = len(self.nodes)
-        area = self.polygon.area
-        return zip(self.nodes, [NodeLoad(**{k: v * area / n_nodes if v else v for k, v in self.components.items()}, axes=self.axes)] * n_nodes)
+        return zip(self.nodes, [self.value] * len(self.nodes))
 
 
 
@@ -311,8 +355,12 @@ class VolumeLoadPattern(Pattern):
         return list(set(itertools.chain.from_iterable(self.parts)))
 
     @property
-    def load(self):
+    def value(self):
         return NodeLoad(**{k: v if v else v for k, v in self.components.items()}, axes=self.axes)
+
+    @property
+    def load(self):
+        return self.value
 
     @property
     def node_load(self):
@@ -381,8 +429,12 @@ class GravityLoadPattern(Pattern):
         return list(set(itertools.chain.from_iterable(self.parts)))
 
     @property
-    def load(self):
+    def value(self):
         return GravityLoad(self.g, self.x, self.y, self.z)
+
+    @property
+    def load(self):
+        return self.value
 
     @property
     def node_load(self):
