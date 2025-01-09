@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 
 
@@ -7,7 +6,7 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="../_static/compas.ico" type="image/x-icon">
     <title>Problem &#8212; COMPAS FEA2</title>
   
@@ -29,28 +28,29 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/css/compas.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/tabs.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/compas.css?v=617b33e2" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/clipboard.min.js"></script>
-    <script src="../_static/copybutton.js"></script>
-    <script src="../_static/tabs.js"></script>
+    <script src="../_static/documentation_options.js?v=bb99e320"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/tabs.js?v=3ee01567"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
-    <script src="../_static/togglebutton.js"></script>
-    <script src="../_static/design-tabs.js"></script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'userguide/basics.problem';</script>
     <script>
@@ -509,6 +509,39 @@ document.write(`
                   
   <section id="problem">
 <h1>Problem</h1>
+<p>The <cite>Problem</cite> class in compas_fea2 is a central component for defining and managing finite element analysis problems. It encapsulates all the necessary information required to set up and solve an FEA problem, including the model, analysis type, boundary conditions, loads, and solver settings.</p>
+<p>Key attributes and methods of the <cite>Problem</cite> class include:
+- <strong>Attributes</strong>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><cite>model</cite>: The finite element model to be analyzed.</p></li>
+<li><p><cite>analysis_type</cite>: The type of analysis to be performed (e.g., static, modal, dynamic).</p></li>
+<li><p><cite>boundary_conditions</cite>: A list of boundary conditions applied to the model.</p></li>
+<li><p><cite>loads</cite>: A list of loads applied to the model.</p></li>
+<li><p><cite>solver_settings</cite>: Configuration settings for the FEA solver.</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p><strong>Methods</strong>:
+- <cite>add_boundary_condition(bc)</cite>: Adds a boundary condition to the problem.
+- <cite>add_load(load)</cite>: Adds a load to the problem.
+- <cite>set_solver(solver)</cite>: Sets the solver to be used for the analysis.
+- <cite>solve()</cite>: Executes the analysis using the specified solver and settings.</p></li>
+</ul>
+<p>The <cite>Problem</cite> class provides a high-level interface for defining and managing FEA problems, making it easier for users to set up and run simulations without dealing with low-level details.</p>
+<p>Example usage:
+<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+from compas_fea2 import Problem</p>
+<p># Create a new Problem instance
+problem = Problem(model=my_model, analysis_type=’static’)</p>
+<p># Add boundary conditions and loads
+problem.add_boundary_condition(my_boundary_condition)
+problem.add_load(my_load)</p>
+<p># Set the solver and solve the problem
+problem.set_solver(my_solver)
+problem.solve()
+<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>For more detailed information and examples, please refer to the official documentation and user guides.</p>
 </section>
 
 
@@ -554,7 +587,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
     <br/>
   </p>
 </div>

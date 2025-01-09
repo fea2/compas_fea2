@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 
 
@@ -7,7 +6,7 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="../_static/compas.ico" type="image/x-icon">
     <title>Introduction &#8212; COMPAS FEA2</title>
   
@@ -29,28 +28,29 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/css/compas.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/tabs.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/compas.css?v=617b33e2" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/clipboard.min.js"></script>
-    <script src="../_static/copybutton.js"></script>
-    <script src="../_static/tabs.js"></script>
+    <script src="../_static/documentation_options.js?v=bb99e320"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/tabs.js?v=3ee01567"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
-    <script src="../_static/togglebutton.js"></script>
-    <script src="../_static/design-tabs.js"></script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'userguide/gettingstarted.intro';</script>
     <script>
@@ -509,6 +509,25 @@ document.write(`
                   
   <section id="introduction">
 <h1>Introduction</h1>
+<p>Welcome to compas_fea2, a powerful and flexible framework for finite element analysis (FEA) in Python. This package is part of the COMPAS framework, an open-source initiative aimed at providing computational tools for research and collaboration in architecture, engineering, and digital fabrication.</p>
+<p>### What is Finite Element Analysis (FEA)?</p>
+<p>Finite Element Analysis (FEA) is a numerical method used to solve complex engineering problems. It involves breaking down a large system into smaller, simpler parts called finite elements. These elements are then analyzed individually, and their behavior is combined to understand the overall system’s response to various conditions such as loads, constraints, and environmental factors.</p>
+<p>### How compas_fea2 Works</p>
+<p>compas_fea2 simplifies the process of setting up, running, and post-processing FEA simulations. The package provides a high-level interface for defining models, applying loads and boundary conditions, selecting solvers, and retrieving results. It is designed to be modular and extensible, allowing users to customize and extend its functionality to meet specific needs.</p>
+<p>Key components of compas_fea2 include:
+- <strong>Model</strong>: Represents the finite element model, including nodes, elements, materials, and sections.
+- <strong>Problem</strong>: Defines the analysis problem, including the model, analysis type, boundary conditions, loads, and solver settings.
+- <strong>Solver</strong>: Executes the analysis and computes the results.
+- <strong>Results</strong>: Stores and provides access to the analysis results.</p>
+<p>### Possible Applications</p>
+<p>compas_fea2 can be used in a wide range of applications, including but not limited to:
+- <strong>Structural Analysis</strong>: Evaluate the strength, stability, and deformation of structures under various loads.
+- <strong>Modal Analysis</strong>: Determine the natural frequencies and mode shapes of structures.
+- <strong>Buckling Analysis</strong>: Assess the buckling behavior of structures under compressive loads.
+- <strong>Dynamic Analysis</strong>: Analyze the response of structures to dynamic loads such as earthquakes and wind.
+- <strong>Thermal Analysis</strong>: Study the thermal behavior of structures and materials.</p>
+<p>Whether you are an engineer, researcher, or student, compas_fea2 provides the tools you need to perform advanced FEA simulations efficiently and effectively.</p>
+<p>For more detailed information and examples, please refer to the official documentation and user guides.</p>
 </section>
 
 
@@ -554,7 +573,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
     <br/>
   </p>
 </div>
