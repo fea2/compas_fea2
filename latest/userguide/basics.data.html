@@ -549,26 +549,9 @@ and derive from a base FEA2 data class (<code class="xref py py-class docutils l
 <p>This means that all these components have the same base data infrastructure as all other COMPAS objects.
 They have a guid, a name, and general attributes.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">compas_fea2.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;node&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;node&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;node&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">guid</span>
-<span class="gp">...</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">attributes</span>
-<span class="go">{}</span>
-</pre></div>
-</div>
-<p>They can be converted to data and serialized to a JSON string or file.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">to_data</span><span class="p">()</span>
-<span class="go">{&#39;name&#39;: &#39;node&#39;, &#39;guid&#39;: ..., &#39;attributes&#39;: {}}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">to_jsonstring</span><span class="p">()</span>
-<span class="go">&#39;{&quot;name&quot;: &quot;node&quot;, &quot;guid&quot;: ..., &quot;attributes&quot;: {}}&#39;</span>
-</pre></div>
-</div>
-<p>The only difference from other COMPAS objects is their default name.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">name</span>
-<span class="gp">...</span>
 </pre></div>
 </div>
 </section>

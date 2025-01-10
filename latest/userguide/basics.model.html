@@ -518,7 +518,7 @@ A model consists of nodes, elements and parts,
 and defines connections, constraints and boundary conditions.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">compas_fea2.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span>
+<span class="gp">&gt;&gt;&gt;</span>
 </pre></div>
 </div>
 <section id="nodes">
@@ -526,8 +526,8 @@ and defines connections, constraints and boundary conditions.</p>
 <p>Nodes are the basic building blocks of a model.
 They define the locations in space that define all other entities.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">compas_fea2.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt;</span>
 <span class="go">Node(...)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">x</span>
 <span class="go">0.0</span>
@@ -538,14 +538,14 @@ They define the locations in space that define all other entities.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">xyz</span>
 <span class="go">[0.0, 0.0, 0.0]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">point</span>
-<span class="go">Point(0.0, 0.0, 0.0)</span>
+<span class="go">Point(x=0.0, y=0.0, z=0.0)</span>
 </pre></div>
 </div>
 <p>Besides coordinates, nodes have many other (optional) attributes.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">mass</span>
-<span class="go">[None, None, None]</span>
+<span class="go">(None, None, None)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">temperature</span>
-<span class="go">None</span>
+<span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">dof</span>
 <span class="go">{&#39;x&#39;: True, &#39;y&#39;: True, &#39;z&#39;: True, &#39;xx&#39;: True, &#39;yy&#39;: True, &#39;zz&#39;: True}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">node</span><span class="o">.</span><span class="n">loads</span>
