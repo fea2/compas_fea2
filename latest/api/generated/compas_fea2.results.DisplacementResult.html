@@ -628,45 +628,9 @@ document.write(`
 <h1>DisplacementResult</h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="compas_fea2.results.DisplacementResult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compas_fea2.results.</span></span><span class="sig-name descname"><span class="pre">DisplacementResult</span></span><a class="reference external" href="https://github.com/compas-dev/compas_fea2/blob/921ee41/src/compas_fea2/results/results.py#L87"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
-<dd><p>Bases: <a class="reference internal" href="compas_fea2.results.Result.html#compas_fea2.results.Result" title="compas_fea2.results.results.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compas_fea2.results.</span></span><span class="sig-name descname"><span class="pre">DisplacementResult</span></span><a class="reference external" href="https://github.com/compas-dev/compas_fea2/blob/afdba20/src/compas_fea2/results/results.py#L146"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NodeResult</span></code></p>
 <p>DisplacementResult object.</p>
-<dl class="field-list">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl>
-<dt><strong>node</strong><span class="classifier"><a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a></span></dt><dd><p>The location of the result.</p>
-</dd>
-<dt><strong>x</strong><span class="classifier">float</span></dt><dd><p>The x component of the displacement vector</p>
-</dd>
-<dt><strong>y</strong><span class="classifier">float</span></dt><dd><p>The y component of the displacement vector</p>
-</dd>
-<dt><strong>z</strong><span class="classifier">float</span></dt><dd><p>The z component of the displacement vector</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Attributes<span class="colon">:</span></dt>
-<dd class="field-even"><dl>
-<dt><strong>location</strong><span class="classifier"><a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a> `</span></dt><dd><p>The location of the result.</p>
-</dd>
-<dt><strong>node</strong><span class="classifier"><a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a></span></dt><dd><p>The location of the result.</p>
-</dd>
-<dt><strong>components</strong><span class="classifier">dict</span></dt><dd><p>A dictionary with {“component name”: component value} for each component of the result.</p>
-</dd>
-<dt><strong>invariants</strong><span class="classifier">dict</span></dt><dd><p>A dictionary with {“invariant name”: invariant value} for each invariant of the result.</p>
-</dd>
-<dt><strong>u1</strong><span class="classifier">float</span></dt><dd><p>The x component of the displacement vector.</p>
-</dd>
-<dt><strong>u2</strong><span class="classifier">float</span></dt><dd><p>The y component of the displacement vector.</p>
-</dd>
-<dt><strong>u3</strong><span class="classifier">float</span></dt><dd><p>The z component of the displacement vector.</p>
-</dd>
-<dt><strong>vector</strong><span class="classifier"><a class="reference external" href="https://compas.dev/compas/latest/api/generated/compas.geometry.Vector.html" title="(in COMPAS vlatest)"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas.geometry.Vector</span></code></a></span></dt><dd><p>The displacement vector.</p>
-</dd>
-<dt><strong>magnitude</strong><span class="classifier">float</span></dt><dd><p>The absolute value of the displacement.</p>
-</dd>
-</dl>
-</dd>
-</dl>
 <p class="rubric">Notes</p>
 <p>DisplacementResults are registered to a <a class="reference internal" href="compas_fea2.model.Node.html#compas_fea2.model.Node" title="compas_fea2.model.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">compas_fea2.model.Node</span></code></a></p>
 <p class="rubric">Inherited Methods</p>

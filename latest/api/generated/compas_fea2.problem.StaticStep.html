@@ -59,7 +59,7 @@
         </script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="StaticStep.add_area_pattern" href="compas_fea2.problem.StaticStep.add_area_pattern.html" />
+    <link rel="next" title="StaticStep.add_areaload_pattern" href="compas_fea2.problem.StaticStep.add_areaload_pattern.html" />
     <link rel="prev" title="ComplexEigenValue.validate_data" href="compas_fea2.problem.ComplexEigenValue.validate_data.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -628,7 +628,7 @@ document.write(`
 <h1>StaticStep</h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="compas_fea2.problem.StaticStep">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compas_fea2.problem.</span></span><span class="sig-name descname"><span class="pre">StaticStep</span></span><a class="reference external" href="https://github.com/compas-dev/compas_fea2/blob/921ee41/src/compas_fea2/problem/steps/static.py#L14"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">compas_fea2.problem.</span></span><span class="sig-name descname"><span class="pre">StaticStep</span></span><a class="reference external" href="https://github.com/compas-dev/compas_fea2/blob/afdba20/src/compas_fea2/problem/steps/static.py#L14"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Bases: <a class="reference internal" href="compas_fea2.problem.GeneralStep.html#compas_fea2.problem.GeneralStep" title="compas_fea2.problem.steps.step.GeneralStep"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralStep</span></code></a></p>
 <p>StaticStep for use in a static analysis.</p>
 <dl class="field-list">
@@ -695,7 +695,7 @@ ones defined in the present step, otherwise the loads are added.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_area_pattern.html#compas_fea2.problem.StaticStep.add_area_pattern" title="compas_fea2.problem.StaticStep.add_area_pattern"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_area_pattern</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_areaload_pattern.html#compas_fea2.problem.StaticStep.add_areaload_pattern" title="compas_fea2.problem.StaticStep.add_areaload_pattern"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_areaload_pattern</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_displacement.html#compas_fea2.problem.StaticStep.add_displacement" title="compas_fea2.problem.StaticStep.add_displacement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_displacement</span></code></a></p></td>
@@ -716,13 +716,10 @@ ones defined in the present step, otherwise the loads are added.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_prestress_load.html#compas_fea2.problem.StaticStep.add_prestress_load" title="compas_fea2.problem.StaticStep.add_prestress_load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_prestress_load</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_temperature_field.html#compas_fea2.problem.StaticStep.add_temperature_field" title="compas_fea2.problem.StaticStep.add_temperature_field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_temperature_field</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_temperature_pattern.html#compas_fea2.problem.StaticStep.add_temperature_pattern" title="compas_fea2.problem.StaticStep.add_temperature_pattern"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_temperature_pattern</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_temperature_fields.html#compas_fea2.problem.StaticStep.add_temperature_fields" title="compas_fea2.problem.StaticStep.add_temperature_fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_temperature_fields</span></code></a></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_tributary_load.html#compas_fea2.problem.StaticStep.add_tributary_load" title="compas_fea2.problem.StaticStep.add_tributary_load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_tributary_load</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="compas_fea2.problem.StaticStep.add_tributary_load.html#compas_fea2.problem.StaticStep.add_tributary_load" title="compas_fea2.problem.StaticStep.add_tributary_load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_tributary_load</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
