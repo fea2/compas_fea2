@@ -124,6 +124,12 @@ class FieldResults(FEAData):
         for r in self.results:
             yield r.location
 
+    def create_sql_table(self, results):
+        """
+        Delegate the table creation to the ResultsDatabase class.
+        """
+        ResultsDatabase.sqlite(self.problem).create_table_for_output_class(self, results)
+
     def _get_results_from_db(self, members=None, columns=None, filters=None, func=None, **kwargs):
         """Get the results for the given members and steps.
 
