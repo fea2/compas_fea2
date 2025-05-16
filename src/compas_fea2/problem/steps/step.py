@@ -6,6 +6,7 @@ from compas.geometry import centroid_points_weighted
 from compas.geometry import sum_vectors
 
 from compas_fea2.base import FEAData
+from compas_fea2.UI import FEA2Viewer
 from compas_fea2.problem.displacements import GeneralDisplacement
 from compas_fea2.problem.fields import DisplacementField
 from compas_fea2.problem.fields import NodeLoadField
@@ -14,7 +15,7 @@ from compas_fea2.results import DisplacementFieldResults
 from compas_fea2.results import ReactionFieldResults
 from compas_fea2.results import SectionForcesFieldResults
 from compas_fea2.results import StressFieldResults
-from compas_fea2.UI import FEA2Viewer
+
 
 # ==============================================================================
 #                                Base Steps
@@ -223,6 +224,16 @@ class Step(FEAData):
         obj._combination = data["combination"]
         return obj
 
+    def check_force_equilibrium(self, tolerance=10**-6):
+        applied_load=[0,0,0]
+        reaction_vector=self.get_total_reaction(self)[0]
+        for load_field in self.loads:
+            for load in load_field.loads :
+                applied_load+= [load.x, load.y, load.z]
+        
+        equilibrium = applied_load[0]-reaction_vector.x < tolerance and applied_load[1]-reaction_vector.y < tolerance and applied_load[2]-reaction_vector.z < tolerance
+        
+        return equilibrium
 
 # ==============================================================================
 #                                General Steps
@@ -670,7 +681,7 @@ class GeneralStep(Step):
             step = self.steps_order[-1]
         reactions = self.reaction_field
         locations, vectors, vectors_lengths = [], [], []
-        for reaction in reactions.results(step):
+        for reaction in reactions.results:
             locations.append(reaction.location.xyz)
             vectors.append(reaction.vector)
             vectors_lengths.append(reaction.vector.length)
