@@ -5,6 +5,8 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+from compas.geometry import Vector, Point
+
 from compas_fea2.base import FEAData
 from compas_fea2.job.input_file import InputFile
 from compas_fea2.problem.steps import StaticStep
@@ -544,3 +546,129 @@ Analysis folder path : {self.path or "N/A"}
         problem._steps = set(Step.__from_data__(step_data) for step_data in data.get("steps", []))
         problem._steps_order = list(problem._steps)
         return problem
+    
+    def plot_deflection_along_line(self, line, step=None, n_divide=1000,  plot_data=False):
+
+        """Plot the deflection along a compas line given as an input. This method can only be used on shell models.
+        
+        Parameters
+        ----------
+        line : :class:`compas.geometry.Line`
+            Line along which the deflection is plotted.
+        step : :class:`compas_fea2.problems.step, optional
+            Step containing the displacements results.
+            If not indicated, the last step of the problem is considered
+        n_divide : int, optional
+            Number of division of the input line.
+            If not indicated, a value of 1000 is implemented.
+
+        """
+
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from compas.geometry import Point
+        from scipy.spatial import KDTree
+        
+        if not step:
+            step = self.steps_order[-1]        
+        if not step.displacement_field:
+            raise ValueError("No displacement field results available for this step")
+        
+        #-----------------------------------------------------------
+        #FIRST, the input line is discretized in n_divide points
+        #-----------------------------------------------------------
+        # TODO automatized the n_divide parameters with the mesh density 
+        v_discretized=Vector(line.vector[0]/n_divide, line.vector[1]/n_divide, line.vector[2]/n_divide)
+
+        l_discretized=[line.start]
+        for i in range(n_divide-1):
+            l_discretized.append(l_discretized[i].translated(v_discretized))
+        l_discretized.append(line.end)
+
+        #--------------------------------------------------------------------------------------------------------------------
+        #SECOND, looking for the closest points of mesh to input line, according to their projection on the horizontal plan
+        #--------------------------------------------------------------------------------------------------------------------
+        part=list(step.model.parts)[0]
+        nodes=part.nodes
+
+        #projection of the nodes of the mesh on the XY plan
+        element_XY_points=[]
+        for node in nodes :
+            element_XY_points.append(Point(node.xyz[0], node.xyz[1], 0)) #nodes of the shell are projected vertically
+        
+        #determination of the closest nodes 
+        l_closestpoints=[]
+        for point_line in l_discretized:
+            tree=KDTree(element_XY_points)
+            dist, closest_2D_point_index=tree.query(point_line, k=1)
+            closest_3D_point=list(nodes)[closest_2D_point_index]
+            l_closestpoints.append(closest_3D_point)
+
+        #Elimination of the points that have the same "closest node"
+        i=0
+        while i<len(l_closestpoints)-1:
+            if l_closestpoints[i]==l_closestpoints[i+1]:
+                del l_closestpoints[i+1]
+                del l_discretized[i+1]
+                i-=1
+            i+=1
+
+        #--------------------------------------------------------------------------------------------------------------------
+        #THIRD, extraction of the deflection values of the nodes of the mesh
+        #--------------------------------------------------------------------------------------------------------------------
+        field_displacement=step.displacement_field
+        
+        #Construction of plotting lists
+        #x_list and y_list store the global x- and y-axis coordinates values 
+        #plot_value stores the corresponding displacement value
+        plot_value=[field_displacement.get_result_at(point).z for point in l_closestpoints]
+        x_list=[point.x for point in l_closestpoints]
+        y_list=[point.y for point in l_closestpoints]
+        
+        #Determination of the local maxima/minima for plot display
+        derivated_values=[]
+        relative_extrema=[]
+        for i in range(len(l_discretized)-1):
+            derivated_values.append(plot_value[i+1]-plot_value[i])
+            if i>0 and (derivated_values[i]*derivated_values[i-1]<0):
+                relative_extrema.append([l_discretized[i],plot_value[i]])
+        
+        #--------------------------------------------------------------------------------------------------------------------
+        #FINAL, script for plot display. 
+        #--------------------------------------------------------------------------------------------------------------------
+        
+        #Determination if the result line is along the x- or y-axis
+        stdx=np.std(np.array(x_list))
+        stdy=np.std(np.array(y_list))
+
+        fig, ax = plt.subplots()
+
+        # input line along the y-axis
+        if stdx==0:
+            ax.plot(y_list,plot_value)
+            ax.set(xlabel='y', ylabel='Displacement (mm)',
+            title='Displacement according to y, x='+str(x_list[0]))
+            for i in range(len(relative_extrema)):
+                ax.plot(relative_extrema[i][0][1], relative_extrema[i][1], 'o')
+                ax.annotate(str(int(relative_extrema[i][1]*100)/100)+' mm',xy=(relative_extrema[i][0][1], relative_extrema[i][1]))
+
+        #input line along the x-axis
+        elif stdy==0:
+
+            ax.plot(x_list,plot_value, linestyle='dashed')
+            ax.set(xlabel='x', ylabel='Displacement (mm)',
+            title='Displacement according to x, y='+str(y_list[0]))
+            for i in range(len(relative_extrema)):
+                ax.plot(relative_extrema[i][0][0], relative_extrema[i][1], 'o')
+                ax.annotate(str(int(relative_extrema[i][1]*100)/100)+' mm',xy=(relative_extrema[i][0][0], relative_extrema[i][1]))
+
+        else :
+            ax = plt.figure().add_subplot(projection='3d')
+            ax.plot(x_list, y_list, plot_value)
+            ax.set(xlabel='x', ylabel='y', zlabel='Displacement (mm)',
+            title='Displacement according to x, y')
+            for i in range(len(relative_extrema)):
+                ax.plot(relative_extrema[i][0][0], relative_extrema[i][0][1], relative_extrema[i][1], 'o')
+                ax.text(relative_extrema[i][0][0], relative_extrema[i][0][1], relative_extrema[i][1], str(int(relative_extrema[i][1]*100)/100))
+            
+        plt.show()
