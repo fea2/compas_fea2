@@ -229,10 +229,13 @@ class Step(FEAData):
         reaction_vector=self.get_total_reaction(self)[0]
         for load_field in self.loads:
             for load in load_field.loads :
-                applied_load+= [load.x, load.y, load.z]
+                applied_load[0], applied_load[1], applied_load[2] = applied_load[0]+load.x, applied_load[1]+load.y, applied_load[2]+load.z
         
-        equilibrium = applied_load[0]-reaction_vector.x < tolerance and applied_load[1]-reaction_vector.y < tolerance and applied_load[2]-reaction_vector.z < tolerance
-        
+        equilibrium = applied_load[0]+reaction_vector.x < tolerance and applied_load[1]+reaction_vector.y < tolerance and applied_load[2]+reaction_vector.z < tolerance
+        if equilibrium :
+            print("The force equilibrium is respected.")
+        else :
+            print("The force equilibrium is not respected.")
         return equilibrium
 
 # ==============================================================================
