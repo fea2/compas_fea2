@@ -1547,31 +1547,63 @@ class _Part(FEAData):
         for node in nodes:
             self.remove_node(node)
 
-    def is_node_on_boundary(self, node: Node, precision: Optional[float] = None) -> bool:
-        """Check if a node is on the boundary mesh of the Part.
+    def connecting_1D_parts(self, external_node):
+        """If the node does not belong to and intercepts the part,
+          add corresponding node and elements in the part for connectors definition.
 
         Parameters
         ----------
         node : :class:`compas_fea2.model.Node`
             The node to evaluate.
-        precision : float, optional
-            Precision for the geometric key comparison, by default None.
 
         Returns
         -------
-        bool
-            `True` if the node is on the boundary, `False` otherwise.
+        list[:class:`compas_fea2.model.Node`, external_node]
+            or None if the external_node 
 
         Notes
         -----
-        The `discretized_boundary_mesh` of the part must have been previously defined.
+        The part must be composed of 1D elements : a ValueError is raised otherwise.
+        The `external_node` must belong to another part : otherwise the function return None.
+
+        Warnings
+        --------
+        If the method creates new elements in the part, the method creates an indentation jump
+        in the input_keys of the elements (removal of one of the elements). This could lead to
+        issues (loop on input_keys f.e)
 
         """
-        if not self.discretized_boundary_mesh:
-            raise AttributeError("The discretized_boundary_mesh has not been defined")
-        if not node.on_boundary:
-            node._on_boundary = TOL.geometric_key(node.xyz, precision) in self.discretized_boundary_mesh.gkey_vertex()
-        return node.on_boundary
+        # Check whether external_node belongs to the part
+        for key, values in self.element_types.items():
+            if not isinstance(values[0], _Element1D):
+                raise ValueError('The part does not contain 1D elements.')
+
+        # Insure external_node does not belong to the part
+        if external_node.part == self:
+            raise ValueError("The point must belong to another part.")
+
+        closest_nodes = self.find_closest_nodes_to_node(external_node, number_of_nodes=2)
+
+        # if the node coincides with one of the existing node of the part
+        for node in closest_nodes:
+            if node.xyz == external_node.xyz:
+                return [external_node, node]
+
+        # if the node coincides with one of the edges of the part
+        for element in self.elements:
+            element_line = Line(element.points[0], element.points[-1])
+            if external_node.point.on_segment(element_line):
+                new_node = self.add_node(Node(xyz=external_node.xyz))
+                new_element1 = self.element_types.get(element, BeamElement)(nodes=[element.nodes[0], new_node], section=element.section, frame=element.frame)
+                new_element2 = self.element_types.get(element, BeamElement)(nodes=[new_node, element.nodes[-1]], section=element.section, frame=element.frame)
+
+                self.add_element(new_element1)
+                self.add_element(new_element2)
+                self.remove_element(element)
+                break
+            
+
+        return [external_node, new_node]
 
     def compute_nodal_masses(self) -> List[float]:
         """Compute the nodal mass of the part.
