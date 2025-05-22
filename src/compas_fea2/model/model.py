@@ -1380,7 +1380,8 @@ class Model(FEAData):
             raise TypeError("{!r} is not a Connector.".format(connector))
         self._connectors.add(connector)
         connector._registration = self
-        self.add_group(connector.nodes)
+        if isinstance(connector.nodes, _Group):
+            self.add_group(connector.nodes)
         return connector
 
     def add_connectors(self, connectors):
