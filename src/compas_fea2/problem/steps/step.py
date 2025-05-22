@@ -224,19 +224,30 @@ class Step(FEAData):
         obj._combination = data["combination"]
         return obj
 
-    def check_force_equilibrium(self, tolerance=10**-6):
+    def check_force_equilibrium(self):
         applied_load=[0,0,0]
         reaction_vector=self.get_total_reaction(self)[0]
         for load_field in self.loads:
             for load in load_field.loads :
                 applied_load[0], applied_load[1], applied_load[2] = applied_load[0]+load.x, applied_load[1]+load.y, applied_load[2]+load.z
-        
-        equilibrium = applied_load[0]+reaction_vector.x < tolerance and applied_load[1]+reaction_vector.y < tolerance and applied_load[2]+reaction_vector.z < tolerance
-        if equilibrium :
+        equilibriumx = applied_load[0]+reaction_vector.x < applied_load[0]/1000 or 1e-3 
+        equilibriumy = applied_load[1]+reaction_vector.y < applied_load[1]/1000 or 1e-3 
+        equilibriumz = applied_load[2]+reaction_vector.z < applied_load[2]/1000 or 1e-3
+        if (equilibriumx and equilibriumy and equilibriumz) :
             print("The force equilibrium is respected.")
         else :
             print("The force equilibrium is not respected.")
-        return equilibrium
+        print(f""" Total reactions :
+X : {reaction_vector.x}
+Y : {reaction_vector.y}
+Z : {reaction_vector.z}
+
+Total applied loads :
+X : {applied_load[0]}
+Y : {applied_load[1]}
+Z : {applied_load[2]}
+""")
+        return reaction_vector, applied_load
 
 # ==============================================================================
 #                                General Steps

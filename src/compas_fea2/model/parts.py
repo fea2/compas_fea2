@@ -644,7 +644,7 @@ class _Part(FEAData):
         for line in lines:
             # initialization of first point of first element
             p1 = Point(line.start.x, line.start.y, line.start.z)
-            prt.add_node(Node(xyz=[p1.x, p1.y, p1.z]))
+            prt.add_nodes(prt.find_closest_nodes_to_point(p1, number_of_nodes=1) or [Node(xyz=[p1.x, p1.y, p1.z])])
             
             # initialization of second point of first element
             n = int(line.length // targetlength) if line.length>targetlength else 1 
@@ -1810,7 +1810,7 @@ class _Part(FEAData):
         Removing elements can cause inconsistencies.
         """
         if self.contains_element(element):
-            self.elements.remove(element)
+            self.elements.elements.remove(element)
             element._registration = None
             for node in element.nodes:
                 node.connected_elements.remove(element)
