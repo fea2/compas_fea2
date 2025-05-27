@@ -728,9 +728,9 @@ class GeneralStep(Step):
         for load_field in self.loads:
             for load in load_field.loads :
                 applied_load[0], applied_load[1], applied_load[2] = applied_load[0]+load.x, applied_load[1]+load.y, applied_load[2]+load.z
-        equilibriumx = applied_load[0]+reaction_vector.x < applied_load[0]/1000 or 1e-3 
-        equilibriumy = applied_load[1]+reaction_vector.y < applied_load[1]/1000 or 1e-3 
-        equilibriumz = applied_load[2]+reaction_vector.z < applied_load[2]/1000 or 1e-3
+        equilibriumx = applied_load[0]+reaction_vector.x < (applied_load[0]/1000 if applied_load[0]!=0 else 1e-3) 
+        equilibriumy = applied_load[1]+reaction_vector.y < (applied_load[1]/1000 if applied_load[1]!=0 else 1e-3) 
+        equilibriumz = applied_load[2]+reaction_vector.z < (applied_load[2]/1000 if applied_load[2]!=0 else 1e-3) 
         if (equilibriumx and equilibriumy and equilibriumz) :
             print("The force equilibrium is respected.")
         else :
