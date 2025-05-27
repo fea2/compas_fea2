@@ -5,6 +5,8 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+from compas.geometry import Vector, Point
+
 from compas_fea2.base import FEAData
 from compas_fea2.job.input_file import InputFile
 from compas_fea2.problem.steps import StaticStep
@@ -544,3 +546,4 @@ Analysis folder path : {self.path or "N/A"}
         problem._steps = set(Step.__from_data__(step_data) for step_data in data.get("steps", []))
         problem._steps_order = list(problem._steps)
         return problem
+    

@@ -222,7 +222,7 @@ class FieldResults(FEAData):
         list
             A list containing the result objects with the minimum and maximum value of the given component in the step.
         """
-        return [self.get_min_result(component, self.step), self.get_max_result(component, self.step)]
+        return [self.get_min_result(component), self.get_max_result(component)]
 
     def component_scalar(self, component):
         """Return the value of selected component."""
