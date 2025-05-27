@@ -1547,63 +1547,68 @@ class _Part(FEAData):
         for node in nodes:
             self.remove_node(node)
 
-    def connecting_1D_parts(self, external_node):
-        """If the node does not belong to and intercepts the part,
-          add corresponding node and elements in the part for connectors definition.
+    def create_connector_node(self, external_node, tol = 1e-5):
+
+        """This method returns the two nodes from both parts for connectors definition.
+        The method receives a node as an input and returns the matching node of the part.
+        If this node does not exist within the part, the method creates the node and elements.
 
         Parameters
         ----------
-        node : :class:`compas_fea2.model.Node`
+        external_node : :class:`compas_fea2.model.Node`
             The node to evaluate.
-
+        
+        tol : float (optional)
+            Tolerance for superposition of two nodes.
+            If not indicated, the tolerance is 1e-5. 
         Returns
         -------
-        list[:class:`compas_fea2.model.Node`, external_node]
-            or None if the external_node 
+        :class:`compas_fea2.model.NodeGroup`
+            Group of the two coinciding nodes for creation of a connection between two parts.
 
         Notes
         -----
         The part must be composed of 1D elements : a ValueError is raised otherwise.
-        The `external_node` must belong to another part : otherwise the function return None.
+        The `external_node` must belong to another part.
 
-        Warnings
-        --------
-        If the method creates new elements in the part, the method creates an indentation jump
-        in the input_keys of the elements (removal of one of the elements). This could lead to
-        issues (loop on input_keys f.e)
 
         """
-        # Check whether external_node belongs to the part
+        # 1D elements test
         for key, values in self.element_types.items():
             if not isinstance(values[0], _Element1D):
                 raise ValueError('The part does not contain 1D elements.')
 
-        # Insure external_node does not belong to the part
+        # whether external_node belongs to the part
         if external_node.part == self:
-            raise ValueError("The point must belong to another part.")
+            raise ValueError("The node given as input belong to the part. It must belong to another part.")
 
+        # if the node coincides with one of its two closest nodes of the part
         closest_nodes = self.find_closest_nodes_to_node(external_node, number_of_nodes=2)
-
-        # if the node coincides with one of the existing node of the part
         for node in closest_nodes:
-            if node.xyz == external_node.xyz:
-                return [external_node, node]
+            if all(abs(a-b) < tol for a, b in zip(node.xyz, external_node.xyz)):
+                return NodesGroup([external_node, node])
 
-        # if the node coincides with one of the edges of the part
-        for element in self.elements:
-            element_line = Line(element.points[0], element.points[-1])
-            if external_node.point.on_segment(element_line):
-                new_node = self.add_node(Node(xyz=external_node.xyz))
-                new_element1 = self.element_types.get(element, BeamElement)(nodes=[element.nodes[0], new_node], section=element.section, frame=element.frame)
-                new_element2 = self.element_types.get(element, BeamElement)(nodes=[new_node, element.nodes[-1]], section=element.section, frame=element.frame)
-
-                self.add_element(new_element1)
-                self.add_element(new_element2)
-                self.remove_element(element)
+        #determine the common element of closest nodes
+        common_element = None
+        for element in list(closest_nodes)[0].connected_elements:
+            if element in list(closest_nodes)[1].connected_elements:
+                common_element = element
                 break
-            
+        
+        # the node must intercept the element
+        element_line = Line(common_element.points[0], common_element.points[-1])
+        if not(external_node.point.on_segment(element_line)):
+            raise ValueError('The node given as input does not intercept with the part.')
+        
+        #the common_element is replaced by two smaller elements
+        new_node = self.add_node(Node(xyz=external_node.xyz))
+        new_element1 = self.element_types.get(common_element, BeamElement)(nodes=[common_element.nodes[0], new_node], section=common_element.section, frame=common_element.frame)
+        new_element2 = self.element_types.get(common_element, BeamElement)(nodes=[new_node, common_element.nodes[-1]], section=common_element.section, frame=common_element.frame)
+        self.add_element(new_element1)
+        self.add_element(new_element2)
+        self.remove_element(element)
 
-        return [external_node, new_node]
+        return NodesGroup([external_node, new_node])
 
     def compute_nodal_masses(self) -> List[float]:
         """Compute the nodal mass of the part.
