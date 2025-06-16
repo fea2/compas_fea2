@@ -1,10 +1,17 @@
-from math import log
+import math
 
 from .material import _Material
+from matplotlib import pyplot as plt
 
 
 class Concrete(_Material):
     """Elastic and plastic-cracking Eurocode-based concrete material.
+    
+    Warning
+    -------
+    EXPERIMENTAL: THIS MATERIAL IS BASED ON THE EUROCODE 2 AND 
+    CAN BE USED ONLY IN A MODEL DEFINED INTHE SI UNIT SYSTEM!
+    
 
     Parameters
     ----------
@@ -41,50 +48,71 @@ class Concrete(_Material):
     The concrete model is based on Eurocode 2 up to fck=90 MPa.
     """
 
-    def __init__(self, *, fck, E=None, v=None, density=None, fr=None, units=None, **kwargs):
+    def __init__(self, fck, density=None, **kwargs):
         super().__init__(density=density, **kwargs)
+        self.v=0.17
 
-        # Ensure small increment for stress-strain curve
-        de = 0.0001
+        # (Eurocode 2, Table 3.1) --- All calculations are done in MPa!
+        fcm = fck + 8.0  # MPa
+        self.fcm = fcm * 1e6 # Pa
 
-        # Compute material properties based on Eurocode 2
-        fcm = fck + 8  # Mean compressive strength
-        Ecm = 22 * 10**3 * (fcm / 10) ** 0.3  # Young's modulus [MPa]
-        ec1 = min(0.7 * fcm**0.31, 2.8) * 0.001  # Strain at peak stress
-        ecu1 = 0.0035 if fck < 50 else (2.8 + 27 * ((98 - fcm) / 100.0) ** 4) * 0.001  # Ultimate strain
+        # Secant modulus of elasticity [MPa]
+        Ecm_mpa = 22000 * (fcm / 10.0) ** 0.3
+        self.E = Ecm_mpa * 1e6 # Store in Pa
 
-        # Stress-strain model parameters
-        k = 1.05 * Ecm * ec1 / fcm
-        e = [i * de for i in range(int(ecu1 / de) + 1)]  # Strain values
-        ec = [ei - e[1] for ei in e[1:]] if len(e) > 1 else [0.0]  # Adjusted strain values
+        # Strain at peak compressive stress [-]
+        ec1 = 0.001 * min(0.7 * fcm ** 0.31, 2.8)
 
-        # Tensile strength according to Eurocode 2
-        fctm = 0.3 * fck ** (2 / 3) if fck <= 50 else 2.12 * log(1 + fcm / 10)  # Tensile strength
-        fc = [10**6 * fcm * (k * (ei / ec1) - (ei / ec1) ** 2) / (1 + (k - 2) * (ei / ec1)) for ei in ec]
+        # Ultimate compressive strain [-]
+        if fck <= 50:
+            ecu1 = 0.0035
+        else:
+            ecu1 = 0.001 * (2.8 + 27 * ((98 - fcm) / 100.0) ** 4)
 
-        ft = [1.0, 0.0]  # Tension stress-strain curve
-        et = [0.0, 0.001]  # Corresponding strain values for tension
+        # Mean tensile strength [MPa]
+        if fck <= 50:
+            fctm_mpa = 0.30 * fck ** (2/3)
+        else:
+            fctm_mpa = 2.12 * math.log(1 + fcm / 10.0)
+        self.fctm = fctm_mpa * 1e6 # Store in Pa
+        
+        # Check: EN 1992-1-1, 3.1.5
+        k = 1.05 * Ecm_mpa * ec1 / fcm
+        
+        num_points = 100  # Number of points on the curve
+        strains_c = [i * ecu1 / num_points for i in range(num_points + 1)]
+        stresses_c_mpa = []
 
-        fr = fr or [1.16, fctm / fcm]  # Failure ratios default
+        for e_c in strains_c:
+            if e_c == 0:
+                stresses_c_mpa.append(0.0)
+                continue
+            eta = e_c / ec1
+            stress = fcm * (k * eta - eta**2) / (1 + (k - 2) * eta)
+            stresses_c_mpa.append(stress)
 
-        # Assign attributes
-        # BUG: change the units
-        self.E = Ecm * 10**6 if E is None else E  # Convert GPa to MPa
-        self.fck = fck * 10**6  # Convert MPa to Pascals
-        self.fc = kwargs.get("fc", fc)
-        self.ec = kwargs.get("ec", ec)
-        self.v = v if v is not None else 0.17
-        self.ft = kwargs.get("ft", ft)
-        self.et = kwargs.get("et", et)
-        self.fr = kwargs.get("fr", fr)
+        # Store compression curve in Pascals
+        self.ec = strains_c
+        self.fc = [s * 1e6 for s in stresses_c_mpa]
 
-        # Ensure valid Young’s modulus calculation
+        e_t_peak = self.fctm / self.E
+        e_t_ult = 2 * e_t_peak
+        
+        self.et = [0.0, e_t_peak, e_t_ult]
+        self.ft = [0.0, self.fctm, 0.0]
+
+        self.fck = fck * 1e6  # Store in Pa
+        self.fr = [1.16, self.fctm / self.fcm] # Failure ratios
+        self.fcd = 0.85 * self.fck / 1.5  # Design compressive strength [Pa]
+
+        self.tension = {"f": self.ft, "e": self.et}
+        self.compression = {"f": self.fc, "e": self.ec}
+
         if len(self.fc) > 1 and self.fc[1] == 0:
             raise ValueError("fc[1] must be non-zero to calculate E.")
         if len(self.ec) > 1 and self.ec[1] == 0:
             raise ValueError("ec[1] must be non-zero for correct calculations.")
 
-        # Tension and compression dictionaries
         self.tension = {"f": self.ft, "e": self.et}
         self.compression = {"f": self.fc[1:], "e": self.ec}
 
@@ -92,6 +120,39 @@ class Concrete(_Material):
     def G(self):
         return 0.5 * self.E / (1 + self.v)
 
+    def plot_stress_strain_curve(self):
+        """
+        Generates and displays a plot of the material's stress-strain curve.
+        
+        Requires the 'matplotlib' library to be installed.
+        """
+        # Convert stresses to MPa for plotting
+        stresses_c_mpa = [s / 1e6 for s in self.fc]
+        stresses_t_mpa = [s / 1e6 for s in self.ft]
+        
+        # Make compressive strains negative for conventional plotting
+        strains_c_negative = [-e for e in self.ec]
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Plot compression curve
+        ax.plot(strains_c_negative, stresses_c_mpa, label="Compression", color="b")
+        
+        # Plot tension curve
+        ax.plot(self.et, stresses_t_mpa, label="Tension", color="r")
+        
+        # Formatting
+        ax.set_xlabel("Strain [-]")
+        ax.set_ylabel("Stress [MPa]")
+        ax.set_title(f"Stress-Strain Curve for {self.name} (fck={self.fck/1e6:.0f} MPa)")
+        ax.legend()
+        ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+        ax.axhline(0, color='black', linewidth=0.75)
+        ax.axvline(0, color='black', linewidth=0.75)
+        
+        plt.show()
+        
     def __str__(self):
         return """
 Concrete Material
@@ -135,8 +196,8 @@ fr  : {}
 
     # FIXME: this is only working for the basic material properties.
     @classmethod
-    def C20_25(cls, units, **kwargs):
-        return cls(fck=25 * units.MPa, E=30 * units.GPa, v=0.17, density=2400 * units("kg/m**3"), name="C20/25", **kwargs)
+    def C20_25(cls, **kwargs):
+        return cls(fck=20, E=30_000, v=0.17, density=2400, name="C20/25", **kwargs)
 
 
 class ConcreteSmearedCrack(_Material):
