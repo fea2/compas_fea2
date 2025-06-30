@@ -18,9 +18,6 @@ from compas.geometry import distance_point_point
 from compas.itertools import pairwise
 
 from compas_fea2.base import FEAData
-from compas_fea2.results import Result
-from compas_fea2.results import ShellStressResult
-from compas_fea2.results import SolidStressResult
 
 if TYPE_CHECKING:
     from compas_fea2.problem import Step
@@ -30,6 +27,9 @@ if TYPE_CHECKING:
     from .parts import _Part
     from .sections import _Section
     from .shapes import Shape
+    from compas_fea2.results import Result
+    from compas_fea2.results import ShellStressResult
+    from compas_fea2.results import SolidStressResult
 
 
 class _Element(FEAData):
@@ -126,7 +126,7 @@ class _Element(FEAData):
         return self.part.model
 
     @property
-    def results_cls(self) -> Result:
+    def results_cls(self) -> "Result":
         raise NotImplementedError("The results_cls property must be implemented in the subclass")
 
     @property
@@ -695,7 +695,7 @@ class ShellElement(_Element2D):
         self._faces = self._construct_faces(self._face_indices)
 
     @property
-    def results_cls(self) -> Result:
+    def results_cls(self) -> "Result":
         return {"s": ShellStressResult}
 
 
@@ -737,7 +737,7 @@ class _Element3D(_Element):
         self._ndim = 3
 
     @property
-    def results_cls(self) -> Result:
+    def results_cls(self) -> "Result":
         return {"s": SolidStressResult}
 
     @property

@@ -1,8 +1,6 @@
 from compas.geometry import Vector
 from compas.geometry import sum_vectors
 
-from compas_fea2.results import ModalAnalysisResult
-
 from .step import Step
 
 

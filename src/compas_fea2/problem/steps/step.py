@@ -10,10 +10,6 @@ from compas_fea2.problem.displacements import GeneralDisplacement
 from compas_fea2.problem.fields import DisplacementField
 from compas_fea2.problem.fields import NodeLoadField
 from compas_fea2.problem.fields import PointLoadField
-from compas_fea2.results import DisplacementFieldResults
-from compas_fea2.results import ReactionFieldResults
-from compas_fea2.results import SectionForcesFieldResults
-from compas_fea2.results import StressFieldResults
 
 # ==============================================================================
 #                                Base Steps
@@ -180,10 +176,12 @@ class Step(FEAData):
 
     @property
     def displacement_field(self):
+        from compas_fea2.results.fields import DisplacementFieldResults
         return DisplacementFieldResults(self)
 
     @property
     def reaction_field(self):
+        from compas_fea2.results.fields import ReactionFieldResults
         return ReactionFieldResults(self)
 
     @property
@@ -192,10 +190,12 @@ class Step(FEAData):
 
     @property
     def stress_field(self):
+        from compas_fea2.results.fields import StressFieldResults
         return StressFieldResults(self)
 
     @property
     def section_forces_field(self):
+        from compas_fea2.results.fields import SectionForcesFieldResults
         return SectionForcesFieldResults(self)
 
     @property

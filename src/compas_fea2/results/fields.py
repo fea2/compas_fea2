@@ -1,3 +1,9 @@
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from compas_fea2.model import Model
+    from compas_fea2.problem import Step, Problem
+
 from itertools import groupby
 from typing import Iterable
 

@@ -1,5 +1,12 @@
+from typing import TYPE_CHECKING
+
 import compas_fea2
 from compas_fea2.base import FEAData
+
+if TYPE_CHECKING:
+    from compas_fea2.problem import Step
+    from compas_fea2.problem import Problem
+
 
 
 class LoadCombination(FEAData):
@@ -21,11 +28,14 @@ class LoadCombination(FEAData):
             yield k
 
     @property
-    def step(self):
-        return self._registration
+    def step(self) -> "Step":
+        if self._registration:
+            return self._registration
+        else:
+            raise ValueError("Register the LoadCombination to a Step first.")
 
     @property
-    def problem(self):
+    def problem(self) -> "Problem":
         return self.step.problem
 
     @property
