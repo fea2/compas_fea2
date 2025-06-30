@@ -9,7 +9,7 @@ from compas_fea2.base import FEAData
 from compas_fea2.job.input_file import InputFile
 from compas_fea2.problem.steps import StaticStep
 from compas_fea2.problem.steps import Step
-from compas_fea2.results.database import ResultsDatabase
+from compas_fea2.results.database import ResultsDatabase, SQLiteResultsDatabase
 
 
 class Problem(FEAData):
@@ -82,21 +82,21 @@ class Problem(FEAData):
         return self._steps
 
     @property
-    def path(self) -> Path:
+    def path(self) -> Optional[Path]:
         return self._path
 
     @path.setter
     def path(self, value: Union[str, Path]):
         self._path = value if isinstance(value, Path) else Path(value)
-        self._path_db = os.path.join(self._path, "{}-results.db".format(self.name))
+        self._path_db = os.path.join(self._path, f"{self.name}-results.db")
 
     @property
-    def path_db(self) -> str:
+    def path_db(self) -> Optional[str]:
         return self._path_db
 
     @property
-    def rdb(self) -> ResultsDatabase:
-        return self._rdb or ResultsDatabase.sqlite(self)
+    def rdb(self) -> SQLiteResultsDatabase:
+        return self._rdb or SQLiteResultsDatabase(self)
 
     @rdb.setter
     def rdb(self, value: str):

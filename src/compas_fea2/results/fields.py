@@ -14,7 +14,7 @@ from compas.geometry import Vector
 
 from compas_fea2.base import FEAData
 
-from .database import ResultsDatabase  # noqa: F401
+from .database import SQLiteResultsDatabase
 from .results import AccelerationResult  # noqa: F401
 from .results import DisplacementResult  # noqa: F401
 from .results import ReactionResult  # noqa: F401
@@ -63,12 +63,25 @@ class FieldResults(FEAData):
     FieldResults are registered to a :class:`compas_fea2.problem.Step`.
     """
 
-    def __init__(self, step, *args, **kwargs):
+    def __init__(self, step: "Step", *args, **kwargs):
         super(FieldResults, self).__init__(*args, **kwargs)
         self._registration = step
-
+    
     @property
     def sqltable_schema(self):
+        """Return the SQL table schema for the field results.
+        The schema includes the table name and the columns with their types.
+        
+        Returns
+        -------
+        dict
+            A dictionary with the table name and columns.
+        
+        Example
+        -------
+        >>> field_results = DisplacementFieldResults(step)
+        >>> field_results.sqltable_schema
+        {'table_name': 'u', 'columns': [('id', 'INTEGER PRIMARY KEY AUTOINCREMENT'), ('key', 'INTEGER'), ('step', 'TEXT'), ('part', 'TEXT'), ('x', 'REAL'), ('y', 'REAL'), ('z', 'REAL'), ('rx', 'REAL'), ('ry', 'REAL'), ('rz', 'REAL')]}"""
         fields = []
         predefined_fields = [
             ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
@@ -87,16 +100,25 @@ class FieldResults(FEAData):
         }
 
     @property
-    def step(self) -> "_Step":  # noqa: F821
+    def step(self) -> "Step":
         return self._registration
 
     @property
-    def problem(self) -> "Problem":  # noqa: F821
+    def problem(self) -> "Problem":
+        if not self.step.problem:
+            raise ValueError("The step is not registered to a problem.")
         return self.step.problem
 
     @property
-    def model(self) -> "Model":  # noqa: F821
+    def model(self) -> "Model":
+        if not self.problem.model:
+            raise ValueError("The problem is not registered to a model.")
         return self.problem.model
+
+    @property
+    def components_names(self):
+        """Names of the components of the field results."""
+        raise NotImplementedError("This method should be implemented in the subclass.")
 
     @property
     def field_name(self) -> str:
@@ -107,7 +129,7 @@ class FieldResults(FEAData):
         raise NotImplementedError("This method should be implemented in the subclass.")
 
     @property
-    def rdb(self) -> ResultsDatabase:
+    def rdb(self) -> SQLiteResultsDatabase:
         return self.problem.rdb
 
     @property
@@ -166,7 +188,7 @@ class FieldResults(FEAData):
         results_set = self.rdb.get_rows(self.field_name, all_columns, filters, func)
         results_set = [{k: v for k, v in zip(all_columns, row)} for row in results_set]
 
-        return self.rdb.to_result(results_set, results_func=self.results_func, field_name=self.field_name, **kwargs)
+        return self.rdb.to_results(results_set, results_func=self.results_func, field_name=self.field_name, **kwargs)
 
     def get_result_at(self, location):
         """Get the result for a given location.
@@ -228,7 +250,7 @@ class FieldResults(FEAData):
         list
             A list containing the result objects with the minimum and maximum value of the given component in the step.
         """
-        return [self.get_min_result(component, self.step), self.get_max_result(component, self.step)]
+        return [self.get_min_result(component), self.get_max_result(component)]
 
     def component_scalar(self, component):
         """Return the value of selected component."""
@@ -287,6 +309,7 @@ class NodeFieldResults(FieldResults):
     def __init__(self, step, *args, **kwargs):
         super(NodeFieldResults, self).__init__(step=step, *args, **kwargs)
         self._results_func = "find_node_by_key"
+        self._field_name = None
 
     @property
     def components_names(self):
@@ -294,6 +317,8 @@ class NodeFieldResults(FieldResults):
 
     @property
     def field_name(self):
+        if not self._field_name:
+            raise ValueError("Field name is not set. Please set the field name in the subclass.")
         return self._field_name
 
     @property
