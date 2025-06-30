@@ -46,7 +46,7 @@ class InitialTemperatureField(_InitialCondition):
 
     """
 
-    def __init__(self, temperature, **kwargs):
+    def __init__(self, temperature,**kwargs):
         super(InitialTemperatureField, self).__init__(**kwargs)
         self._t = temperature
 
@@ -72,6 +72,11 @@ class InitialTemperatureField(_InitialCondition):
     def __from_data__(cls, data):
         temperature = data.pop("temperature")
         return cls(temperature, **data)
+
+    @classmethod
+    def from_file(cls, path, **kwargs):
+        cls._path = path
+        return cls(temperature=None, path=path, **kwargs)
 
 
 class InitialStressField(_InitialCondition):
