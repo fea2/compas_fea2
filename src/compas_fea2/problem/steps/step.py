@@ -6,6 +6,7 @@ from compas.geometry import centroid_points_weighted
 from compas.geometry import sum_vectors
 
 from compas_fea2.base import FEAData
+from compas_fea2.UI import FEA2Viewer
 from compas_fea2.problem.displacements import GeneralDisplacement
 from compas_fea2.problem.fields import DisplacementField
 from compas_fea2.problem.fields import NodeLoadField
@@ -223,7 +224,6 @@ class Step(FEAData):
         obj._load_cases = set(data["load_cases"])
         obj._combination = data["combination"]
         return obj
-
 
 # ==============================================================================
 #                                General Steps
@@ -676,7 +676,7 @@ class GeneralStep(Step):
             step = self.steps_order[-1]
         reactions = self.reaction_field
         locations, vectors, vectors_lengths = [], [], []
-        for reaction in reactions.results(step):
+        for reaction in reactions.results:
             locations.append(reaction.location.xyz)
             vectors.append(reaction.vector)
             vectors_lengths.append(reaction.vector.length)
@@ -716,6 +716,43 @@ class GeneralStep(Step):
     #     vector, location = self.get_total_reaction(step)
 
     #     return sum_vectors([reaction.vector for reaction in reactions.results])
+
+    def check_force_equilibrium(self):
+        """Checks whether the equilibrium between reactions and applied loads is respected and
+        returns the total applied loads and total reaction forces. 
+
+        Prints whether the equilibrium is found and the total loads and reactions.
+        
+        Returns
+        -------
+        The two lists of total reaction and applied loads according to global x-, y- ans z-axis.
+
+        """
+
+        applied_load=[0,0,0]
+        reaction_vector=self.get_total_reaction(self)[0]
+        for load_field in self.loads:
+            for load in load_field.loads :
+                applied_load[0], applied_load[1], applied_load[2] = applied_load[0]+load.x, applied_load[1]+load.y, applied_load[2]+load.z
+        equilibriumx = applied_load[0]+reaction_vector.x < (applied_load[0]/1000 if applied_load[0]!=0 else 1e-3) 
+        equilibriumy = applied_load[1]+reaction_vector.y < (applied_load[1]/1000 if applied_load[1]!=0 else 1e-3) 
+        equilibriumz = applied_load[2]+reaction_vector.z < (applied_load[2]/1000 if applied_load[2]!=0 else 1e-3) 
+        if (equilibriumx and equilibriumy and equilibriumz) :
+            print("The force equilibrium is respected.")
+        else :
+            print("The force equilibrium is not respected.")
+        print(f""" Total reactions :
+X : {reaction_vector.x}
+Y : {reaction_vector.y}
+Z : {reaction_vector.z}
+
+Total applied loads :
+X : {applied_load[0]}
+Y : {applied_load[1]}
+Z : {applied_load[2]}
+""")
+        return reaction_vector, applied_load
+    
     # ==============================================================================
     # Visualisation
     # ==============================================================================
@@ -840,6 +877,127 @@ class GeneralStep(Step):
             }
         )
         return data
+    
+    def plot_deflection_along_line(self, line, step=None, n_divide=1000,  plot_data=False):
+
+        """Plot the deflection along a compas line given as an input. This method can only be used on shell models.
+        
+        Parameters
+        ----------
+        line : :class:`compas.geometry.Line`
+            Line along which the deflection is plotted.
+        step : :class:`compas_fea2.problems.step, optional
+            Step containing the displacements results.
+            If not indicated, the last step of the problem is considered
+        n_divide : int, optional
+            Number of division of the input line.
+            If not indicated, a value of 1000 is implemented.
+
+        """
+
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from compas.geometry import Point
+        from scipy.spatial import KDTree
+        
+        #-----------------------------------------------------------
+        #FIRST, the input line is discretized in n_divide points
+        #-----------------------------------------------------------
+        # TODO automatized the n_divide parameters with the mesh density 
+        v_discretized=Vector(line.vector[0]/n_divide, line.vector[1]/n_divide, line.vector[2]/n_divide)
+
+        l_discretized=[line.start]
+        for i in range(n_divide-1):
+            l_discretized.append(l_discretized[i].translated(v_discretized))
+        l_discretized.append(line.end)
+
+        #--------------------------------------------------------------------------------------------------------------------
+        #SECOND, looking for the closest points of mesh to input line, according to their projection on the horizontal plan
+        #--------------------------------------------------------------------------------------------------------------------
+        part=list(self.model.parts)[0]
+        nodes=part.nodes
+
+        #projection of the nodes of the mesh on the XY plan
+        element_XY_points=[]
+        for node in nodes :
+            element_XY_points.append(Point(node.xyz[0], node.xyz[1], 0)) #nodes of the shell are projected vertically
+        
+        #determination of the closest nodes 
+        l_closestpoints=[]
+        for point_line in l_discretized:
+            tree=KDTree(element_XY_points)
+            dist, closest_2D_point_index=tree.query(point_line, k=1)
+            closest_3D_point=list(nodes)[closest_2D_point_index]
+            l_closestpoints.append(closest_3D_point)
+
+        #Elimination of the points that have the same "closest node"
+        i=0
+        while i<len(l_closestpoints)-1:
+            if l_closestpoints[i]==l_closestpoints[i+1]:
+                del l_closestpoints[i+1]
+                del l_discretized[i+1]
+                i-=1
+            i+=1
+
+        #--------------------------------------------------------------------------------------------------------------------
+        #THIRD, extraction of the deflection values of the nodes of the mesh
+        #--------------------------------------------------------------------------------------------------------------------
+        field_displacement=self.displacement_field
+        
+        #Construction of plotting lists
+        #x_list and y_list store the global x- and y-axis coordinates values 
+        #plot_value stores the corresponding displacement value
+        plot_value=[field_displacement.get_result_at(point).z for point in l_closestpoints]
+        x_list=[point.x for point in l_closestpoints]
+        y_list=[point.y for point in l_closestpoints]
+        
+        #Determination of the local maxima/minima for plot display
+        derivated_values=[]
+        relative_extrema=[]
+        for i in range(len(l_discretized)-1):
+            derivated_values.append(plot_value[i+1]-plot_value[i])
+            if i>0 and (derivated_values[i]*derivated_values[i-1]<0):
+                relative_extrema.append([l_discretized[i],plot_value[i]])
+        
+        #--------------------------------------------------------------------------------------------------------------------
+        #FINAL, script for plot display. 
+        #--------------------------------------------------------------------------------------------------------------------
+        
+        #Determination if the result line is along the x- or y-axis
+        stdx=np.std(np.array(x_list))
+        stdy=np.std(np.array(y_list))
+
+        fig, ax = plt.subplots()
+
+        # input line along the y-axis
+        if stdx==0:
+            ax.plot(y_list,plot_value)
+            ax.set(xlabel='y', ylabel='Displacement (mm)',
+            title='Displacement according to y, x='+str(x_list[0]))
+            for i in range(len(relative_extrema)):
+                ax.plot(relative_extrema[i][0][1], relative_extrema[i][1], 'o')
+                ax.annotate(str(int(relative_extrema[i][1]*100)/100)+' mm',xy=(relative_extrema[i][0][1], relative_extrema[i][1]))
+
+        #input line along the x-axis
+        elif stdy==0:
+
+            ax.plot(x_list,plot_value, linestyle='dashed')
+            ax.set(xlabel='x', ylabel='Displacement (mm)',
+            title='Displacement according to x, y='+str(y_list[0]))
+            for i in range(len(relative_extrema)):
+                ax.plot(relative_extrema[i][0][0], relative_extrema[i][1], 'o')
+                ax.annotate(str(int(relative_extrema[i][1]*100)/100)+' mm',xy=(relative_extrema[i][0][0], relative_extrema[i][1]))
+
+        else :
+            ax = plt.figure().add_subplot(projection='3d')
+            ax.plot(x_list, y_list, plot_value)
+            ax.set(xlabel='x', ylabel='y', zlabel='Displacement (mm)',
+            title='Displacement according to x, y')
+            for i in range(len(relative_extrema)):
+                ax.plot(relative_extrema[i][0][0], relative_extrema[i][0][1], relative_extrema[i][1], 'o')
+                ax.text(relative_extrema[i][0][0], relative_extrema[i][0][1], relative_extrema[i][1], str(int(relative_extrema[i][1]*100)/100))
+            
+        plt.show()
 
     @classmethod
     def __from_data__(cls, data):

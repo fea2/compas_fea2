@@ -173,7 +173,7 @@ class FEA2ModelObject(GroupObject):
             for connector in model.connectors:
                 connectors_meshes.append(
                     (
-                        connector.nodes[0].point,
+                        list(connector.nodes)[0].point,
                         {
                             "pointcolor": Color.red(),
                             "pointsize": 50,

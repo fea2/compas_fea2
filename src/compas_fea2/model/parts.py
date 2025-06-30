@@ -18,6 +18,7 @@ from compas.geometry import Box
 from compas.geometry import Frame
 from compas.geometry import Plane
 from compas.geometry import Point
+from compas.geometry import Line
 from compas.geometry import Scale
 from compas.geometry import Transformation
 from compas.geometry import Vector
@@ -661,6 +662,63 @@ class _Part(FEAData):
     #                       Constructor methods
     # =========================================================================
 
+    @classmethod
+    def from_compas_lines_discretized(cls, lines, targetlength, element_class, section, frame, name=None, **kwargs):
+        """Generate a discretized model from a list of :class:`compas.geometry.Line`.
+
+        Parameters
+        ----------
+        compas_lines : dict
+            Dictionary providing for each compas line the targetlenght of the mesh, the element class, the section and frame. For example:
+            {'L1': [targetlenght1, BeamElement, section1, frame1], 'L2': [targetlenght2, BeamElement, section2, frame2]...}
+        target_length : int
+            The targetted lenght of the discretization of the lines.
+        section : :class:`compas_fea2.model.BeamSection`
+            The section to be assigned to the elements, by default None.
+        element_model : str, optional
+            Implementation model for the element, by default 'BeamElement'.
+        xaxis : list[float], optional
+            The x-axis direction, by default [0,1,0].
+        name : str, optional
+            The name of the part, by default None (one is automatically generated).
+
+        Returns
+        -------
+        :class:`compas_fea2.model.Part`
+            The part.
+
+        """
+        prt = cls(name=name)
+
+        for line in lines:
+            # initialization of first point of first element
+            p1 = Point(line.start.x, line.start.y, line.start.z)
+            prt.add_nodes(prt.find_closest_nodes_to_point(p1, number_of_nodes=1) or [Node(xyz=[p1.x, p1.y, p1.z])])
+            
+            # initialization of second point of first element
+            n = int(line.length // targetlength) if line.length>targetlength else 1 
+            v_discretized = Vector(line.vector[0] / n, line.vector[1] / n, line.vector[2] / n)
+            p2 = p1.translated(v_discretized)
+
+            # loop to create the elements except the last one
+            for i in range(n-1):
+                prt.add_node(Node(xyz=[p2.x, p2.y, p2.z]))   
+                nodes = (list(prt.find_closest_nodes_to_point(p1, number_of_nodes=1)) or [Node(xyz=[p1.x, p1.y, p1.z])]) + (list(prt.find_closest_nodes_to_point(p2, number_of_nodes=1) or [Node(xyz=[p2.x, p2.y, p2.z])]))
+                element = element_class(nodes=nodes, section=section, frame=frame)
+                prt.add_element(element)
+
+                p1.translate(v_discretized)
+                p2.translate(v_discretized)
+                
+            #the last element might not respect the targetlength and is therefore created indepedantly
+            prt.add_node(Node(xyz=[line.end.x, line.end.y, line.end.z]))
+            nodes = (list(prt.find_closest_nodes_to_point(p1, number_of_nodes=1)) or [Node(xyz=[p1.x, p1.y, p1.z])]) + list(prt.find_closest_nodes_to_point(line.end, number_of_nodes=1) )
+            element = element_class(nodes=nodes, section=section, frame=frame) 
+            prt.add_element(element)
+
+        return prt
+
+    
     @classmethod
     def from_compas_lines(
         cls,
@@ -1538,31 +1596,68 @@ class _Part(FEAData):
         for node in nodes:
             self.remove_node(node)
 
-    def is_node_on_boundary(self, node: Node, precision: Optional[float] = None) -> bool:
-        """Check if a node is on the boundary mesh of the Part.
+    def create_connector_node(self, external_node, tol = 1e-5):
+
+        """This method returns the two nodes from both parts for connectors definition.
+        The method receives a node as an input and returns the matching node of the part.
+        If this node does not exist within the part, the method creates the node and elements.
 
         Parameters
         ----------
-        node : :class:`compas_fea2.model.Node`
+        external_node : :class:`compas_fea2.model.Node`
             The node to evaluate.
-        precision : float, optional
-            Precision for the geometric key comparison, by default None.
-
+        
+        tol : float (optional)
+            Tolerance for superposition of two nodes.
+            If not indicated, the tolerance is 1e-5. 
         Returns
         -------
-        bool
-            `True` if the node is on the boundary, `False` otherwise.
+        :class:`compas_fea2.model.NodeGroup`
+            Group of the two coinciding nodes for creation of a connection between two parts.
 
         Notes
         -----
-        The `discretized_boundary_mesh` of the part must have been previously defined.
+        The part must be composed of 1D elements : a ValueError is raised otherwise.
+        The `external_node` must belong to another part.
+
 
         """
-        if not self.discretized_boundary_mesh:
-            raise AttributeError("The discretized_boundary_mesh has not been defined")
-        if not node.on_boundary:
-            node._on_boundary = TOL.geometric_key(node.xyz, precision) in self.discretized_boundary_mesh.gkey_vertex()
-        return node.on_boundary
+        # 1D elements test
+        for key, values in self.element_types.items():
+            if not isinstance(values[0], _Element1D):
+                raise ValueError('The part does not contain 1D elements.')
+
+        # whether external_node belongs to the part
+        if external_node.part == self:
+            raise ValueError("The node given as input belong to the part. It must belong to another part.")
+
+        # if the node coincides with one of its two closest nodes of the part
+        closest_nodes = self.find_closest_nodes_to_node(external_node, number_of_nodes=2)
+        for node in closest_nodes:
+            if all(abs(a-b) < tol for a, b in zip(node.xyz, external_node.xyz)):
+                return NodesGroup([external_node, node])
+
+        #determine the common element of closest nodes
+        common_element = None
+        for element in list(closest_nodes)[0].connected_elements:
+            if element in list(closest_nodes)[1].connected_elements:
+                common_element = element
+                break
+        
+        # the node must intercept the element
+        element_line = Line(common_element.points[0], common_element.points[-1])
+        if not(external_node.point.on_segment(element_line)):
+            raise ValueError('The node given as input does not intercept with the part.')
+        
+        #the common_element is replaced by two smaller elements
+        new_node = self.add_node(Node(xyz=external_node.xyz))
+        new_element1 = self.element_types.get(common_element, BeamElement)(nodes=[common_element.nodes[0], new_node], section=common_element.section, frame=common_element.frame)
+        new_element2 = self.element_types.get(common_element, BeamElement)(nodes=[new_node, common_element.nodes[-1]], section=common_element.section, frame=common_element.frame)
+        self.add_element(new_element1)
+        self.add_element(new_element2)
+        self.remove_element(element)
+
+        return NodesGroup([external_node, new_node])
 
     def compute_nodal_masses(self) -> List[float]:
         """Compute the nodal mass of the part.
@@ -1769,7 +1864,7 @@ class _Part(FEAData):
         Removing elements can cause inconsistencies.
         """
         if self.contains_element(element):
-            self.elements.remove(element)
+            self.elements.elements.remove(element)
             element._registration = None
             for node in element.nodes:
                 node.connected_elements.remove(element)
