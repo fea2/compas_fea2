@@ -1340,7 +1340,7 @@ class Model(FEAData):
         :class:`compas_fea2.model._InitialCondition`
 
         """
-        group.part.add_group(group)
+        # group.part.add_group(group)
 
         if not isinstance(ic, _InitialCondition):
             raise TypeError("{!r} is not a InitialCondition.".format(ic))

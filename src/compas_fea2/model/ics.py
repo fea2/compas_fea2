@@ -73,6 +73,11 @@ class InitialTemperatureField(_InitialCondition):
         temperature = data.pop("temperature")
         return cls(temperature, **data)
 
+    @classmethod
+    def from_file(cls, path, **kwargs):
+        cls._path = path
+        return cls(temperature=None, path=path, **kwargs)
+
 
 class InitialStressField(_InitialCondition):
     """Stress field.
