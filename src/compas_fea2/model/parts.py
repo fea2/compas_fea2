@@ -18,6 +18,8 @@ from compas.geometry import Box
 from compas.geometry import Frame
 from compas.geometry import Plane
 from compas.geometry import Point
+from compas.geometry import Polyline
+from compas.geometry import Line
 from compas.geometry import Line
 from compas.geometry import Scale
 from compas.geometry import Transformation
@@ -663,7 +665,7 @@ class _Part(FEAData):
     # =========================================================================
 
     @classmethod
-    def from_compas_lines_discretized(cls, lines, targetlength, element_class, section, frame, name=None, **kwargs):
+    def from_compas_lines_discretized(cls, lines, targetlength, element_model, section, frame, name=None, **kwargs):
         """Generate a discretized model from a list of :class:`compas.geometry.Line`.
 
         Parameters
@@ -677,8 +679,8 @@ class _Part(FEAData):
             The section to be assigned to the elements, by default None.
         element_model : str, optional
             Implementation model for the element, by default 'BeamElement'.
-        xaxis : list[float], optional
-            The x-axis direction, by default [0,1,0].
+        frame : :class:`compas.geometry.Line` or list[float], optional
+            Local frame of the element or x-axis of the frame by default [0,1,0].
         name : str, optional
             The name of the part, by default None (one is automatically generated).
 
@@ -688,33 +690,13 @@ class _Part(FEAData):
             The part.
 
         """
-        prt = cls(name=name)
-
-        for line in lines:
-            # initialization of first point of first element
-            p1 = Point(line.start.x, line.start.y, line.start.z)
-            prt.add_nodes(prt.find_closest_nodes_to_point(p1, number_of_nodes=1) or [Node(xyz=[p1.x, p1.y, p1.z])])
-            
-            # initialization of second point of first element
-            n = int(line.length // targetlength) if line.length>targetlength else 1 
-            v_discretized = Vector(line.vector[0] / n, line.vector[1] / n, line.vector[2] / n)
-            p2 = p1.translated(v_discretized)
-
-            # loop to create the elements except the last one
-            for i in range(n-1):
-                prt.add_node(Node(xyz=[p2.x, p2.y, p2.z]))   
-                nodes = (list(prt.find_closest_nodes_to_point(p1, number_of_nodes=1)) or [Node(xyz=[p1.x, p1.y, p1.z])]) + (list(prt.find_closest_nodes_to_point(p2, number_of_nodes=1) or [Node(xyz=[p2.x, p2.y, p2.z])]))
-                element = element_class(nodes=nodes, section=section, frame=frame)
-                prt.add_element(element)
-
-                p1.translate(v_discretized)
-                p2.translate(v_discretized)
-                
-            #the last element might not respect the targetlength and is therefore created indepedantly
-            prt.add_node(Node(xyz=[line.end.x, line.end.y, line.end.z]))
-            nodes = (list(prt.find_closest_nodes_to_point(p1, number_of_nodes=1)) or [Node(xyz=[p1.x, p1.y, p1.z])]) + list(prt.find_closest_nodes_to_point(line.end, number_of_nodes=1) )
-            element = element_class(nodes=nodes, section=section, frame=frame) 
-            prt.add_element(element)
+        polyline = Polyline(points = [line.start for line in lines] + [lines[-1].end])
+        dividedline_points = polyline.divide_by_length(targetlength, strict=False)
+        prt = Part.from_compas_lines(lines=[Line(start=dividedline_points[i], end=dividedline_points[i+1]) for i in range(len(dividedline_points)-1)],
+                                     section=section,
+                                     element_model=element_model,
+                                     frame=frame,
+                                     name=name)
 
         return prt
 
@@ -724,7 +706,7 @@ class _Part(FEAData):
         cls,
         lines: List["compas.geometry.Line"],
         element_model: str = "BeamElement",
-        xaxis: List[float] = [0, 1, 0],
+        frame: Frame or List[float] = [0, 1, 0],
         section: Optional["_Section"] = None,
         name: Optional[str] = None,
         **kwargs,
@@ -737,7 +719,7 @@ class _Part(FEAData):
             The lines to be converted.
         element_model : str, optional
             Implementation model for the element, by default 'BeamElement'.
-        xaxis : list[float], optional
+        frame : :class:`compas.geometry.Line` or list[float], optional
             The x-axis direction, by default [0,1,0].
         section : :class:`compas_fea2.model.BeamSection`, optional
             The section to be assigned to the elements, by default None.
@@ -755,7 +737,8 @@ class _Part(FEAData):
         prt = cls(name=name)
         mass = kwargs.get("mass", None)
         for line in lines:
-            frame = Frame(line.start, xaxis, line.vector)
+            if not(isinstance(frame, Frame)):
+                frame = Frame(line.start, frame, line.vector)
 
             nodes = []
             for p in [line.start, line.end]:

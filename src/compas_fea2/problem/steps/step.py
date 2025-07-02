@@ -2,6 +2,7 @@ from typing import Iterable
 
 from compas.geometry import Point
 from compas.geometry import Vector
+from compas.geometry import Polyline
 from compas.geometry import centroid_points_weighted
 from compas.geometry import sum_vectors
 
@@ -878,7 +879,7 @@ Z : {applied_load[2]}
         )
         return data
     
-    def plot_deflection_along_line(self, line, step=None, n_divide=1000,  plot_data=False):
+    def plot_deflection_along_line(self, line, n_divide=1000):
 
         """Plot the deflection along a compas line given as an input. This method can only be used on shell models.
         
@@ -904,12 +905,9 @@ Z : {applied_load[2]}
         #FIRST, the input line is discretized in n_divide points
         #-----------------------------------------------------------
         # TODO automatized the n_divide parameters with the mesh density 
-        v_discretized=Vector(line.vector[0]/n_divide, line.vector[1]/n_divide, line.vector[2]/n_divide)
 
-        l_discretized=[line.start]
-        for i in range(n_divide-1):
-            l_discretized.append(l_discretized[i].translated(v_discretized))
-        l_discretized.append(line.end)
+        length = line.length/n_divide
+        l_discretized=Polyline(points=[line.start, line.end]).divide_by_length(length)
 
         #--------------------------------------------------------------------------------------------------------------------
         #SECOND, looking for the closest points of mesh to input line, according to their projection on the horizontal plan
@@ -922,7 +920,7 @@ Z : {applied_load[2]}
         for node in nodes :
             element_XY_points.append(Point(node.xyz[0], node.xyz[1], 0)) #nodes of the shell are projected vertically
         
-        #determination of the closest nodes 
+        #determination of the closest nodes of the projected mesh to the input line
         l_closestpoints=[]
         for point_line in l_discretized:
             tree=KDTree(element_XY_points)
@@ -930,7 +928,8 @@ Z : {applied_load[2]}
             closest_3D_point=list(nodes)[closest_2D_point_index]
             l_closestpoints.append(closest_3D_point)
 
-        #Elimination of the points that have the same "closest node"
+        #The discretization of the input line might be more precised than the precision of the mesh
+        #The points of the line associated to the same mesh node are removed
         i=0
         while i<len(l_closestpoints)-1:
             if l_closestpoints[i]==l_closestpoints[i+1]:
