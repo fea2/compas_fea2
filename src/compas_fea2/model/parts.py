@@ -801,7 +801,7 @@ class _Part(FEAData):
 
         for face in mesh.faces():
             nodes = [vertex_node[vertex] for vertex in mesh.face_vertices(face)]
-            element = ShellElement(nodes=nodes, section=section, implementation=implementation)
+            element = ShellElement(nodes=nodes, section=section, implementation=implementation, **kwargs)
             part.add_element(element)
 
         part._boundary_mesh = mesh
@@ -880,6 +880,7 @@ class _Part(FEAData):
                         section=section,
                         rigid=rigid,
                         implementation=implementation,
+                        **kwargs
                     )
                 )
 
@@ -891,6 +892,7 @@ class _Part(FEAData):
                             section=section,
                             rigid=rigid,
                             implementation=implementation,
+                            **kwargs
                         )
                     )
                 else:
