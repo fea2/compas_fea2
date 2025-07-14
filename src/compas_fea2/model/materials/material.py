@@ -156,11 +156,22 @@ class ElasticOrthotropic(_Material):
         self.Ey = Ey
         self.Ez = Ez
         self.vxy = vxy
+        self.vyx = vxy*Ey/Ex
         self.vyz = vyz
+        self.vzy = vyz*Ez/Ey
         self.vzx = vzx
+        self.vxz = vzx*Ex/Ez
         self.Gxy = Gxy
         self.Gyz = Gyz
         self.Gzx = Gzx
+
+        #the equations below must be verified by an orthotropic elactic material
+        check_list = [self.Ex>0, self.Ey>0, self.Ez>0, self.Gxy>0, self.Gyz>0, self.Gzx>0, 
+                    self.vxy<(Ex/Ey)**0.5, vzx<(Ez/Ex)**0.5,vyz<(Ey/Ez)**0.5,
+                    1-self.vxy*self.vyx-self.vyz*self.vzy-self.vzx*self.vxz-2*self.vyx*self.vzy*self.vxz>0]
+        for check in check_list:
+            if not(check):
+                raise ValueError('The mechanical values do not respect the material stability criteria.')
 
     @property
     def __data__(self):

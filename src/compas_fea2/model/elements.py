@@ -13,15 +13,15 @@ from compas.geometry import Point
 from compas.geometry import Polygon
 from compas.geometry import Polyhedron
 from compas.geometry import Vector
+from compas.geometry import cross_vectors
 from compas.geometry import centroid_points
 from compas.geometry import distance_point_point
 from compas.itertools import pairwise
-
 from compas_fea2.base import FEAData
+from compas_fea2.model.materials.material import ElasticOrthotropic
 
 if TYPE_CHECKING:
     from compas_fea2.problem import Step
-
     from .model import Model
     from .nodes import Node
     from .parts import _Part
@@ -591,14 +591,19 @@ class _Element2D(_Element):
     __doc__ += """
     Additional Parameters
     ---------------------
+    frame :  :class:`compas.geometry.Frame` or list, optional.
+        Frame or local Y axis in global coordinates (longitudinal axis).
+        This can be used to define the local orientation for anisotrop material.
     faces : [:class:`compas_fea2.model.elements.Face]
         The faces of the element.
     face_indices : dict
         Dictionary providing for each face the node indices. For example:
         {'s1': (0,1,2), ...}
+    
+    
     """
 
-    def __init__(self, nodes: List["Node"], section: Optional["_Section"] = None, implementation: Optional[str] = None, rigid: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: Optional["_Section"] = None, implementation: Optional[str] = None, rigid: bool = False, frame: Optional[Frame] = None,**kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
@@ -606,7 +611,18 @@ class _Element2D(_Element):
             rigid=rigid,
             **kwargs,
         )
-
+        if frame:
+            if isinstance(frame, Frame) :
+                self._frame = frame 
+            else :
+                compas_polygon = Polygon(points = [node.point for node in nodes])
+                #the third axis is built from the y-axis (frame input) and z-axis (normal of the element)
+                x_axis = cross_vectors(frame, compas_polygon.normal)
+                frame = Frame(nodes[0].point, Vector(*x_axis), Vector(*frame))
+                self._frame = frame
+        else :
+            if isinstance(self.section.material, ElasticOrthotropic):
+                raise ValueError("For orthotropic or anisotropic materials, the frame must implemented to define the local orientation of the element.")
         self._faces = None
         self._face_indices = None
         self._ndim = 2
@@ -724,7 +740,7 @@ class _Element3D(_Element):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, frame: Optional[List] = None, **kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
