@@ -15,75 +15,72 @@ class Timber(ElasticOrthotropic):
     The longitudinal axis (along the grain) is defined along the y-axis.
     
     Parameters
-        ----------
-        fmk : float
-            Bending resistance.
-        ft0k : float
-            Characteristic tensile strength along the grain.
-        fc0k : float
-            Characteristic compressive strength along the grain.
-        ft90k : float
-            Characteristic tensile strength perpendicular to the grain.
-        fc90k : float
-            Characteristic tensile strength along the grain.
-        fvk : float
-            Shear resistance.
-        vLT : float
-            Value of Poisson ratio longitudinal/transverse.
-        vTT : float
-            Value of Poisson ratio transverse/transverse.
-        E0mean : float
-            Mean value of modulus of elasticity parallel.
-        E90mean : float
-            Mean value of modulus of elasticity perpendicular.
-        Gmean : float
-            Mean value of shear modulus.
-        density : float
-            Mean density of the timber material [kg/m^3].
-        name : str, optional
-            Name of the material.
-        
-        Attributes :
-        ------------
-
-        fmk : float
-            Bending resistance.
-        ft0k : float
-            Characteristic tensile strength along the grain.
-        fc0k : float
-            Characteristic compressive strength along the grain.
-        ft90k : float
-            Characteristic tensile strength perpendicular to the grain.
-        fc90k : float
-            Characteristic tensile strength along the grain.
-        fvk : float
-            Shear resistance.
-        Ex : float
-            Young's modulus Ex in x direction (EN383 - E90 mean).
-        Ey : float
-            Young's modulus Ey in y direction (EN383 - E0 mean).
-        Ez : float
-            Young's modulus Ez in z direction (EN383 - E90 mean).
-        vxy : float
-            Poisson's ratio vxy in x-y directions.
-        vyz : float
-            Poisson's ratio vyz in y-z directions.
-        vzx : float
-            Poisson's ratio vzx in z-x directions.
-        Gxy : float
-            Shear modulus Gxy in x-y direction (EN383 - G mean).
-        Gyz : float
-            Shear modulus Gyz in y-z directions (EN383 - G mean).
-        Gzx : float
-            Shear modulus Gzx in z-x directions (EN383 - G mean).
+    ----------
+    fmk : float
+        Bending resistance.
+    ft0k : float
+        Characteristic tensile strength along the grain.
+    fc0k : float
+        Characteristic compressive strength along the grain.
+    ft90k : float
+        Characteristic tensile strength perpendicular to the grain.
+    fc90k : float
+        Characteristic tensile strength along the grain.
+    fvk : float
+        Shear resistance.
+    vLT : float
+        Value of Poisson ratio longitudinal/transverse.
+    vTT : float
+        Value of Poisson ratio transverse/transverse.
+    E0mean : float
+        Mean value of modulus of elasticity parallel.
+    E90mean : float
+        Mean value of modulus of elasticity perpendicular.
+    Gmean : float
+        Mean value of shear modulus.
+    density : float
+        Mean density of the timber material [kg/m^3].
+    name : str, optional
+        Name of the material.
     
-            """
+    Attributes :
+    ------------
+
+    fmk : float
+        Bending resistance.
+    ft0k : float
+        Characteristic tensile strength along the grain.
+    fc0k : float
+        Characteristic compressive strength along the grain.
+    ft90k : float
+        Characteristic tensile strength perpendicular to the grain.
+    fc90k : float
+        Characteristic tensile strength along the grain.
+    fvk : float
+        Shear resistance.
+    Ex : float
+        Young's modulus Ex in x direction (EN383 - E90 mean).
+    Ey : float
+        Young's modulus Ey in y direction (EN383 - E0 mean).
+    Ez : float
+        Young's modulus Ez in z direction (EN383 - E90 mean).
+    vxy : float
+        Poisson's ratio vxy in x-y directions.
+    vyz : float
+        Poisson's ratio vyz in y-z directions.
+    vzx : float
+        Poisson's ratio vzx in z-x directions.
+    Gxy : float
+        Shear modulus Gxy in x-y direction (EN383 - G mean).
+    Gyz : float
+        Shear modulus Gyz in y-z directions (EN383 - G mean).
+    Gzx : float
+        Shear modulus Gzx in z-x directions (EN383 - G mean).
+
+    """
     __doc__+=ElasticOrthotropic.__doc__
 
     def __init__(self, fmk, ft0k, fc0k, ft90k, fc90k, fvk, vLT, vTT, E0mean, E90mean, Gmean, densityk, density, **kwargs):
-        """
-        
-        """
 
         super().__init__(Ex=E90mean, Ey=E0mean, Ez=E90mean, vxy=vLT*E90mean/E0mean, vyz=vLT, vzx=vTT , Gxy=Gmean, Gyz=Gmean, Gzx=Gmean, density=density, **kwargs)
         self.fmk = fmk

@@ -368,8 +368,8 @@ class _Element1D(_Element):
         self.section.plot()
 
     def plot_stress_distribution(self, step: "Step", end: str = "end_1", nx: int = 100, ny: int = 100, *args, **kwargs):  # noqa: F821
-        """ Plot the stress distribution along the element.
-        
+        """Plot the stress distribution along the element.
+
         Parameters
         ----------
         step : :class:`compas_fea2.model.Step`
@@ -424,8 +424,8 @@ class _Element1D(_Element):
         return r.forces
 
     def moments(self, step: "_Step") -> "Result":  # noqa: F821
-        """ Get the moments result for the element.
-        
+        """Get the moments result for the element.
+
         Parameters
         ----------
         step : :class:`compas_fea2.model.Step`
@@ -603,7 +603,9 @@ class _Element2D(_Element):
     
     """
 
-    def __init__(self, nodes: List["Node"], section: Optional["_Section"] = None, implementation: Optional[str] = None, rigid: bool = False, frame: Optional[Frame] = None,**kwargs):
+    def __init__(
+        self, nodes: List["Node"], section: Optional["_Section"] = None, implementation: Optional[str] = None, rigid: bool = False, frame: Optional[Frame] = None, **kwargs
+    ):
         super().__init__(
             nodes=nodes,
             section=section,
@@ -611,21 +613,23 @@ class _Element2D(_Element):
             rigid=rigid,
             **kwargs,
         )
-        if frame:
-            if isinstance(frame, Frame) :
-                self._frame = frame 
-            else :
-                compas_polygon = Polygon(points = [node.point for node in nodes])
-                #the third axis is built from the y-axis (frame input) and z-axis (normal of the element)
-                x_axis = cross_vectors(frame, compas_polygon.normal)
-                frame = Frame(nodes[0].point, Vector(*x_axis), Vector(*frame))
-                self._frame = frame
-        else :
-            if isinstance(self.section.material, ElasticOrthotropic):
-                raise ValueError("For orthotropic or anisotropic materials, the frame must implemented to define the local orientation of the element.")
         self._faces = None
         self._face_indices = None
         self._ndim = 2
+        if frame:
+            if isinstance(frame, (Vector, List, Tuple)):
+                compas_polygon = Polygon(points=[node.point for node in nodes])
+                # the third axis is built from the y-axis (frame input) and z-axis (normal of the element)
+                x_axis = cross_vectors(frame, compas_polygon.normal)
+                frame = Frame(nodes[0].point, Vector(*x_axis), Vector(*frame))
+                self._frame = frame
+            else:
+                raise ValueError("The frame must be a Frame object or a Vector object.")
+
+        else:
+            if isinstance(self.section.material, ElasticOrthotropic):
+                raise ValueError("For orthotropic or anisotropic materials, the frame must implemented to define the local orientation of the element.")
+
 
     @property
     def nodes(self) -> List["Node"]:
@@ -698,7 +702,7 @@ class ShellElement(_Element2D):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: Optional["_Section"] = None, implementation: Optional[str] = None, rigid: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, **kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
