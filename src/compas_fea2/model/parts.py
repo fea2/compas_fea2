@@ -44,6 +44,7 @@ from .elements import _Element
 from .elements import _Element1D
 from .elements import _Element2D
 from .elements import _Element3D
+from .groups import EdgesGroup
 from .groups import ElementsGroup
 from .groups import FacesGroup
 from .groups import MaterialsGroup
@@ -249,6 +250,10 @@ class _Part(FEAData):
     @property
     def elements(self) -> ElementsGroup:
         return ElementsGroup(self._elements)
+
+    @property
+    def edges(self) -> EdgesGroup:
+        return EdgesGroup([edge for element in self.elements for edge in element.edges])
 
     @property
     def faces(self) -> FacesGroup:
@@ -779,12 +784,13 @@ class _Part(FEAData):
         """
         implementation = kwargs.get("implementation", None)
         ndm = kwargs.get("ndm", None)
+        heat = kwargs.get("heat", False)
         part = cls(name=name, ndm=ndm) if ndm else cls(name=name)
         vertex_node = {vertex: part.add_node(Node(mesh.vertex_coordinates(vertex))) for vertex in mesh.vertices()}
 
         for face in mesh.faces():
             nodes = [vertex_node[vertex] for vertex in mesh.face_vertices(face)]
-            element = ShellElement(nodes=nodes, section=section, implementation=implementation, **kwargs)
+            element = ShellElement(nodes=nodes, section=section, implementation=implementation, heat=heat, **kwargs)
             part.add_element(element)
 
         part._boundary_mesh = mesh
@@ -842,15 +848,23 @@ class _Part(FEAData):
 
         # Get elements
         gmsh_elements = model.mesh.get_elements()
-        dimension = 2 if isinstance(section, SolidSection) else 1
+        implementation = kwargs.get("implementation", None)
+        if 'C2D' in implementation and isinstance(section, SolidSection):
+            dimension = 1
+        else : 
+            dimension = 2 if isinstance(section, SolidSection) else 1
         # gmsh keys start from 1
         ntags_per_element = np.split(gmsh_elements[2][dimension] - 1, len(gmsh_elements[1][dimension]))
 
         verbose = kwargs.get("verbose", False)
         rigid = kwargs.get("rigid", False)
         implementation = kwargs.get("implementation", None)
+        heat = kwargs.get("heat", False)
 
+        i=0
         for ntags in ntags_per_element:
+            i+=1
+            print(str(i)+'\\'+str(len(gmsh_elements[1][dimension])))
             if kwargs.get("split", False):
                 raise NotImplementedError("This feature is under development")
 
@@ -863,6 +877,7 @@ class _Part(FEAData):
                         section=section,
                         rigid=rigid,
                         implementation=implementation,
+                        heat=heat
                         **kwargs
                     )
                 )
@@ -875,19 +890,20 @@ class _Part(FEAData):
                             section=section,
                             rigid=rigid,
                             implementation=implementation,
+                            heat=heat
                             **kwargs
                         )
                     )
                 else:
-                    part.add_element(TetrahedronElement(nodes=element_nodes, section=section, rigid=rigid))
+                    part.add_element(TetrahedronElement(nodes=element_nodes, section=section, rigid=rigid, heat=heat))
                     part.ndf = 3  # FIXME: move outside the loop
 
             elif ntags.size == 10:  # C3D10 tetrahedral element
-                part.add_element(TetrahedronElement(nodes=element_nodes, section=section, rigid=rigid))
+                part.add_element(TetrahedronElement(nodes=element_nodes, section=section, rigid=rigid, heat=heat))
                 part.ndf = 3
 
             elif ntags.size == 8:
-                part.add_element(HexahedronElement(nodes=element_nodes, section=section, rigid=rigid))
+                part.add_element(HexahedronElement(nodes=element_nodes, section=section, rigid=rigid, heat=heat))
 
             else:
                 raise NotImplementedError(f"Element with {ntags.size} nodes not supported")

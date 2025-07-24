@@ -1,4 +1,5 @@
 from typing import Dict
+from typing import Optional
 
 from compas_fea2.base import FEAData
 
@@ -35,6 +36,8 @@ yy : bool
     Restrain rotations around the y axis.
 zz : bool
     Restrain rotations around the z axis.
+temp : float (False otherwise)
+    Imposed temperature for heat analysis.
 components : dict
     Dictionary with component-value pairs summarizing the boundary condition.
 axes : str
@@ -56,6 +59,7 @@ class _BoundaryCondition(FEAData):
         self._xx = False
         self._yy = False
         self._zz = False
+        self._temp = False
 
     @property
     def x(self) -> bool:
@@ -80,6 +84,10 @@ class _BoundaryCondition(FEAData):
     @property
     def zz(self) -> bool:
         return self._zz
+    
+    @property
+    def temp(self) -> bool:
+        return self._temp
 
     @property
     def axes(self) -> str:
@@ -104,6 +112,7 @@ class _BoundaryCondition(FEAData):
             "xx": self._xx,
             "yy": self._yy,
             "zz": self._zz,
+            "temp": self._temp,
         }
 
     @classmethod
@@ -302,3 +311,49 @@ class RollerBCXZ(PinnedBC):
         super().__init__(**kwargs)
         self._x = False
         self._z = False
+
+#===================================================================
+# HEAT ANALYSIS
+#===================================================================
+
+class _ThermalBoundaryCondition(FEAData):
+    """Base class for temperature boundary conditions."""
+
+    __doc__ += docs
+
+    def __init__(self, temp: float = None, **kwargs):
+        super().__init__(**kwargs)
+        self._temp = None
+
+    @property
+    def temp(self) -> Optional[float]:
+        return self._temp
+
+    @property
+    def __data__(self) -> Dict[str, any]:
+        return {
+            "class": self.__class__.__base__.__name__,
+            "temp": self._temp,
+        }
+
+    @classmethod
+    def __from_data__(cls, data: Dict[str, any]):
+        return cls(
+            temp=data.get("temp", None)
+        )
+
+class ImposedTemperature(_ThermalBoundaryCondition):
+    """Imposed temperature conidtion for heat analysis.
+    
+    Additional Parameters
+---------------------
+temperature : float
+    Value of imposed temperature applied
+    """
+
+    __doc__ += docs
+
+    def __init__(self, temperature, **kwargs):
+        super().__init__(**kwargs)
+        self._temp = temperature
+

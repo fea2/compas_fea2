@@ -4,8 +4,8 @@ import compas_fea2
 from compas_fea2.base import FEAData
 
 if TYPE_CHECKING:
-    from compas_fea2.problem import Step
     from compas_fea2.problem import Problem
+    from compas_fea2.problem import Step
 
 
 

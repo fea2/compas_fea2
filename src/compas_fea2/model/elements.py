@@ -22,14 +22,15 @@ from compas_fea2.model.materials.material import ElasticOrthotropic
 
 if TYPE_CHECKING:
     from compas_fea2.problem import Step
+    from compas_fea2.results import Result
+    from compas_fea2.results import ShellStressResult
+    from compas_fea2.results import SolidStressResult
+
     from .model import Model
     from .nodes import Node
     from .parts import _Part
     from .sections import _Section
     from .shapes import Shape
-    from compas_fea2.results import Result
-    from compas_fea2.results import ShellStressResult
-    from compas_fea2.results import SolidStressResult
 
 
 class _Element(FEAData):
@@ -465,6 +466,51 @@ class StrutElement(TrussElement):
 class TieElement(TrussElement):
     """A truss element that resists axial tensile loads."""
 
+class Edge(FEAData):
+    def __init__(self, nodes: List["Node"], tag: str, element: Optional["_Element"] = None, **kwargs):
+        super().__init__( **kwargs)
+        self._nodes = nodes
+        self._tag = tag
+        self._line = Line(start=nodes[0].point, end=nodes[1].point)  # TODO check when more than 3 nodes
+        self._registration = element  # FIXME: not updated when copying parts
+
+
+    @property
+    def nodes(self) -> List["Node"]:
+        return self._nodes
+
+    @property
+    def tag(self) -> str:
+        return self._tag
+
+    @property
+    def plane(self) -> Plane:
+        return self._plane
+
+    @property
+    def element(self) -> Optional["_Element"]:
+        return self._registration
+
+    @property
+    def part(self) -> "_Part":
+        return self.element.part
+
+    @property
+    def model(self) -> "Model":
+        return self.element.model
+
+    @property
+    def centroid(self) -> "Point":
+        return centroid_points([node.xyz for node in self.nodes])
+
+    @property
+    def nodes_key(self) -> List:
+        return [n._part_key for n in self.nodes]
+
+    @property
+    def points(self) -> List["Point"]:
+        return [node.point for node in self.nodes]
+
 
 class Face(FEAData):
     """Element representing a face.
@@ -599,8 +645,11 @@ class _Element2D(_Element):
     face_indices : dict
         Dictionary providing for each face the node indices. For example:
         {'s1': (0,1,2), ...}
-    
-    
+    edges : [:class:`compas_fea2.model.elements.Edge]
+        The edges of the element.
+    edge_indices : dict
+        Dictionary providing for each edge the node indices. For example:
+        {'e1': (0,1), ...}
     """
 
     def __init__(
@@ -615,6 +664,8 @@ class _Element2D(_Element):
         )
         self._faces = None
         self._face_indices = None
+        self._edges = None
+        self._edges_indices = None
         self._ndim = 2
         if frame:
             if isinstance(frame, (Vector, List, Tuple)):
@@ -641,9 +692,17 @@ class _Element2D(_Element):
         self._faces = self._construct_faces(self._face_indices)
 
     @property
+    def edge_indices(self) -> Optional[Dict[str, Tuple[int]]]:
+        return self._edgee_indices
+    
+    @property
+    def edges(self) -> Optional[List[Face]]:
+        return self._edges
+
+    @property
     def face_indices(self) -> Optional[Dict[str, Tuple[int]]]:
         return self._face_indices
-
+    
     @property
     def faces(self) -> Optional[List[Face]]:
         return self._faces
@@ -676,6 +735,22 @@ class _Element2D(_Element):
         """
         return [Face(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in face_indices.items()]
 
+    def _construct_edges(self, edge_indices: Dict[str, Tuple[int]]) -> List[Edge]:
+        """Construct the face-nodes dictionary.
+
+        Parameters
+        ----------
+        face_indices : dict
+            Dictionary providing for each face the node indices. For example:
+            {'s1': (0,1,2), ...}
+
+        Returns
+        -------
+        dict
+            Dictionary with edge names and the corresponding nodes.
+        """
+        return [Edge(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in edge_indices.items()]
+    
     def stress_results(self, step: "Step") -> "Result":
         """Get the stress results for the element.
 
@@ -713,6 +788,9 @@ class ShellElement(_Element2D):
 
         self._face_indices = {"SPOS": tuple(range(len(nodes))), "SNEG": tuple(range(len(nodes)))[::-1]}
         self._faces = self._construct_faces(self._face_indices)
+        self._edges_indices = {f"s{i+1}": (i,i+1) if i<len(nodes)-1 else (i,0) for i in range(len(nodes))}
+        # self._edge_indices[f"s{len(nodes)-1}"]= (len(nodes)-1, 0)
+        self._edges = self._construct_edges(self._edges_indices)
 
     @property
     def results_cls(self) -> "Result":

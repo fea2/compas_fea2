@@ -1,7 +1,7 @@
 from .problem import Problem
 from .displacements import GeneralDisplacement
 from .loads import (
-    Load,
+    VectorLoad,
     PrestressLoad,
     ConcentratedLoad,
     PressureLoad,
@@ -10,6 +10,8 @@ from .loads import (
     HarmonicPointLoad,
     HarmonicPressureLoad,
     ThermalLoad,
+    HeatFluxLoad,
+    TemperatureLoad
 )
 
 from .fields import (
@@ -19,8 +21,16 @@ from .fields import (
     PointLoadField,
     _PrescribedField,
     PrescribedTemperatureField,
+    HeatFluxField,
+    ConvectionField,
+    RadiationField,
+    TemperatureField,
+    SurfaceLoadField
 )
+
 from .combinations import LoadCombination
+
+from.amplitudes import Amplitude
 
 from .steps import (
     Step,
@@ -34,13 +44,14 @@ from .steps import (
     DynamicStep,
     QuasiStaticStep,
     DirectCyclicStep,
+    HeatTransferStep
 )
 
 
 __all__ = [
     "Problem",
     "GeneralDisplacement",
-    "Load",
+    "VectorLoad",
     "PrestressLoad",
     "ConcentratedLoad",
     "PressureLoad",

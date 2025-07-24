@@ -2,7 +2,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
-    from compas_fea2.problem import Step, Problem
+    from compas_fea2.problem import Problem
+    from compas_fea2.problem import Step
 
 from itertools import groupby
 from typing import Iterable
@@ -531,6 +532,35 @@ class ContactForcesFieldResults(NodeFieldResults):
         super().__init__(step=step, *args, **kwargs)
         self._field_name = "c"
 
+class TemperatureFieldResults(NodeFieldResults):
+    """Reaction field results.
+
+    This class handles the reaction field results from a finite element analysis.
+
+    Parameters
+    ----------
+    step : :class:`compas_fea2.problem._Step`
+        The analysis step where the results are defined.
+
+    Attributes
+    ----------
+    components_names : list of str
+        Names of the reaction components.
+    invariants_names : list of str
+        Names of the invariants of the reaction field.
+    results_class : class
+        The class used to instantiate the reaction results.
+    results_func : str
+        The function used to find nodes by key.
+    """
+
+    def __init__(self, step, *args, **kwargs):
+        super().__init__(step=step, *args, **kwargs)
+        self._field_name = "t"
+
+    @property
+    def components_names(self):
+        return ["temp"]
 
 # ------------------------------------------------------------------------------
 # Section Forces Field Results

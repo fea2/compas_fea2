@@ -195,3 +195,114 @@ class HardContactRough(Contact):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(normal="HARD", tangent="ROUGH", **kwargs)
+
+
+# ------------------------------------------------------------------------------
+# THERMAL INTERACTION
+# ------------------------------------------------------------------------------
+
+class ThermalInteraction(_Interaction):
+    """General thermal interaction of a part with the exterior.
+
+    Parameters
+    ----------
+    name : str, optional
+        Uniqe identifier. If not provided it is automatically generated. Set a
+        name if you want a more human-readable input file.
+    temperature : float or [float]
+        Constant temperature value or temperature evolution. 
+
+
+    Attributes
+    ----------
+    name : str, optional
+        Uniqe identifier. If not provided it is automatically generated. Set a
+        name if you want a more human-readable input file.
+    temperature : float or [float]
+        Constant temperature value or temperature evolution. 
+
+    """
+
+    def __init__(self, temperature, **kwargs):
+        super(_Interaction, self).__init__(**kwargs)
+        self._temperature = temperature
+
+    @property
+    def temperature(self):
+        return self._temperature
+
+class SurfaceConvection(ThermalInteraction):
+    """Convection.
+
+    Parameters
+    ----------
+    name : str, optional
+        Uniqe identifier. If not provided it is automatically generated. Set a
+        name if you want a more human-readable input file.
+    h : float
+        Convection coefficient.
+    surface : FaceGroup
+        Convection surface.
+    temperature : float or [float]
+        Constant temperature value or temperature evolution. 
+
+    Attributes
+    ----------
+    name : str, optional
+        Uniqe identifier. If not provided it is automatically generated. Set a
+        name if you want a more human-readable input file.
+    temperature : float or [float]
+        Constant temperature value or temperature evolution. 
+
+    """
+
+    def __init__(self, surface, h, temperature, **kwargs):
+        super().__init__(temperature=temperature, **kwargs)
+        self._h = h
+        self._surface = surface
+
+    @property
+    def h(self):
+        return self._h
+    
+    @property
+    def surface(self):
+        return self._surface
+
+class SurfaceRadiation(ThermalInteraction):
+    """Radiation.
+
+    Parameters
+    ----------
+    name : str, optional
+        Uniqe identifier. If not provided it is automatically generated. Set a
+        name if you want a more human-readable input file.
+    eps : float
+        Radiation coefficient.
+    surface : FaceGroup
+        Convection surface.
+    temperature : float or [float]
+        Constant temperature value or temperature evolution. 
+
+    Attributes
+    ----------
+    name : str, optional
+        Uniqe identifier. If not provided it is automatically generated. Set a
+        name if you want a more human-readable input file.
+    temperature : float or [float]
+        Constant temperature value or temperature evolution. 
+
+    """
+
+    def __init__(self, surface, eps, temperature, **kwargs):
+        super().__init__(temperature=temperature, **kwargs)
+        self._eps = eps
+        self._surface = surface
+
+    @property
+    def eps(self):
+        return self._eps
+    
+    @property
+    def surface(self):
+        return self._surface

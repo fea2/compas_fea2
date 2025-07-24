@@ -340,7 +340,7 @@ class ElasticPlastic(ElasticIsotropic):
         in the form of strain/stress value pairs.
     """
 
-    def __init__(self, *, E: float, v: float, density: float, strain_stress: list[tuple[float, float]], expansion: Optional[float] = None, **kwargs):
+    def __init__(self, E: float, v: float, density: float, strain_stress: list[tuple[float, float]], expansion: float = None, **kwargs):
         super().__init__(E=E, v=v, density=density, expansion=expansion, **kwargs)
         self.strain_stress = strain_stress
 
@@ -396,3 +396,74 @@ class UserMaterial(FEAData):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         raise NotImplementedError("This class is not available for the selected backend plugin")
+
+# ==============================================================================
+# Heat Material
+# ==============================================================================
+
+class ThermalElasticIsotropic(ElasticIsotropic):
+    """Thermal isotropic material for heat analysis.
+
+    Parameters
+    ----------
+    k : float
+        Thermal conductivity.
+    c : float
+        Specific heat capacity.
+
+    Attributes
+    ----------
+    k : float
+        Thermal conductivity.
+    c : float
+        Specific heat capacity.
+    
+    """
+
+
+
+    def __init__(self, k: float, c:float, E: float, v: float, density: float, expansion: float = None, **kwargs):
+        super().__init__(E=E, v=v,density=density, expansion=expansion, **kwargs)
+        self._k = k
+        self._c = c
+
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update(
+            {
+                "k": self.k,
+                "c": self.c,
+            }
+        )
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return cls(data["k"], data["c"],data["E"], data["v"], data["density"], data["expansion"])
+
+    def __str__(self) -> str:
+        return """
+Thermal ElasticIsotropic Material
+-------------------------
+name        : {}
+density     : {}
+expansion   : {}
+
+E : {}
+v : {}
+G : {}
+
+k : {}
+c : {}
+""".format(
+            self.name, self.density, self.expansion, self.E, self.v, self.G, self.k, self.c 
+        )
+
+    @property
+    def k(self) -> float:
+        return self._k
+    
+    @property
+    def c(self) -> float:
+        return self._c

@@ -445,6 +445,104 @@ class ElementsGroup(_Group):
         """
         return self._add_members(elements)
 
+class EdgesGroup(_Group):
+    """Base class elements edges groups.
+
+    Parameters
+    ----------
+    name : str, optional
+        Uniqe identifier. If not provided it is automatically generated. Set a
+        name if you want a more human-readable input file.
+    edges : Set[:class:`compas_fea2.model.Edge`]
+        The Edges belonging to the group.
+
+    Attributes
+    ----------
+    name : str
+        Uniqe identifier. If not provided it is automatically generated. Set a
+        name if you want a more human-readable input file.
+    edges : Set[:class:`compas_fea2.model.Edge`]
+        The Edges belonging to the group.
+    nodes : Set[:class:`compas_fea2.model.Node`]
+        The Nodes of the edges belonging to the group.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+
+    Notes
+    -----
+    EdgesGroups are registered to the same :class:`compas_fea2.model.Part` as the
+    elements of its edges.
+
+    """
+
+    def __init__(self, edges, **kwargs):
+        super().__init__(members=edges, **kwargs)
+
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update({"edges": list(self.edges)})
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        obj = cls(edges=set(data["edges"]))
+        obj._registration = data["registration"]
+        return obj
+
+    @property
+    def part(self):
+        return self._registration
+
+    @property
+    def model(self):
+        return self.part._registration
+
+    @property
+    def edges(self):
+        return self._members
+
+    @property
+    def nodes(self):
+        nodes_set = set()
+        for edge in self.edges:
+            for node in edge.nodes:
+                nodes_set.add(node)
+        return nodes_set
+
+    def add_edge(self, edge):
+        """
+        Add a face to the group.
+
+        Parameters
+        ----------
+        face : :class:`compas_fea2.model.Face`
+            The face to add.
+
+        Returns
+        -------
+        :class:`compas_fea2.model.Face`
+            The face added.
+        """
+        return self._add_member(edge)
+
+    def add_edges(self, edges):
+        """
+        Add multiple faces to the group.
+
+        Parameters
+        ----------
+        faces : [:class:`compas_fea2.model.Face`]
+            The faces to add.
+
+        Returns
+        -------
+        [:class:`compas_fea2.model.Face`]
+            The faces added.
+        """
+        return self._add_members(edges)
 
 class FacesGroup(_Group):
     """Base class elements faces groups.

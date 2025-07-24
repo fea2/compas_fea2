@@ -86,6 +86,7 @@ class Node(FEAData):
         self._z = xyz[2]
 
         self._bc = None
+        self._bct = None
         self._dof = {"x": True, "y": True, "z": True, "xx": True, "yy": True, "zz": True}
 
         self._mass = mass if isinstance(mass, list) else list([mass] * 6)
@@ -236,6 +237,10 @@ class Node(FEAData):
     @property
     def bc(self):
         return self._bc
+    
+    @property
+    def bct(self):
+        return self._bct
 
     @property
     def on_boundary(self) -> Optional[bool]:
@@ -339,8 +344,10 @@ class Node(FEAData):
     def results_cls(self):
         from compas_fea2.results import DisplacementResult
         from compas_fea2.results import ReactionResult
+        from compas_fea2.results import TemperatureResult
 
         return {
             "u": DisplacementResult,
             "rf": ReactionResult,
+            "t" : TemperatureResult
         }

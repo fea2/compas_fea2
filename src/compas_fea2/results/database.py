@@ -1,8 +1,4 @@
-import json
 import sqlite3
-
-import h5py
-import numpy as np
 
 from compas_fea2.base import FEAData
 

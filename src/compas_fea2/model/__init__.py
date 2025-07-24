@@ -21,10 +21,12 @@ from .elements import (
     _Element3D,
     TetrahedronElement,
     HexahedronElement,
+    Face
 )
 from .materials.material import (
     _Material,
     ElasticIsotropic,
+    ThermalElasticIsotropic,
     ElasticOrthotropic,
     ElasticPlastic,
     Stiff,
@@ -123,6 +125,8 @@ from .interactions import (
     HardContactNoFriction,
     LinearContactFrictionPenalty,
     HardContactRough,
+    SurfaceConvection,
+    SurfaceRadiation
 )
 
 __all__ = [
@@ -152,6 +156,7 @@ __all__ = [
     "ConcreteSmearedCrack",
     "ConcreteDamagedPlasticity",
     "ElasticIsotropic",
+    "ThermalElasticIsotropic",
     "Stiff",
     "ElasticOrthotropic",
     "ElasticPlastic",

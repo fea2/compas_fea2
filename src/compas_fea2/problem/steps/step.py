@@ -8,10 +8,17 @@ from compas.geometry import sum_vectors
 
 from compas_fea2.base import FEAData
 from compas_fea2.UI import FEA2Viewer
+from compas_fea2.model.nodes import Node
+from compas_fea2.model.elements import _Element
+from compas_fea2.model.groups import NodesGroup
+from compas_fea2.model.nodes import Node
 from compas_fea2.problem.displacements import GeneralDisplacement
 from compas_fea2.problem.fields import DisplacementField
 from compas_fea2.problem.fields import NodeLoadField
 from compas_fea2.problem.fields import PointLoadField
+from compas_fea2.problem.fields import _PrescribedField
+from compas_fea2.results import TemperatureFieldResults
+from compas_fea2.UI import FEA2Viewer
 
 # ==============================================================================
 #                                Base Steps
@@ -62,6 +69,7 @@ class Step(FEAData):
         self._load_fields = set()
         self._load_cases = set()
         self._combination = None
+        self._prescribed_fields = dict()
 
     @property
     def problem(self):
@@ -86,6 +94,10 @@ class Step(FEAData):
     @property
     def combination(self):
         return self._combination
+    
+    @property
+    def prescribed_fields(self):
+        return self._prescribed_fields
 
     @combination.setter
     def combination(self, combination):
@@ -188,7 +200,7 @@ class Step(FEAData):
 
     @property
     def temperature_field(self):
-        raise NotImplementedError
+        return TemperatureFieldResults(self)
 
     @property
     def stress_field(self):
@@ -651,6 +663,81 @@ class GeneralStep(Step):
         return self.add_load_field(DisplacementField(displacement, nodes))
 
     # ==============================================================================
+    #                             Prescribed Fields
+    # ==============================================================================
+    def _add_prescribed_field(self, prescribed_field, group):
+        """Add a :class:`compas_fea2.model._InitialCondition` to the model.
+
+        Parameters
+        ----------
+        ic : :class:`compas_fea2.model._InitialCondition`
+            Initial condition object to add to the model.
+        group : :class:`compas_fea2.model._Group`
+            Group of Nodes/Elements where the initial condition is assigned.
+
+        Returns
+        -------
+        :class:`compas_fea2.model._InitialCondition`
+
+        """
+        # group.part.add_group(group)
+
+        if not isinstance(prescribed_field, _PrescribedField):
+            raise TypeError("{!r} is not a InitialCondition.".format(ic))
+        for member in group.members:
+            if not isinstance(member, (Node, _Element)):
+                raise TypeError("{!r} is not a Node or an Element.".format(member))
+            if not member.part:
+                raise ValueError("{!r} is not registered to any part.".format(member))
+            elif member.part not in self.model.parts:
+                raise ValueError("{!r} belongs to a part not registered to this model.".format(member))
+            member._prescribed_field = prescribed_field
+
+        prescribed_field._key = len(self._prescribed_fields)
+        self._prescribed_fields[prescribed_field] = group.members
+        prescribed_field._registration = self
+
+        return prescribed_field
+
+    def add_nodes_prescribed_field(self, prescribed_field, nodes):
+        """Add a :class:`compas_fea2.model._InitialCondition` to the model.
+
+        Parameters
+        ----------
+        ic : :class:`compas_fea2.model._InitialCondition`
+        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
+
+        Returns
+        -------
+        :class:`compas_fea2.model._InitialCondition`
+
+        """
+        if not isinstance(nodes, NodesGroup):
+            raise TypeError("{} is not a group of nodes".format(nodes))
+        self._add_prescribed_field(prescribed_field, nodes)
+        return prescribed_field
+    
+    def add_prescribed_field(self, field, *kwargs):
+        """Add a general :class:`compas_fea2.problem.patterns.Pattern` to the Step.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        :class:`compas_fea2.problem.patterns.Pattern`
+
+        """
+
+        if not isinstance(field, _PrescribedField):
+            raise TypeError("{!r} is not a _PrescribedField.".format(field))
+
+        self._prescribed_fields.add(field)
+        field._registration = self
+        return field
+
+
+    # ==============================================================================
     #                             Combinations
     # ==============================================================================
 
@@ -772,7 +859,6 @@ Z : {applied_load[2]}
         None
 
         """
-        from compas_fea2.UI import FEA2Viewer
 
         viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
 
@@ -803,7 +889,6 @@ Z : {applied_load[2]}
             _description_, by default
 
         """
-        from compas_fea2.UI import FEA2Viewer
 
         if not self.displacement_field:
             raise ValueError("No displacement field results available for this step")
@@ -834,7 +919,6 @@ Z : {applied_load[2]}
         scale_results : _type_, optional
             _description_, by default 1
         """
-        from compas_fea2.UI import FEA2Viewer
 
         if not self.reaction_field:
             raise ValueError("No reaction field results available for this step")
@@ -849,7 +933,6 @@ Z : {applied_load[2]}
         viewer.scene.clear()
 
     def show_stress(self, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=1, show_contour=False, plane="mid", **kwargs):
-        from compas_fea2.UI import FEA2Viewer
 
         if not self.stress_field:
             raise ValueError("No reaction field results available for this step")
