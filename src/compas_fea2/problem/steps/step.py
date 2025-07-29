@@ -1,4 +1,5 @@
 from typing import Iterable
+from typing import TYPE_CHECKING
 
 from compas.geometry import Point
 from compas.geometry import Vector
@@ -19,6 +20,13 @@ from compas_fea2.problem.fields import PointLoadField
 from compas_fea2.problem.fields import _PrescribedField
 from compas_fea2.results import TemperatureFieldResults
 from compas_fea2.UI import FEA2Viewer
+
+if TYPE_CHECKING:
+    from compas_fea2.model import Model
+    from compas_fea2.problem import Problem
+    from compas_fea2.model import NodesGroup
+    from compas_fea2.model import _Element
+    from compas_fea2.problem import _LoadField
 
 # ==============================================================================
 #                                Base Steps
@@ -72,11 +80,13 @@ class Step(FEAData):
         self._prescribed_fields = dict()
 
     @property
-    def problem(self):
+    def problem(self) -> "Problem":
+        if not self._registration:
+            raise AttributeError("Step is not registered to a Problem.")
         return self._registration
 
     @property
-    def model(self):
+    def model(self) -> "Model":
         return self.problem.model
 
     @property
@@ -94,7 +104,7 @@ class Step(FEAData):
     @property
     def combination(self):
         return self._combination
-    
+
     @property
     def prescribed_fields(self):
         return self._prescribed_fields
@@ -191,11 +201,13 @@ class Step(FEAData):
     @property
     def displacement_field(self):
         from compas_fea2.results.fields import DisplacementFieldResults
+
         return DisplacementFieldResults(self)
 
     @property
     def reaction_field(self):
         from compas_fea2.results.fields import ReactionFieldResults
+
         return ReactionFieldResults(self)
 
     @property
@@ -205,11 +217,13 @@ class Step(FEAData):
     @property
     def stress_field(self):
         from compas_fea2.results.fields import StressFieldResults
+
         return StressFieldResults(self)
 
     @property
     def section_forces_field(self):
         from compas_fea2.results.fields import SectionForcesFieldResults
+
         return SectionForcesFieldResults(self)
 
     @property
@@ -237,6 +251,7 @@ class Step(FEAData):
         obj._load_cases = set(data["load_cases"])
         obj._combination = data["combination"]
         return obj
+
 
 # ==============================================================================
 #                                General Steps
@@ -368,7 +383,7 @@ class GeneralStep(Step):
     #                               Load Fields
     # ==============================================================================
 
-    def add_load_field(self, field, *kwargs):
+    def add_load_field(self, field: NodeLoadField):
         """Add a general :class:`compas_fea2.problem.patterns.Pattern` to the Step.
 
         Parameters
@@ -381,11 +396,10 @@ class GeneralStep(Step):
         :class:`compas_fea2.problem.patterns.Pattern`
 
         """
-        from compas_fea2.problem.fields import LoadField
+        from compas_fea2.problem.fields import _LoadField
 
-        if not isinstance(field, LoadField):
-            raise TypeError("{!r} is not a LoadPattern.".format(field))
-
+        if not isinstance(field, _LoadField):
+            raise TypeError("{!r} is not a LoadField.".format(field))
         self._load_fields.add(field)
         self._load_cases.add(field.load_case)
         field._registration = self
@@ -408,9 +422,9 @@ class GeneralStep(Step):
         for field in fields:
             self.add_load_field(field)
 
-    def add_uniform_node_load(self, nodes, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
-        """Add a :class:`compas_fea2.problem.PointLoad` subclass object to the
-        ``Step`` at specific points.
+    def add_uniform_vector_field(self, nodes, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, amplitude=None, **kwargs):
+        """Add a :class:`compas_fea2.problem.fields.NodeLoadField` where all the nodes
+        have the same load.
 
         Parameters
         ----------
@@ -428,8 +442,6 @@ class GeneralStep(Step):
             moment about the global y axis of the point load, by default None
         zz : float, optional
             moment about the global z axis of the point load, by default None
-        axes : str, optional
-            'local' or 'global' axes, by default 'global'
 
         Returns
         -------
@@ -440,48 +452,65 @@ class GeneralStep(Step):
         local axes are not supported yet
 
         """
-        from compas_fea2.problem import ConcentratedLoad
+        from compas_fea2.problem import VectorLoad
 
-        return self.add_load_field(NodeLoadField(loads=ConcentratedLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes), nodes=nodes, load_case=load_case, **kwargs))
+        if not isinstance(nodes, (list, tuple, NodesGroup)):
+            raise TypeError("nodes must be a list, tuple or NodesGroup, not {}".format(type(nodes)))
+        nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
+        load = VectorLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, amplitude=amplitude)
+        field = NodeLoadField(loads=load, nodes=nodes, load_case=load_case, **kwargs)
 
-    def add_uniform_point_load(self, points, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", tolerance=None, **kwargs):
-        """Add a :class:`compas_fea2.problem.PointLoad` subclass object to the
-        ``Step`` at specific points.
+        return self.add_load_field(field)
 
+    def add_uniform_scalar_field(self, nodes, load_case=None, value=None, amplitude=None, **kwargs):
+        """Add a :class:`compas_fea2.problem.fields.NodeLoadField` where all the nodes
+        have the same scalar load.
         Parameters
         ----------
-        name : str
-            name of the point load
-        x : float, optional
-            x component (in global coordinates) of the point load, by default None
-        y : float, optional
-            y component (in global coordinates) of the point load, by default None
-        z : float, optional
-            z component (in global coordinates) of the point load, by default None
-        xx : float, optional
-            moment about the global x axis of the point load, by default None
-        yy : float, optional
-            moment about the global y axis of the point load, by default None
-        zz : float, optional
-            moment about the global z axis of the point load, by default None
-        axes : str, optional
-            'local' or 'global' axes, by default 'global'
+        nodes : list[:class:`compas_fea2.model.Node`] | :class:`compas_fea2.model.NodesGroup`
+            Nodes where the load is applied.
+        load_case : str, optional
+            Load case name, by default None
+        value : float, optional
+            Value of the scalar load, by default None
+        amplitude : str, optional
+            Name of the amplitude to be used, by default None
+        **kwargs : dict
+            Additional keyword arguments to be passed to the NodeLoadField constructor.
 
         Returns
         -------
-        :class:`compas_fea2.problem.PointLoad`
-
-        Warnings
-        --------
-        local axes are not supported yet
-
+        :class:`compas_fea2.problem.fields.NodeLoadField`
         """
-        return self.add_load_field(PointLoadField(points=points, x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, load_case=load_case, axes=axes, tolerance=tolerance, **kwargs))
+        from compas_fea2.problem.loads import ScalarLoad
 
-    def add_prestress_load(self):
-        raise NotImplementedError
+        if not isinstance(nodes, (list, tuple, NodesGroup)):
+            raise TypeError("nodes must be a list, tuple or NodesGroup, not {}".format(type(nodes)))
+        nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
+        load = ScalarLoad(value=value, amplitude=amplitude)
+        field = NodeLoadField(loads=load, nodes=nodes, load_case=load_case, **kwargs)
 
-    def add_line_load(self, polyline, load_case=None, discretization=10, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", tolerance=None, **kwargs):
+        return self.add_load_field(field)
+
+    def add_uniform_line_field(self, polyline, load_case=None, discretization=10, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", tolerance=None, **kwargs):
+        """Add a :class:`compas_fea2.problem.field.NodeLoadField` subclass object to the
+        ``Step`` along a prescribed path.
+        """
+        raise NotImplementedError("This method is not implemented yet.")
+
+    def add_surface_field_from_polygon(self, polygon, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
+        from compas_fea2.problem.fields import UniformSurfaceLoadField
+        from compas_fea2.problem.loads import VectorLoad
+
+        surface = self.model.find_faces_in_polygon(polygon)
+
+        load = VectorLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes)
+
+        field = UniformSurfaceLoadField(load=load, surface=surface, load_case=load_case, **kwargs)
+
+        return self.add_load_field(field)
+
+    def add_surface_field(self, surface, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
         """Add a :class:`compas_fea2.problem.PointLoad` subclass object to the
         ``Step`` along a prescribed path.
 
@@ -518,60 +547,16 @@ class GeneralStep(Step):
         local axes are not supported yet
 
         """
-        raise NotImplementedError("Line loads are not implemented yet.")
+        from compas_fea2.problem import VectorLoad
+        from compas_fea2.problem.fields import UniformSurfaceLoadField
 
-    def add_area_load(self, polygon, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
-        """Add a :class:`compas_fea2.problem.PointLoad` subclass object to the
-        ``Step`` along a prescribed path.
-
-        Parameters
-        ----------
-        name : str
-            name of the point load
-        part : str
-            name of the :class:`compas_fea2.problem.Part` where the load is applied
-        where : int or list(int), obj
-            It can be either a key or a list of keys, or a NodesGroup of the nodes where the load is
-            applied.
-        x : float, optional
-            x component (in global coordinates) of the point load, by default None
-        y : float, optional
-            y component (in global coordinates) of the point load, by default None
-        z : float, optional
-            z component (in global coordinates) of the point load, by default None
-        xx : float, optional
-            moment about the global x axis of the point load, by default None
-        yy : float, optional
-            moment about the global y axis of the point load, by default None
-        zz : float, optional
-            moment about the global z axis of the point load, by default None
-        axes : str, optional
-            'local' or 'global' axes, by default 'global'
-
-        Returns
-        -------
-        :class:`compas_fea2.problem.PointLoad`
-
-        Warnings
-        --------
-        local axes are not supported yet
-
-        """
-        from compas_fea2.problem import ConcentratedLoad
-
-        loaded_faces = self.model.find_faces_in_polygon(polygon)
-        nodes = []
-        loads = []
         components = {"x": x or 0, "y": y or 0, "z": z or 0, "xx": xx or 0, "yy": yy or 0, "zz": zz or 0}
-        for face in loaded_faces:
-            for node, area in face.node_area:
-                nodes.append(node)
-                factored_components = {k: v * area for k, v in components.items()}
-                loads.append(ConcentratedLoad(**factored_components))
-        load_field = NodeLoadField(loads=loads, nodes=nodes, load_case=load_case, **kwargs)
-        return self.add_load_field(load_field)
+        load = VectorLoad(**components, axes=axes)
+        field = UniformSurfaceLoadField(load=load, surface=surface, load_case=load_case, **kwargs)
+    
+        return self.add_load_field(field)
 
-    def add_gravity_load(self, parts=None, g=9.81, x=0.0, y=0.0, z=-1.0, load_case=None, **kwargs):
+    def add_gravity_fied(self, parts=None, g=9.81, x=0.0, y=0.0, z=-1.0, load_case=None, **kwargs):
         """Add a :class:`compas_fea2.problem.GravityLoad` load to the ``Step``
 
         Parameters
@@ -598,25 +583,11 @@ class GeneralStep(Step):
         Be careful to assign a value of *g* consistent with the units in your
         model!
         """
-        # try:
-        #     from compas_fea2.problem import GravityLoad
-        #     gravity = GravityLoad(x=x, y=y, z=z, g=g, load_case=load_case, **kwargs)
-        # except ImportError:
-        from compas_fea2.problem import ConcentratedLoad
 
-        try:
-            parts = parts or self.model.parts
-        except Exception:
-            raise AttributeError('You need to register the problem to the model first')
-        nodes = []
-        loads = []
-        for part in parts:
-            part.compute_nodal_masses()
-            for node in part.nodes:
-                nodes.append(node)
-                loads.append(ConcentratedLoad(x=node.mass[0] * g * x, y=node.mass[1] * g * y, z=node.mass[2] * g * z))
-        load_field = NodeLoadField(loads=loads, nodes=nodes, load_case=load_case, **kwargs)
-        self.add_load_field(load_field)
+        from compas_fea2.problem.fields import GravityLoadField
+
+        gravity = GravityLoadField(g=g, parts=parts, direction=[x, y, z], load_case=load_case, **kwargs)
+        self.add_load_field(gravity)
 
     def add_temperature_field(self, field, node):
         """Add a temperature field to the Step object.
@@ -634,30 +605,36 @@ class GeneralStep(Step):
             The temperature field that was added.
         """
         raise NotImplementedError()
-        # if not isinstance(field, PrescribedTemperatureField):
-        #     raise TypeError("{!r} is not a PrescribedTemperatureField.".format(field))
-
-        # if not isinstance(node, Node):
-        #     raise TypeError("{!r} is not a Node.".format(node))
-
-        # node._temperature = field
-        # self._fields.setdefault(node.part, {}).setdefault(field, set()).add(node)
-        # return field
 
     def add_uniform_displacement_field(self, nodes, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
-        """Add a displacement at give nodes to the Step object.
+        """Add a uniform displacement field to the Step object.
 
         Parameters
         ----------
-        displacement : obj
-            :class:`compas_fea2.problem.GeneralDisplacement` object.
+        nodes : list[:class=`compas_fea2.model.Node`] | :class=`compas_fea2.model.NodesGroup`
+            Nodes where the displacement is applied.
+        x, y, z : float, optional
+            Translational displacements in the global x, y, z directions, by default None.
+        xx, yy, zz : float, optional
+            Rotational displacements about the global x, y, z axes, by default None.
+        axes : str, optional
+            Coordinate system for the displacements ('global' or 'local'), by default 'global'.
 
         Returns
         -------
-        None
+        :class=`compas_fea2.problem.fields.DisplacementField`
+            The displacement field that was added.
 
+        Raises
+        ------
+        TypeError
+            If `nodes` is not a list, tuple, or NodesGroup.
         """
-        from compas_fea2.problem import DisplacementField
+        from compas_fea2.problem.fields import DisplacementField
+
+        if not isinstance(nodes, (list, tuple, NodesGroup)):
+            raise TypeError(f"nodes must be a list, tuple, or NodesGroup, not {type(nodes)}")
+        nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
 
         displacement = GeneralDisplacement(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes, **kwargs)
         return self.add_load_field(DisplacementField(displacement, nodes))
@@ -666,37 +643,31 @@ class GeneralStep(Step):
     #                             Prescribed Fields
     # ==============================================================================
     def _add_prescribed_field(self, prescribed_field, group):
-        """Add a :class:`compas_fea2.model._InitialCondition` to the model.
+        """Add a prescribed field to the model.
 
         Parameters
         ----------
-        ic : :class:`compas_fea2.model._InitialCondition`
-            Initial condition object to add to the model.
-        group : :class:`compas_fea2.model._Group`
-            Group of Nodes/Elements where the initial condition is assigned.
+        prescribed_field : :class=`compas_fea2.problem.fields._PrescribedField`
+            The prescribed field to add.
+        group : :class=`compas_fea2.model.NodesGroup`
+            Group of nodes where the field is applied.
 
         Returns
         -------
-        :class:`compas_fea2.model._InitialCondition`
-
+        :class=`compas_fea2.problem.fields._PrescribedField`
         """
-        # group.part.add_group(group)
-
         if not isinstance(prescribed_field, _PrescribedField):
-            raise TypeError("{!r} is not a InitialCondition.".format(ic))
+            raise TypeError(f"{prescribed_field!r} is not a _PrescribedField.")
+
+        if not isinstance(group, NodesGroup):
+            raise TypeError(f"{group!r} is not a NodesGroup.")
+
         for member in group.members:
-            if not isinstance(member, (Node, _Element)):
-                raise TypeError("{!r} is not a Node or an Element.".format(member))
-            if not member.part:
-                raise ValueError("{!r} is not registered to any part.".format(member))
-            elif member.part not in self.model.parts:
-                raise ValueError("{!r} belongs to a part not registered to this model.".format(member))
-            member._prescribed_field = prescribed_field
+            if not isinstance(member, Node):
+                raise TypeError(f"{member!r} is not a Node.")
 
-        prescribed_field._key = len(self._prescribed_fields)
+        prescribed_field._registration = self  # Ensure this attribute is valid
         self._prescribed_fields[prescribed_field] = group.members
-        prescribed_field._registration = self
-
         return prescribed_field
 
     def add_nodes_prescribed_field(self, prescribed_field, nodes):
@@ -716,7 +687,7 @@ class GeneralStep(Step):
             raise TypeError("{} is not a group of nodes".format(nodes))
         self._add_prescribed_field(prescribed_field, nodes)
         return prescribed_field
-    
+
     def add_prescribed_field(self, field, *kwargs):
         """Add a general :class:`compas_fea2.problem.patterns.Pattern` to the Step.
 
@@ -736,7 +707,6 @@ class GeneralStep(Step):
         field._registration = self
         return field
 
-
     # ==============================================================================
     #                             Combinations
     # ==============================================================================
@@ -750,14 +720,14 @@ class GeneralStep(Step):
 
         Parameters
         ----------
-        step : :class:`compas_fea2.problem._Step`, optional
+        step : :class=`compas_fea2.problem._Step`, optional
             The analysis step, by default the last step.
 
         Returns
         -------
-        :class:`compas.geometry.Vector`
+        :class=`compas.geometry.Vector`
             The resultant vector.
-        :class:`compas.geometry.Point`
+        :class=`compas.geometry.Point`
             The application point.
         """
         if not step:
@@ -807,29 +777,30 @@ class GeneralStep(Step):
 
     def check_force_equilibrium(self):
         """Checks whether the equilibrium between reactions and applied loads is respected and
-        returns the total applied loads and total reaction forces. 
+        returns the total applied loads and total reaction forces.
 
         Prints whether the equilibrium is found and the total loads and reactions.
-        
+
         Returns
         -------
         The two lists of total reaction and applied loads according to global x-, y- ans z-axis.
 
         """
 
-        applied_load=[0,0,0]
-        reaction_vector=self.get_total_reaction(self)[0]
+        applied_load = [0, 0, 0]
+        reaction_vector = self.get_total_reaction(self)[0]
         for load_field in self.loads:
-            for load in load_field.loads :
-                applied_load[0], applied_load[1], applied_load[2] = applied_load[0]+load.x, applied_load[1]+load.y, applied_load[2]+load.z
-        equilibriumx = applied_load[0]+reaction_vector.x < (applied_load[0]/1000 if applied_load[0]!=0 else 1e-3) 
-        equilibriumy = applied_load[1]+reaction_vector.y < (applied_load[1]/1000 if applied_load[1]!=0 else 1e-3) 
-        equilibriumz = applied_load[2]+reaction_vector.z < (applied_load[2]/1000 if applied_load[2]!=0 else 1e-3) 
-        if (equilibriumx and equilibriumy and equilibriumz) :
+            for load in load_field.loads:
+                applied_load[0], applied_load[1], applied_load[2] = applied_load[0] + load.x, applied_load[1] + load.y, applied_load[2] + load.z
+        equilibriumx = applied_load[0] + reaction_vector.x < (applied_load[0] / 1000 if applied_load[0] != 0 else 1e-3)
+        equilibriumy = applied_load[1] + reaction_vector.y < (applied_load[1] / 1000 if applied_load[1] != 0 else 1e-3)
+        equilibriumz = applied_load[2] + reaction_vector.z < (applied_load[2] / 1000 if applied_load[2] != 0 else 1e-3)
+        if equilibriumx and equilibriumy and equilibriumz:
             print("The force equilibrium is respected.")
-        else :
+        else:
             print("The force equilibrium is not respected.")
-        print(f""" Total reactions :
+        print(
+            f""" Total reactions :
 X : {reaction_vector.x}
 Y : {reaction_vector.y}
 Z : {reaction_vector.z}
@@ -838,9 +809,10 @@ Total applied loads :
 X : {applied_load[0]}
 Y : {applied_load[1]}
 Z : {applied_load[2]}
-""")
+"""
+        )
         return reaction_vector, applied_load
-    
+
     # ==============================================================================
     # Visualisation
     # ==============================================================================
@@ -850,16 +822,23 @@ Z : {applied_load[2]}
 
         Parameters
         ----------
-        step : :class:`compas_fea2.problem._Step`, optional
-            The Step of the analysis, by default None. If not provided, the last
-            step is used.
+        opacity : float, optional
+            Opacity of the model, by default 1.
+        show_bcs : bool, optional
+            Whether to show boundary conditions, by default True.
+        scale_results : float, optional
+            Scale factor for results, by default 1.
+        scale_model : float, optional
+            Scale factor for the model, by default 1.
+        show_loads : bool, optional
+            Whether to show loads, by default True.
+        show_original : bool, optional
+            Whether to show the original model, by default False.
 
         Returns
         -------
         None
-
         """
-
         viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
 
         if show_original:
@@ -869,7 +848,7 @@ Z : {applied_load[2]}
         for displacement in displacements.results:
             vector = displacement.vector.scaled(scale_results)
             displacement.node.xyz = sum_vectors([Vector(*displacement.node.xyz), vector])
-        viewer.add_model(self.model, fast=True, opacity=opacity, show_bcs=show_bcs, show_loads=show_loads, **kwargs)
+        viewer.add_model(self.model, fast=True, opacity=opacity, show_bcs=bool(show_bcs), show_loads=bool(show_loads), **kwargs)
         if show_loads:
             viewer.add_step(self, show_loads=show_loads)
         viewer.show()
@@ -906,31 +885,35 @@ Z : {applied_load[2]}
 
         Parameters
         ----------
-        step : _type_, optional
-            _description_, by default None
-        scale_model : int, optional
-            _description_, by default 1
+        fast : bool, optional
+            Whether to use fast rendering, by default True.
         show_bcs : bool, optional
-            _description_, by default True
-        component : _type_, optional
-            _description_, by default
-        translate : _type_, optional
-            _description_, by default -1
-        scale_results : _type_, optional
-            _description_, by default 1
-        """
+            Whether to show boundary conditions, by default True.
+        scale_model : int, optional
+            Scale factor for the model, by default 1.
+        show_loads : bool, optional
+            Whether to show loads, by default True.
+        component : str, optional
+            Component of the reaction field to display, by default None.
+        show_vectors : bool, optional
+            Whether to show reaction vectors, by default True.
+        show_contour : bool, optional
+            Whether to show reaction contours, by default False.
 
+        Returns
+        -------
+        None
+        """
         if not self.reaction_field:
             raise ValueError("No reaction field results available for this step")
 
         viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
-        viewer.add_model(self.model, fast=fast, show_parts=True, opacity=0.5, show_bcs=show_bcs, show_loads=show_loads, **kwargs)
-        viewer.add_reaction_field(self.reaction_field, fast=fast, model=self.model, component=component, show_vectors=show_vectors, show_contour=show_contour, **kwargs)
+        viewer.add_model(self.model, fast=fast, show_parts=True, opacity=0.5, show_bcs=bool(show_bcs), show_loads=bool(show_loads), **kwargs)
+        viewer.add_reaction_field(self.reaction_field, fast=fast, model=self.model, component=component, show_vectors=bool(show_vectors), show_contour=show_contour, **kwargs)
 
         if show_loads:
-            viewer.add_step(self, show_loads=show_loads)
+            viewer.add_step(self, show_loads=int(show_loads))
         viewer.show()
-        viewer.scene.clear()
 
     def show_stress(self, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=1, show_contour=False, plane="mid", **kwargs):
 
@@ -961,124 +944,69 @@ Z : {applied_load[2]}
             }
         )
         return data
-    
-    def plot_deflection_along_line(self, line, n_divide=1000):
 
+    def plot_deflection_along_line(self, line, n_divide=1000):
         """Plot the deflection along a compas line given as an input. This method can only be used on shell models.
-        
+
         Parameters
         ----------
-        line : :class:`compas.geometry.Line`
+        line : :class=`compas.geometry.Line`
             Line along which the deflection is plotted.
-        step : :class:`compas_fea2.problems.step, optional
-            Step containing the displacements results.
-            If not indicated, the last step of the problem is considered
         n_divide : int, optional
             Number of division of the input line.
             If not indicated, a value of 1000 is implemented.
 
         """
-
         import matplotlib.pyplot as plt
         import numpy as np
         from compas.geometry import Point
         from scipy.spatial import KDTree
-        
-        #-----------------------------------------------------------
-        #FIRST, the input line is discretized in n_divide points
-        #-----------------------------------------------------------
-        # TODO automatized the n_divide parameters with the mesh density 
 
-        length = line.length/n_divide
-        l_discretized=Polyline(points=[line.start, line.end]).divide_by_length(length)
+        # -----------------------------------------------------------
+        # FIRST, the input line is discretized in n_divide points
+        # -----------------------------------------------------------
+        # TODO automatized the n_divide parameters with the mesh density
 
-        #--------------------------------------------------------------------------------------------------------------------
-        #SECOND, looking for the closest points of mesh to input line, according to their projection on the horizontal plan
-        #--------------------------------------------------------------------------------------------------------------------
-        part=list(self.model.parts)[0]
-        nodes=part.nodes
+        length = line.length / n_divide
+        l_discretized = line.divide_by_length(length)
 
-        #projection of the nodes of the mesh on the XY plan
-        element_XY_points=[]
-        for node in nodes :
-            element_XY_points.append(Point(node.xyz[0], node.xyz[1], 0)) #nodes of the shell are projected vertically
-        
-        #determination of the closest nodes of the projected mesh to the input line
-        l_closestpoints=[]
+        # --------------------------------------------------------------------------------------------------------------------
+        # SECOND, looking for the closest points of mesh to input line, according to their projection on the horizontal plan
+        # --------------------------------------------------------------------------------------------------------------------
+        part = list(self.model.parts)[0]
+        nodes = part.nodes
+
+        # projection of the nodes of the mesh on the XY plan
+        element_XY_points = [Point(node.xyz[0], node.xyz[1], 0) for node in nodes]
+
+        # determination of the closest nodes of the projected mesh to the input line
+        l_closestpoints = []
         for point_line in l_discretized:
-            tree=KDTree(element_XY_points)
-            dist, closest_2D_point_index=tree.query(point_line, k=1)
-            closest_3D_point=list(nodes)[closest_2D_point_index]
+            tree = KDTree(element_XY_points)
+            _, closest_2D_point_index = tree.query(point_line, k=1)
+            closest_3D_point = list(nodes)[closest_2D_point_index]
             l_closestpoints.append(closest_3D_point)
 
-        #The discretization of the input line might be more precised than the precision of the mesh
-        #The points of the line associated to the same mesh node are removed
-        i=0
-        while i<len(l_closestpoints)-1:
-            if l_closestpoints[i]==l_closestpoints[i+1]:
-                del l_closestpoints[i+1]
-                del l_discretized[i+1]
-                i-=1
-            i+=1
+        # Remove duplicate points
+        l_closestpoints = list(dict.fromkeys(l_closestpoints))
 
-        #--------------------------------------------------------------------------------------------------------------------
-        #THIRD, extraction of the deflection values of the nodes of the mesh
-        #--------------------------------------------------------------------------------------------------------------------
-        field_displacement=self.displacement_field
-        
-        #Construction of plotting lists
-        #x_list and y_list store the global x- and y-axis coordinates values 
-        #plot_value stores the corresponding displacement value
-        plot_value=[field_displacement.get_result_at(point).z for point in l_closestpoints]
-        x_list=[point.x for point in l_closestpoints]
-        y_list=[point.y for point in l_closestpoints]
-        
-        #Determination of the local maxima/minima for plot display
-        derivated_values=[]
-        relative_extrema=[]
-        for i in range(len(l_discretized)-1):
-            derivated_values.append(plot_value[i+1]-plot_value[i])
-            if i>0 and (derivated_values[i]*derivated_values[i-1]<0):
-                relative_extrema.append([l_discretized[i],plot_value[i]])
-        
-        #--------------------------------------------------------------------------------------------------------------------
-        #FINAL, script for plot display. 
-        #--------------------------------------------------------------------------------------------------------------------
-        
-        #Determination if the result line is along the x- or y-axis
-        stdx=np.std(np.array(x_list))
-        stdy=np.std(np.array(y_list))
+        # --------------------------------------------------------------------------------------------------------------------
+        # THIRD, extraction of the deflection values of the nodes of the mesh
+        # --------------------------------------------------------------------------------------------------------------------
+        field_displacement = self.displacement_field
 
+        # Construction of plotting lists
+        plot_value = [field_displacement.get_result_at(point).z for point in l_closestpoints]
+        x_list = [point.x for point in l_closestpoints]
+        y_list = [point.y for point in l_closestpoints]
+
+        # --------------------------------------------------------------------------------------------------------------------
+        # FINAL, script for plot display.
+        # --------------------------------------------------------------------------------------------------------------------
         fig, ax = plt.subplots()
+        ax.plot(x_list, plot_value, linestyle="dashed")
+        ax.set(xlabel="x", ylabel="Displacement (mm)", title="Displacement along line")
 
-        # input line along the y-axis
-        if stdx==0:
-            ax.plot(y_list,plot_value)
-            ax.set(xlabel='y', ylabel='Displacement (mm)',
-            title='Displacement according to y, x='+str(x_list[0]))
-            for i in range(len(relative_extrema)):
-                ax.plot(relative_extrema[i][0][1], relative_extrema[i][1], 'o')
-                ax.annotate(str(int(relative_extrema[i][1]*100)/100)+' mm',xy=(relative_extrema[i][0][1], relative_extrema[i][1]))
-
-        #input line along the x-axis
-        elif stdy==0:
-
-            ax.plot(x_list,plot_value, linestyle='dashed')
-            ax.set(xlabel='x', ylabel='Displacement (mm)',
-            title='Displacement according to x, y='+str(y_list[0]))
-            for i in range(len(relative_extrema)):
-                ax.plot(relative_extrema[i][0][0], relative_extrema[i][1], 'o')
-                ax.annotate(str(int(relative_extrema[i][1]*100)/100)+' mm',xy=(relative_extrema[i][0][0], relative_extrema[i][1]))
-
-        else :
-            ax = plt.figure().add_subplot(projection='3d')
-            ax.plot(x_list, y_list, plot_value)
-            ax.set(xlabel='x', ylabel='y', zlabel='Displacement (mm)',
-            title='Displacement according to x, y')
-            for i in range(len(relative_extrema)):
-                ax.plot(relative_extrema[i][0][0], relative_extrema[i][0][1], relative_extrema[i][1], 'o')
-                ax.text(relative_extrema[i][0][0], relative_extrema[i][0][1], relative_extrema[i][1], str(int(relative_extrema[i][1]*100)/100))
-            
         plt.show()
 
     @classmethod

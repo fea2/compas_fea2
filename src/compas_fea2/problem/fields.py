@@ -1,21 +1,34 @@
 from typing import Iterable
+from typing import Optional
+from typing import TYPE_CHECKING
 
 from compas_fea2.base import FEAData
-from compas_fea2.problem.loads import GravityLoad
+from compas_fea2.problem.loads import VectorLoad
+from compas_fea2.problem.loads import ScalarLoad
 from compas_fea2.problem.loads import HeatFluxLoad
+
+if TYPE_CHECKING:
+    from compas_fea2.problem.loads import _Load
+    from compas_fea2.problem.displacements import GeneralDisplacement
+    from compas_fea2.problem.amplitudes import Amplitude
+    from compas_fea2.model.nodes import Node
+    from compas_fea2.model.elements import _Element
+    from compas_fea2.problem.steps import Step
+    from compas_fea2.problem import Problem
+    from compas_fea2.model import Model
+    from compas_fea2.model.groups import FacesGroup
+    from compas.geometry import Point
 
 # TODO implement __*__ magic method for combination
 
 
-class LoadField(FEAData):
-    """A pattern is the spatial distribution of a specific set of forces,
+class _LoadField(FEAData):
+    """A Field is the spatial distribution of a specific set of forces,
     displacements, temperatures, and other effects which act on a structure.
-    Any combination of nodes and elements may be subjected to loading and
-    kinematic conditions.
 
     Parameters
     ----------
-    load : :class:`compas_fea2.problem._Load` | :class:`compas_fea2.problem.GeneralDisplacement`
+    load : list[:class:`compas_fea2.problem._Load`] | list[:class:`compas_fea2.problem.GeneralDisplacement`]
         The load/displacement assigned to the pattern.
     distribution : list
         List of :class:`compas_fea2.model.Node` or :class:`compas_fea2.model._Element`. The
@@ -43,69 +56,66 @@ class LoadField(FEAData):
 
     def __init__(
         self,
-        loads,
-        distribution,
-        load_case=None,
+        loads: Iterable["_Load"] | Iterable["GeneralDisplacement"],
+        distribution: "Node | _Element | Iterable[Node] | Iterable[_Element]",
+        load_case: Optional[str] = None,
         **kwargs,
     ):
-        super(LoadField, self).__init__(**kwargs)
-        self._distribution = distribution if isinstance(distribution, Iterable) else [distribution]
+        super(_LoadField, self).__init__(**kwargs)
+        self._distribution = list(distribution) if isinstance(distribution, Iterable) and not isinstance(distribution, str) else [distribution]
         self._loads = loads if isinstance(loads, Iterable) else [loads * (1 / len(self._distribution))] * len(self._distribution)
-        self.load_case = load_case
+        self._load_case = load_case
         self._registration = None
 
-        self._amplitudes = set()
-        for load in self._loads:
-            if load.amplitude:
-                self._amplitudes.add(load.amplitude)
-
     @property
-    def loads(self):
+    def loads(self) -> Iterable["_Load"] | Iterable["GeneralDisplacement"] | list[float]:
         return self._loads
 
     @property
-    def amplitudes(self):
-        return self._amplitudes
-
-    @property
-    def distribution(self):
+    def distribution(self) -> list["Node"] | list["_Element"]:
         return self._distribution
 
     @property
-    def step(self):
+    def step(self) -> "Step":
         if self._registration:
             return self._registration
         else:
             raise ValueError("Register the LoadField to a Step first.")
 
     @property
-    def problem(self):
+    def problem(self) -> "Problem":
         return self.step.problem
 
     @property
-    def model(self):
+    def model(self) -> "Model":
         return self.problem.model
 
-    # def __add__(self, other):
-    #     if not isinstance(other, Pattern):
-    #         raise TypeError("Can only combine with another Pattern")
-    #     combined_distribution = self._distribution + other._distribution
-    #     combined_components = {k: (getattr(self, k) or 0) + (getattr(other, k) or 0) for k in self.components}
-    #     return Pattern(
-    #         combined_distribution,
-    #         x=combined_components["x"],
-    #         y=combined_components["y"],
-    #         z=combined_components["z"],
-    #         xx=combined_components["xx"],
-    #         yy=combined_components["yy"],
-    #         zz=combined_components["zz"],
-    #         load_case=self.load_case or other.load_case,
-    #         axes=self.axes,
-    #         name=self.name or other.name,
-    #     )
+    @property
+    def load_case(self) -> str | None:
+        """Return the load case to which this pattern belongs."""
+        return self._load_case
+
+    @load_case.setter
+    def load_case(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError("Load case must be a string.")
+        self._load_case = value
 
 
-class DisplacementField(LoadField):
+class _PrescribedField(FEAData):
+    """Base class for all predefined initial conditions.
+
+    Notes
+    -----
+    Fields are registered to a :class:`compas_fea2.problem.Step`.
+
+    """
+
+    def __init__(self, **kwargs):
+        super(_PrescribedField, self).__init__(**kwargs)
+
+
+class DisplacementField(_LoadField):
     """A distribution of a set of displacements over a set of nodes.
 
     Parameters
@@ -118,10 +128,10 @@ class DisplacementField(LoadField):
         The load case to which this pattern belongs.
     """
 
-    def __init__(self, displacements, nodes, load_case=None, **kwargs):
+    def __init__(self, displacements: Iterable["GeneralDisplacement"], nodes: Iterable["Node"], load_case=None, **kwargs):
         nodes = nodes if isinstance(nodes, Iterable) else [nodes]
         displacements = displacements if isinstance(displacements, Iterable) else [displacements] * len(nodes)
-        super(DisplacementField, self).__init__(loads=displacements, distribution=nodes, load_case=load_case, **kwargs)
+        super().__init__(loads=displacements, distribution=nodes, load_case=load_case, **kwargs)
 
     @property
     def nodes(self):
@@ -137,7 +147,7 @@ class DisplacementField(LoadField):
         return zip(self.nodes, self.displacements)
 
 
-class NodeLoadField(LoadField):
+class NodeLoadField(_LoadField):
     """A distribution of a set of concentrated loads over a set of nodes.
 
     Parameters
@@ -150,11 +160,11 @@ class NodeLoadField(LoadField):
         The load case to which this pattern belongs.
     """
 
-    def __init__(self, loads, nodes, load_case=None, **kwargs):
-        super(NodeLoadField, self).__init__(loads=loads, distribution=nodes, load_case=load_case, **kwargs)
+    def __init__(self, loads: Iterable["_Load"], nodes: Iterable["Node"], load_case: str | None = None, **kwargs):
+        super().__init__(loads=loads, distribution=nodes, load_case=load_case, **kwargs)
 
     @property
-    def nodes(self):
+    def nodes(self) -> Iterable["Node"]:
         return self._distribution
 
     @property
@@ -183,11 +193,9 @@ class PointLoadField(NodeLoadField):
         Tolerance for finding the closest nodes to the points.
     """
 
-    def __init__(self, loads, points, load_case=None, tolerance=1, **kwargs):
+    def __init__(self, loads: Iterable["_Load"], points: Iterable["Point"], load_case: str | None = None, **kwargs):
         self._points = points
-        self._tolerance = tolerance
-        # FIXME: this is not working, the patternhas no model!
-        distribution = [self.model.find_closest_nodes_to_point(point, distance=self._tolerance)[0] for point in self.points]
+        distribution = [self.model.find_closest_nodes_to_point(point) for point in self.points]
         super().__init__(loads, distribution, load_case, **kwargs)
 
     @property
@@ -199,7 +207,33 @@ class PointLoadField(NodeLoadField):
         return self._distribution
 
 
-class GravityLoadField(LoadField):
+class UniformSurfaceLoadField(NodeLoadField):
+    def __init__(self, load: float, surface: "FacesGroup", direction: list[float] | None = None, **kwargs):
+        """A distribution of a set of loads over a set of surface elements.
+
+        Parameters
+        ----------
+        loads : Iterable[_Load]
+            The loads to be applied in Force/area units."""
+        from compas_fea2.problem.loads import VectorLoad
+
+        distribution = surface.nodes
+        area = surface.area
+        direction = direction or surface.normal
+        amplitude = kwargs.pop("amplitude", None)
+
+        components = [i * load * area for i in direction] if isinstance(load, (int, float)) else [l * area for l in load]
+        vector_load = VectorLoad(*components, amplitude=amplitude)
+
+        super().__init__(loads=[vector_load], distribution=distribution, **kwargs)
+        self._surface = surface
+
+    @property
+    def surface(self):
+        return self._surface
+
+
+class GravityLoadField(NodeLoadField):
     """Volume distribution of a gravity load case.
 
     Parameters
@@ -212,21 +246,15 @@ class GravityLoadField(LoadField):
         The load case to which this pattern belongs.
     """
 
-    def __init__(self, g=9.81, parts=None, load_case=None, **kwargs):
-        super(GravityLoadField, self).__init__(GravityLoad(g=g), parts, load_case, **kwargs)
-
-
-class _PrescribedField(FEAData):
-    """Base class for all predefined initial conditions.
-
-    Notes
-    -----
-    Fields are registered to a :class:`compas_fea2.problem.Step`.
-
-    """
-
-    def __init__(self, **kwargs):
-        super(_PrescribedField, self).__init__(**kwargs)
+    def __init__(self, g=9.81, direction=[0, 0, -1], parts=None, load_case=None, **kwargs):
+        load = VectorLoad([g * v for v in direction], name="gravity_load", load_case=load_case)
+        nodes = []
+        if parts:
+            for part in parts:
+                nodes.extend(part.nodes)
+        else:
+            nodes = self.model.nodes
+        super().__init__(loads=[load] * len(nodes), distribution=nodes, load_case=load_case, **kwargs)
 
 
 class PrescribedTemperatureField(_PrescribedField):
@@ -243,37 +271,21 @@ class PrescribedTemperatureField(_PrescribedField):
     @temperature.setter
     def temperature(self, value):
         self._t = value
-    
-    @classmethod
-    def from_file(cls, path, **kwargs):
-        cls._path = path
-        return cls(path=path, **kwargs)
-    
+
+
 # =====================================================================
 # HEAT ANALYSIS
 # =====================================================================
 
+
 class TemperatureField(NodeLoadField):
-    def __init__(self, temperature, nodes, **kwargs):
-        nodes = nodes if isinstance(nodes, Iterable) else [nodes]
+    def __init__(self, temperature: float, nodes: Iterable["Node"], **kwargs):
+        nodes = list(nodes) if not isinstance(nodes, list) else nodes
         loads = temperature if isinstance(temperature, Iterable) else [temperature] * len(nodes)
-        super().__init__(loads=loads, nodes=nodes,**kwargs)
+        super().__init__(loads=loads, nodes=nodes, **kwargs)
 
 
-class SurfaceLoadField(LoadField):
-    def __init__(self, loads, surface, **kwargs):
-        super().__init__(loads=loads, distribution=surface, **kwargs)
-        
-    @property
-    def surface(self):
-        return self.distribution
-        
-    @property
-    def load_surface(self):
-        return zip(self.loads, self.surface)
-
-
-class HeatFluxField(SurfaceLoadField):
+class HeatFluxField(UniformSurfaceLoadField):
     """A distribution of a uniform convection flux on a set of face elements.
     A non-uniform distribution is not yet implemented.
 
@@ -290,26 +302,26 @@ class HeatFluxField(SurfaceLoadField):
     def __init__(self, heatflux: HeatFluxLoad, surface, **kwargs):
         surface = surface if isinstance(surface, Iterable) else [surface]
         heatflux = heatflux if isinstance(heatflux, Iterable) else [heatflux] * len(surface)
-        super().__init__(loads=heatflux, surface=surface,**kwargs)
-    
+        super().__init__(load=heatflux, surface=surface, **kwargs)
+
     @property
     def heatflux(self):
         return self.loads
 
-class ConvectionField(SurfaceLoadField):
-    """
-    """
+
+class ConvectionField(UniformSurfaceLoadField):
+    """ """
 
     def __init__(self, h, temperature, surface, **kwargs):
         surface = surface if isinstance(surface, Iterable) else [surface]
         temperature = temperature if isinstance(temperature, Iterable) else [temperature] * len(surface)
-        super().__init__(loads=temperature, surface=surface,**kwargs)
+        super().__init__(load=temperature, surface=surface, **kwargs)
         self._h = h
 
     @property
     def surface(self):
         return self._distribution
-    
+
     @property
     def temperature(self):
         return self._loads
@@ -317,16 +329,15 @@ class ConvectionField(SurfaceLoadField):
     @property
     def h(self):
         return self._h
-    
 
-class RadiationField(SurfaceLoadField):
-    """
-    """
+
+class RadiationField(UniformSurfaceLoadField):
+    """ """
 
     def __init__(self, eps, temperature, surface, **kwargs):
         surface = surface if isinstance(surface, Iterable) else [surface]
         temperature = temperature if isinstance(temperature, Iterable) else [temperature] * len(surface)
-        super().__init__(loads=temperature, surface=surface,**kwargs)
+        super().__init__(load=temperature, surface=surface, **kwargs)
         self._eps = eps
 
     @property

@@ -2,20 +2,12 @@ from .problem import Problem
 from .displacements import GeneralDisplacement
 from .loads import (
     VectorLoad,
-    PrestressLoad,
-    ConcentratedLoad,
-    PressureLoad,
-    GravityLoad,
-    TributaryLoad,
-    HarmonicPointLoad,
-    HarmonicPressureLoad,
-    ThermalLoad,
     HeatFluxLoad,
     TemperatureLoad
 )
 
 from .fields import (
-    LoadField,
+    _LoadField,
     DisplacementField,
     NodeLoadField,
     PointLoadField,
@@ -25,7 +17,7 @@ from .fields import (
     ConvectionField,
     RadiationField,
     TemperatureField,
-    SurfaceLoadField
+    UniformSurfaceLoadField
 )
 
 from .combinations import LoadCombination
@@ -52,21 +44,10 @@ __all__ = [
     "Problem",
     "GeneralDisplacement",
     "VectorLoad",
-    "PrestressLoad",
-    "ConcentratedLoad",
-    "PressureLoad",
-    "GravityLoad",
-    "TributaryLoad",
-    "HarmonicPointLoad",
-    "HarmonicPressureLoad",
-    "ThermalLoad",
-    "LoadField",
+    "_LoadField",
     "DisplacementField",
     "NodeLoadField",
     "PointLoadField",
-    "LineLoadField",
-    "PressureLoadField",
-    "VolumeLoadField",
     "_PrescribedField",
     "PrescribedTemperatureField",
     "LoadCombination",
@@ -81,12 +62,4 @@ __all__ = [
     "DynamicStep",
     "QuasiStaticStep",
     "DirectCyclicStep",
-    "FieldOutput",
-    "HistoryOutput",
-    "DisplacementFieldOutput",
-    "AccelerationFieldOutput",
-    "VelocityFieldOutput",
-    "Stress2DFieldOutput",
-    "ReactionFieldOutput",
-    "SectionForcesFieldOutput",
 ]

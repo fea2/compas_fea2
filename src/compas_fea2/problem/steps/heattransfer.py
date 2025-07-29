@@ -143,9 +143,9 @@ class HeatTransferStep(Step):
         :class:`compas_fea2.problem.patterns.Pattern`
 
         """
-        from compas_fea2.problem.fields import LoadField
+        from compas_fea2.problem.fields import _LoadField
 
-        if not isinstance(field, LoadField):
+        if not isinstance(field, _LoadField):
             raise TypeError("{!r} is not a LoadPattern.".format(field))
         
         if not(isinstance(field, (HeatFluxField, TemperatureField))):
