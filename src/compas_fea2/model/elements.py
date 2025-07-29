@@ -25,11 +25,16 @@ if TYPE_CHECKING:
     from compas_fea2.results import Result
     from compas_fea2.results import ShellStressResult
     from compas_fea2.results import SolidStressResult
+    from compas_fea2.model.sections import SpringSection
+    from compas_fea2.model.sections import _Section1D
+    from compas_fea2.model.sections import _Section
+    from compas_fea2.model.sections import _Section2D
+    from compas_fea2.model.sections import _Section3D
+    
 
     from .model import Model
     from .nodes import Node
     from .parts import _Part
-    from .sections import _Section
     from .shapes import Shape
 
 
@@ -44,6 +49,10 @@ class _Element(FEAData):
         Section Object assigned to the element.
     implementation : str, optional
         The name of the backend model implementation of the element.
+    rigid : bool, optional
+        Define the element as rigid (no deformations allowed) or not. Defaults to False.
+    heat : bool, optional
+        Define the element as a heat transfer element. Defaults to False.
 
     Attributes
     ----------
@@ -62,8 +71,6 @@ class _Element(FEAData):
     on_boundary : bool | None
         `True` if the element has a face on the boundary mesh of the part, `False`
         otherwise, by default `None`.
-    part : :class:`compas_fea2.model._Part`, read-only
-        The Part where the element is assigned.
     model : :class:`compas_fea2.model.Model`, read-only
         The Model where the element is assigned.
     area : float, read-only
@@ -73,6 +80,8 @@ class _Element(FEAData):
     rigid : bool, read-only
         Define the element as rigid (no deformations allowed) or not. For Rigid
         elements sections are not needed.
+    heat : bool, read-only
+        Define the element as a heat transfer element.
 
     Notes
     -----
@@ -86,7 +95,7 @@ class _Element(FEAData):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section | None", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
         super().__init__(**kwargs)
         self._part_key = None
         self._nodes = self._check_nodes(nodes)
@@ -95,144 +104,283 @@ class _Element(FEAData):
         self._implementation = implementation
         self._frame = None
         self._on_boundary = None
-        self._area = None
-        self._volume = None
+        self._area = 0.0  
+        self._volume = 0.0
         self._results_format = {}
         self._rigid = rigid
         self._heat = heat
         self._reference_point = None
-        self._shape = None
+        self._shape = None  
+        self._ndim = 0  
+        self._faces = []  
+        self._face_indices = {}  
+        self._length = 0.0  
 
     @property
     def __data__(self):
+        """Return a dictionary representation of the element's data."""
         return {
-            "class": self.__class__.__base__,
+            "class": self.__class__.__name__,
             "nodes": [node.__data__ for node in self.nodes],
-            "section": self.section.__data__,
+            "section": self.section.__data__ if self.section else None,
             "implementation": self.implementation,
             "rigid": self.rigid,
         }
 
     @classmethod
     def __from_data__(cls, data):
-        nodes = [node_data.pop("class").__from_data__(node_data) for node_data in data["nodes"]]
-        section = data["section"].pop("class").__from_data__(data["section"])
+        """Create an element instance from a data dictionary.
+
+        Parameters
+        ----------
+        data : dict
+            The data dictionary containing the element's attributes.
+
+        Returns
+        -------
+        _Element
+            An instance of the element.
+        """
+        from compas_fea2.model.nodes import Node
+        from compas_fea2.model.sections import _Section
+
+        nodes = [Node.__from_data__(node_data) for node_data in data["nodes"]]
+        section = _Section.__from_data__(data["section"])
         return cls(nodes, section, implementation=data.get("implementation"), rigid=data.get("rigid"))
 
     @property
-    def part(self) -> "_Part":
+    def part(self) -> "_Part | None" :
+        """Return the part to which the element is registered."""
         return self._registration
 
     @property
-    def model(self) -> "Model":
+    def model(self) -> "Model | None":
+        """Return the model to which the element belongs."""
+        if not self.part:
+            return None
         return self.part.model
 
     @property
-    def results_cls(self) -> "Result":
-        raise NotImplementedError("The results_cls property must be implemented in the subclass")
-
-    @property
     def nodes(self) -> List["Node"]:
+        """Return the list of nodes to which the element is connected."""
         return self._nodes
 
     @nodes.setter
     def nodes(self, value: List["Node"]):
+        """Set the nodes of the element.
+
+        Parameters
+        ----------
+        value : list[:class:`compas_fea2.model.Node`]
+            The list of nodes to assign to the element.
+        """
         self._nodes = self._check_nodes(value)
 
     @property
-    def nodes_key(self) -> str:
+    def nodes_key(self) -> List[int]:
+        """Return a unique identifier based on the connected nodes."""
         return [n.part_key for n in self.nodes]
 
     @property
     def nodes_inputkey(self) -> str:
+        """Return a string key for input based on the connected nodes."""
         return "-".join(sorted([str(node.key) for node in self.nodes], key=int))
 
     @property
     def points(self) -> List["Point"]:
+        """Return the points corresponding to the element's nodes."""
         return [node.point for node in self.nodes]
 
     @property
-    def section(self) -> "_Section":
+    def section(self) -> "_Section | None":
+        """Return the section object assigned to the element."""
         return self._section
 
     @section.setter
     def section(self, value: "_Section"):
+        """Set the section object for the element.
+
+        Parameters
+        ----------
+        value : :class:`compas_fea2.model._Section`
+            The section object to assign to the element.
+        """
         self._section = value
 
     @property
     def frame(self) -> Optional[Frame]:
+        """Return the frame of the element."""
+        if not isinstance(self._frame, Frame):
+            raise ValueError("Frame must be a valid Frame object")
         return self._frame
 
     @property
     def implementation(self) -> Optional[str]:
+        """Return the implementation name of the element."""
         return self._implementation
 
     @property
     def on_boundary(self) -> Optional[bool]:
+        """Return whether the element has a face on the boundary mesh."""
         return self._on_boundary
 
     @on_boundary.setter
     def on_boundary(self, value: bool):
+        """Set whether the element has a face on the boundary mesh.
+
+        Parameters
+        ----------
+        value : bool
+            True if the element has a face on the boundary mesh, False otherwise.
+        """
         self._on_boundary = value
 
     def _check_nodes(self, nodes: List["Node"]) -> List["Node"]:
+        """Check that all nodes are registered to the same part.
+
+        Parameters
+        ----------
+        nodes : list[:class:`compas_fea2.model.Node`]
+            The list of nodes to check.
+
+        Returns
+        -------
+        list[:class:`compas_fea2.model.Node`]
+            The validated list of nodes.
+
+        Raises
+        ------
+        ValueError
+            If at least one node is registered to a different part or not registered.
+        """
         if len(set([node._registration for node in nodes])) != 1:
-            raise ValueError("At least one of node is registered to a different part or not registered")
+            raise ValueError("At least one of the nodes is registered to a different part or not registered")
         return nodes
 
     @property
-    def part_key(self) -> int:
+    def part_key(self) -> int | None:
+        """Return the part key of the element."""
         return self._part_key
 
     @property
     def area(self) -> float:
-        raise NotImplementedError()
-
+        """Return the area of the element."""
+        return self._area
+    
     @property
     def volume(self) -> float:
-        raise NotImplementedError()
+        return self._volume
 
     @property
     def results_format(self) -> Dict:
+        """Return the results format for the element.
+
+        Raises
+        ------
+        NotImplementedError
+            If the subclass does not implement this property.
+        """
         raise NotImplementedError()
 
     @property
     def reference_point(self) -> "Point":
-        raise NotImplementedError()
+        """Return the reference point of the element."""
+        if self._reference_point:
+            return self._reference_point
+        return Point(*centroid_points([node.point for node in self.nodes]))
 
     @property
     def rigid(self) -> bool:
+        """Return whether the element is rigid."""
         return self._rigid
 
     @property
     def heat(self) -> bool:
+        """Return whether the element is a heat transfer element."""
         return self._heat
 
     @property
-    def mass(self) -> float:
-        return self.volume * self.section.material.density
+    def mass(self) -> float | None:
+        """Return the mass of the element."""
+        if self.section:
+            if self.section.material:
+                if self.volume and self.section.material.density:
+                    return self.volume * self.section.material.density
+        return None
 
     @property
     def g(self) -> float:
+        """Return the gravity constant of the model.
+
+        Raises
+        ------
+        ValueError
+            If the gravity constant is not defined in the model.
+        """
         if self.model:
             return self.model.g
         else:
-            return self.g
+            raise ValueError("Gravity constant not defined")
 
     @property
     def weight(self) -> float:
-        if self.model.g:
+        """Return the weight of the element.
+
+        Raises
+        ------
+        ValueError
+            If the gravity constant is not defined in the model.
+        """
+        if hasattr(self.model, "g") and self.mass:
             return self.mass * self.g
         else:
-            raise "Gravity constant not defined"
+            raise ValueError("Gravity constant not defined")
 
     @property
-    def nodal_mass(self) -> List[float]:
-        return [self.mass / len(self.nodes)] * 3
+    def nodal_mass(self) -> List[float] | None:
+        if self.mass:
+            return [self.mass / len(self.nodes)] * 3
 
     @property
     def ndim(self) -> int:
         return self._ndim
+
+    def plot_section(self):
+        """Plot the section of the element."""
+        if self.section and hasattr(self.section, "plot"):
+            self.section.plot()
+        else:
+            raise AttributeError("Section does not have a 'plot' method")
+
+    @property
+    def faces(self) -> Optional[List['Face']]:
+        """Return the faces of the element."""
+        if self._faces is None:
+            raise ValueError("Faces have not been constructed")
+        return self._faces
+
+    def _construct_faces(self, face_indices: Dict[str, Tuple[int]]) -> List['Face']:
+        """Construct the face-nodes dictionary.
+
+        Parameters
+        ----------
+        face_indices : dict
+            Dictionary providing for each face the node indices. For example:
+            {'s1': (0,1,2), ...}
+
+        Returns
+        -------
+        list[:class:`compas_fea2.model.elements.Face`]
+            List of Face objects.
+        """
+        if not face_indices:
+            raise ValueError("Face indices must be provided")
+        return [Face(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in face_indices.items()]
+
+    @property
+    def length(self) -> float:
+        """Return the length of the element."""
+        return self._length
 
 
 class MassElement(_Element):
@@ -274,7 +422,7 @@ class SpringElement(_Element0D):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "SpringSection", implementation: Optional[str] = None, **kwargs):
         super().__init__(nodes, section=section, implementation=implementation, rigid=False, **kwargs)
 
 
@@ -319,7 +467,7 @@ class _Element1D(_Element):
     """
 
     def __init__(
-        self, nodes: List["Node"], section: "_Section", frame: Optional[Frame] = None, implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs
+        self, nodes: List["Node"], section: "_Section1D", frame: Optional[Frame] = None, implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs
     ):
         super().__init__(nodes, section, implementation=implementation, rigid=rigid, heat=heat, **kwargs)
         if not frame:
@@ -347,7 +495,9 @@ class _Element1D(_Element):
     @property
     def outermesh(self) -> Mesh:
         self._frame.point = self.nodes[0].point
-        self._shape_i = self.section._shape.oriented(self._frame, check_planarity=False)
+        if not self.section or not self.section.shape:
+            raise ValueError("Section shape is required to create the outer mesh")
+        self._shape_i = self.section.shape.oriented(self._frame, check_planarity=False)
         self._shape_j = self._shape_i.translated(Vector.from_start_end(self.nodes[0].point, self.nodes[-1].point), check_planarity=False)
         p = self._shape_i.points
         n = len(p)
@@ -462,7 +612,7 @@ class BeamElement(_Element1D):
 class TrussElement(_Element1D):
     """A 1D element that resists axial loads."""
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section1D", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
         super().__init__(nodes, section, frame=[1, 1, 1], implementation=implementation, rigid=rigid, heat=heat, **kwargs)
 
 
@@ -663,7 +813,7 @@ class _Element2D(_Element):
     def __init__(
         self,
         nodes: List["Node"],
-        section: Optional["_Section"] = None,
+        section: Optional["_Section2D"] = None,
         implementation: Optional[str] = None,
         rigid: bool = False,
         heat: bool = False,
@@ -792,7 +942,7 @@ class ShellElement(_Element2D):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section2D", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
@@ -838,7 +988,7 @@ class _Element3D(_Element):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, frame: Optional[List] = None, rigid=False, heat: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section3D", implementation: Optional[str] = None, frame: Optional[List] = None, rigid=False, heat: bool = False, **kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
@@ -960,7 +1110,7 @@ class TetrahedronElement(_Element3D):
     def __init__(
         self,
         nodes: List["Node"],
-        section: "_Section",
+        section: "_Section3D",
         implementation: Optional[str] = None,
         **kwargs,
     ):
@@ -1035,7 +1185,7 @@ class PentahedronElement(_Element3D):
 class HexahedronElement(_Element3D):
     """A Solid cuboid element with 6 faces (extruded rectangle)."""
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid=False,  heat: bool = False,**kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section3D", implementation: Optional[str] = None, rigid=False,  heat: bool = False,**kwargs):
         super().__init__(
             nodes=nodes,
             section=section,

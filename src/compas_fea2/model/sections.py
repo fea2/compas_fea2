@@ -1,20 +1,25 @@
 from math import pi
 from math import sqrt
 
+from typing import TYPE_CHECKING
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Polygon as mplPolygon
 from matplotlib.path import Path
 
-from compas_fea2 import units
 from compas_fea2.base import FEAData
 from compas_fea2.model.shapes import Circle
 from compas_fea2.model.shapes import IShape
 from compas_fea2.model.shapes import LShape
 from compas_fea2.model.shapes import Rectangle
 
+if TYPE_CHECKING:
+    from compas_fea2.model.materials.material import _Material  # noqa: F401
+    from compas_fea2.model.shapes import Shape  # noqa: F401
 
-def from_shape(shape, material: "_Material", **kwargs) -> dict:  # noqa: F821
+
+def from_shape(shape: "Shape", material: "_Material", g0=None, gw=None, **kwargs) -> dict:  # noqa: F821
     return {
         "A": shape.A,
         "Ixx": shape.Ixx,
@@ -24,6 +29,9 @@ def from_shape(shape, material: "_Material", **kwargs) -> dict:  # noqa: F821
         "Avy": shape.Avy,
         "J": shape.J,
         "material": material,
+        "g0": g0,
+        "gw": gw,
+        "shape": shape if hasattr(shape, "__data__") else None,
         **kwargs,
     }
 
@@ -91,7 +99,7 @@ material : {self.material!r}
 
     @material.setter
     def material(self, value: "_Material"):  # noqa: F821
-        from compas_fea2.model.materials import _Material
+        from compas_fea2.model.materials.material import _Material
 
         if value:
             if not isinstance(value, _Material):
@@ -102,52 +110,6 @@ material : {self.material!r}
 # ==============================================================================
 # 0D
 # ==============================================================================
-
-
-class MassSection(FEAData):
-    """
-    Section for point mass elements.
-
-    Parameters
-    ----------
-    mass : float
-        Point mass value.
-    **kwargs : dict, optional
-        Additional keyword arguments.
-
-    Attributes
-    ----------
-    key : int, read-only
-        Identifier of the element in the parent part.
-    mass : float
-        Point mass value.
-    """
-
-    def __init__(self, mass: float, **kwargs):
-        super().__init__(**kwargs)
-        self.mass = mass
-
-    def __str__(self) -> str:
-        return f"""
-Mass Section  {self.name}
-{"-" * len(self.name)}
-model    : {self.model!r}
-mass     : {self.mass}
-"""
-
-    @property
-    def __data__(self):
-        return {
-            "class": self.__class__.__base__.__name__,
-            "mass": self.mass,
-            "uid": self.uid,
-        }
-
-    @classmethod
-    def __from_data__(cls, data):
-        return cls(mass=data["mass"], **data)
-
-
 class SpringSection(FEAData):
     """
     Section for use with spring elements.
@@ -178,7 +140,7 @@ class SpringSection(FEAData):
     to elements in different Parts.
     """
 
-    def __init__(self, axial: float, lateral: float, rotational: float, **kwargs):
+    def __init__(self, axial: float | None, lateral: float | None, rotational: float | None, **kwargs):
         super().__init__(**kwargs)
         self.axial = axial
         self.lateral = lateral
@@ -187,7 +149,7 @@ class SpringSection(FEAData):
     @property
     def __data__(self):
         return {
-            "class": self.__class__.__base__.__name__,
+            "class": self.__class__.__name__,
             "axial": self.axial,
             "lateral": self.lateral,
             "rotational": self.rotational,
@@ -245,7 +207,7 @@ class ConnectorSection(SpringSection):
         Rotational stiffness value.
     """
 
-    def __init__(self, axial: float = None, lateral: float = None, rotational: float = None, **kwargs):
+    def __init__(self, axial: float | None = None, lateral: float | None = None, rotational: float | None = None, **kwargs):
         super().__init__(axial, lateral, rotational, **kwargs)
 
 
@@ -257,35 +219,8 @@ class ConnectorSection(SpringSection):
 # # 1D - beam cross-sections
 # # ============================================================================
 
-
-class BeamSection(_Section):
-    """
-    Custom section for beam elements.
-
-    Parameters
-    ----------
-    A : float
-        Cross section area.
-    Ixx : float
-        Inertia with respect to XX axis.
-    Iyy : float
-        Inertia with respect to YY axis.
-    Ixy : float
-        Inertia with respect to XY axis.
-    Avx : float
-        Shear area along x.
-    Avy : float
-        Shear area along y.
-    J : float
-        Torsion modulus.
-    g0 : float
-        Warping constant.
-    gw : float
-        Warping constant.
-    material : :class:`compas_fea2.model._Material`
-        The section material.
-    **kwargs : dict, optional
-        Additional keyword arguments.
+class _Section1D(_Section):
+    """Base class for 1D sections.
 
     Attributes
     ----------
@@ -307,13 +242,8 @@ class BeamSection(_Section):
         Warping constant.
     gw : float
         Warping constant.
-    material : :class:`compas_fea2.model._Material`
-        The section material.
-    shape : :class:`compas_fea2.shapes.Shape`
-        The shape of the section.
     """
-
-    def __init__(self, *, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, material: "_Material", **kwargs):  # noqa: F821
+    def __init__(self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", shape:"Shape | None"=None, **kwargs):
         super().__init__(material=material, **kwargs)
         self.A = A
         self.Ixx = Ixx
@@ -322,6 +252,22 @@ class BeamSection(_Section):
         self.Avx = Avx
         self.Avy = Avy
         self.J = J
+        self.g0 = g0
+        self.gw = gw
+        self._shape = shape
+
+    @property
+    def shape(self):
+        return self._shape
+
+    @shape.setter
+    def shape(self, value):
+        self._shape = value
+
+    @classmethod
+    def from_shape(cls, shape, material: "_Material", **kwargs):
+        section = cls(**from_shape(shape, material, **kwargs))
+        return section
 
     @property
     def __data__(self):
@@ -335,14 +281,23 @@ class BeamSection(_Section):
                 "Avx": self.Avx,
                 "Avy": self.Avy,
                 "J": self.J,
+                "g0": self.g0,
+                "gw": self.gw,
             }
         )
+        if self._shape:
+            shape_data = getattr(self._shape, "__data__", None)
+            if shape_data:
+                data.update({"shape": shape_data})
+            else:
+                # Add fallback for missing attributes
+                data.update({
+                    "w": getattr(self._shape, "w", "Attribute 'w' not defined"),
+                    "h": getattr(self._shape, "h", "Attribute 'h' not defined"),
+                    "r": getattr(self._shape, "r", "Attribute 'r' not defined"),
+                    "t": getattr(self._shape, "t", "Attribute 't' not defined"),
+                })
         return data
-
-    @classmethod
-    def __from_data__(cls, data):
-        section = super().__from_data__(data.pop("material"))
-        return section(**data)
 
     def __str__(self) -> str:
         return f"""
@@ -351,29 +306,16 @@ class BeamSection(_Section):
 name     : {self.name}
 material : {self.material!r}
 
-A   : {self.A * units["m**2"]:.4g}
-Ixx : {self.Ixx * units["m**4"]:.4g}
-Iyy : {self.Iyy * units["m**4"]:.4g}
-Ixy : {self.Ixy * units["m**4"]:.4g}
-Avx : {self.Avx * units["m**2"]:.2g}
-Avy : {self.Avy * units["m**2"]:.2g}
+A   : {self.A:.4g} m²
+Ixx : {self.Ixx:.4g} m⁴
+Iyy : {self.Iyy:.4g} m⁴
+Ixy : {self.Ixy:.4g} m⁴
+Avx : {self.Avx:.2g} m²
+Avy : {self.Avy:.2g} m²
 J   : {self.J}
 g0  : {self.g0}
 gw  : {self.gw}
 """
-
-    @classmethod
-    def from_shape(cls, shape, material: "_Material", **kwargs):  # noqa: F821
-        section = cls(**from_shape(shape, material, **kwargs))
-        section._shape = shape
-        return section
-
-    @property
-    def shape(self):
-        return self._shape
-
-    def plot(self):
-        self.shape.plot()
 
     def compute_stress(self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, x: float = 0.0, y: float = 0.0) -> tuple:
         """
@@ -432,32 +374,35 @@ gw  : {self.gw}
         tuple
             Grid of x-coordinates, grid of y-coordinates, grid of normal stresses, grid of shear stresses in x-direction, grid of shear stresses in y-direction.
         """
-        verts = [(p.x, p.y) for p in self.shape.points]
-        polygon_path = Path(verts)
-        xs = [p[0] for p in verts]
-        ys = [p[1] for p in verts]
-        x_min, x_max = min(xs), max(xs)
-        y_min, y_max = min(ys), max(ys)
-        cx, cy, _ = self.shape.centroid
-        x = np.linspace(x_min, x_max, nx)
-        y = np.linspace(y_min, y_max, ny)
-        grid_x, grid_y = np.meshgrid(x, y)
-        points = np.vstack((grid_x.flatten(), grid_y.flatten())).T
-        inside = polygon_path.contains_points(points)
-        grid_sigma = np.full(grid_x.shape, np.nan)
-        grid_tau_x = np.full(grid_x.shape, np.nan)
-        grid_tau_y = np.full(grid_x.shape, np.nan)
+        if self.shape:
+            verts = [(p.x, p.y) for p in self.shape.points]
+            polygon_path = Path(verts)
+            xs = [p[0] for p in verts]
+            ys = [p[1] for p in verts]
+            x_min, x_max = min(xs), max(xs)
+            y_min, y_max = min(ys), max(ys)
+            cx, cy, _ = self.shape.centroid
+            x = np.linspace(x_min, x_max, nx)
+            y = np.linspace(y_min, y_max, ny)
+            grid_x, grid_y = np.meshgrid(x, y)
+            points = np.vstack((grid_x.flatten(), grid_y.flatten())).T
+            inside = polygon_path.contains_points(points)
+            grid_sigma = np.full(grid_x.shape, np.nan)
+            grid_tau_x = np.full(grid_x.shape, np.nan)
+            grid_tau_y = np.full(grid_x.shape, np.nan)
 
-        for i, (x_, y_) in enumerate(points):
-            if inside[i]:
-                x_fiber = x_ - cx
-                y_fiber = y_ - cy
-                sigma, tau_x, tau_y = self.compute_stress(N=N, Mx=Mx, My=My, Vx=Vx, Vy=Vy, x=x_fiber, y=y_fiber)
-                grid_sigma.flat[i] = sigma
-                grid_tau_x.flat[i] = tau_x
-                grid_tau_y.flat[i] = tau_y
+            for i, (x_, y_) in enumerate(points):
+                if inside[i]:
+                    x_fiber = x_ - cx
+                    y_fiber = y_ - cy
+                    sigma, tau_x, tau_y = self.compute_stress(N=N, Mx=Mx, My=My, Vx=Vx, Vy=Vy, x=x_fiber, y=y_fiber)
+                    grid_sigma.flat[i] = sigma
+                    grid_tau_x.flat[i] = tau_x
+                    grid_tau_y.flat[i] = tau_y
 
-        return grid_x, grid_y, grid_sigma, grid_tau_x, grid_tau_y
+            return grid_x, grid_y, grid_sigma, grid_tau_x, grid_tau_y
+        else:
+            raise ValueError("Section shape is not defined. Please set the shape before computing stress distribution.")
 
     def compute_neutral_axis(self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0) -> tuple:
         """
@@ -485,6 +430,8 @@ gw  : {self.gw}
         if Mx == 0 and My == 0:
             raise ValueError("Neutral axis is undefined for pure axial load.")
 
+        if not self.shape:
+            raise ValueError("Section shape is not defined. Please set the shape before computing the neutral axis.")
         # Centroid and properties
         cx, cy, _ = self.shape.centroid
         A = self.A
@@ -531,6 +478,9 @@ gw  : {self.gw}
         show_tau : bool, optional
             Whether to display separate plots for shear stresses (\u03c4_x, \u03c4_y) (default is True).
         """
+        if not self.shape:
+            raise ValueError("Section shape is not defined. Please set the shape before plotting stress distribution.")
+        
         grid_x, grid_y, grid_sigma, grid_tau_x, grid_tau_y = self.compute_stress_distribution(N=N, Mx=Mx, My=My, Vx=Vx, Vy=Vy, nx=nx, ny=ny)
 
         # Plot normal stress (\u03c3)
@@ -627,7 +577,7 @@ gw  : {self.gw}
             plt.show()
 
     def plot_section_with_stress(
-        self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, direction: tuple = (1, 0), point: tuple = None, nx: int = 50, ny: int = 50
+        self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, direction: tuple = (1, 0), point: tuple | None = None, nx: int = 50, ny: int = 50
     ):
         """
         Plot the section and overlay the stress distribution along a general direction.
@@ -658,7 +608,9 @@ gw  : {self.gw}
         ValueError
             If the specified line does not pass through the section.
         """
-
+        if not self.shape:
+            raise ValueError("Section shape is not defined. Please set the shape before plotting stress distribution along a direction.")
+        import matplotlib.patches as mpatches
         # Normalize the direction vector
         dx, dy = direction
         norm = np.sqrt(dx**2 + dy**2)
@@ -734,9 +686,15 @@ gw  : {self.gw}
         ax.legend(loc="upper left", fontsize=9)
         plt.grid(True)
         plt.show()
+    
+    def plot(self):
+        if self.shape:
+            return self.shape.plot()
+        else:
+            return None
 
 
-class GenericBeamSection(BeamSection):
+class GenericBeamSection(_Section1D):
     """
     Generic beam cross-section for beam elements.
 
@@ -768,7 +726,7 @@ class GenericBeamSection(BeamSection):
 
     def __init__(self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", **kwargs):  # noqa: F821
         super().__init__(A=A, Ixx=Ixx, Iyy=Iyy, Ixy=Ixy, Avx=Avx, Avy=Avy, J=J, g0=g0, gw=gw, material=material, **kwargs)
-        self._shape = Circle(radius=sqrt(A / pi))
+        self._shape = Circle(radius=sqrt(A / pi)) # only used for plotting
 
     @property
     def __data__(self):
@@ -782,7 +740,7 @@ class GenericBeamSection(BeamSection):
         return data
 
 
-class AngleSection(BeamSection):
+class AngleSection(_Section1D):
     """
     Uniform thickness angle cross-section for beam elements.
 
@@ -838,25 +796,25 @@ class AngleSection(BeamSection):
     """
 
     def __init__(self, w, h, t1, t2, material, **kwargs):
-        self._shape = LShape(w, h, t1, t2)
-        super().__init__(**from_shape(self._shape, material, **kwargs))
+        shape= LShape(w, h, t1, t2)
+        super().__init__(**from_shape(shape, material, **kwargs))
 
     @property
     def __data__(self):
         data = super().__data__
         data.update(
             {
-                "w": self._shape.w,
-                "h": self._shape.h,
-                "t1": self._shape.t1,
-                "t2": self._shape.t2,
+                "w": self.shape.w,
+                "h": self.shape.h,
+                "t1": self.shape.t1,
+                "t2": self.shape.t2,
             }
         )
         return data
 
 
 # FIXME: implement 'from_shape' method
-class BoxSection(BeamSection):
+class BoxSection(_Section1D):
     """
     Hollow rectangular box cross-section for beam elements.
 
@@ -962,7 +920,7 @@ class BoxSection(BeamSection):
         return data
 
 
-class CircularSection(BeamSection):
+class CircularSection(_Section1D):
     """
     Solid circular cross-section for beam elements.
 
@@ -1002,22 +960,22 @@ class CircularSection(BeamSection):
     """
 
     def __init__(self, r, material, **kwargs):
-        self._shape = Circle(r, 360)
-        super().__init__(**from_shape(self._shape, material, **kwargs))
+        shape = Circle(r, 360)
+        super().__init__(**from_shape(shape, material, **kwargs))
 
     @property
     def __data__(self):
         data = super().__data__
         data.update(
             {
-                "r": self._shape.radius,
+                "r": self.shape.radius,
             }
         )
         return data
 
 
 # FIXME: implement 'from_shape' method
-class HexSection(BeamSection):
+class HexSection(_Section1D):
     """
     Hexagonal hollow section.
 
@@ -1068,19 +1026,7 @@ class HexSection(BeamSection):
     def __init__(self, r, t, material, **kwargs):
         raise NotImplementedError("This section is not available for the selected backend")
 
-    @property
-    def __data__(self):
-        data = super().__data__
-        data.update(
-            {
-                "r": self.r,
-                "t": self.t,
-            }
-        )
-        return data
-
-
-class ISection(BeamSection):
+class ISection(_Section1D):
     """
     Equal flanged I-section for beam elements.
 
@@ -1136,8 +1082,8 @@ class ISection(BeamSection):
     """
 
     def __init__(self, w, h, tw, tbf, ttf, material, **kwargs):
-        self._shape = IShape(w, h, tw, tbf, ttf)
-        super().__init__(**from_shape(self._shape, material, **kwargs))
+        shape = IShape(w, h, tw, tbf, ttf)
+        super().__init__(**from_shape(shape, material, **kwargs))
 
     @property
     def k(self):
@@ -1148,11 +1094,11 @@ class ISection(BeamSection):
         data = super().__data__
         data.update(
             {
-                "w": self._shape.w,
-                "h": self._shape.h,
-                "tw": self._shape.tw,
-                "tbf": self._shape.tbf,
-                "ttf": self._shape.ttf,
+                "w": self.shape.w,
+                "h": self.shape.h,
+                "tw": self.shape.tw,
+                "tbf": self.shape.tbf,
+                "ttf": self.shape.ttf,
             }
         )
         return data
@@ -1505,7 +1451,7 @@ class ISection(BeamSection):
         return cls(w=1000, h=996, tw=33, tbf=43, ttf=43, material=material, **kwargs)
 
 
-class PipeSection(BeamSection):
+class PipeSection(_Section1D):
     """
     Hollow circular cross-section for beam elements.
 
@@ -1589,7 +1535,7 @@ class PipeSection(BeamSection):
         return data
 
 
-class RectangularSection(BeamSection):
+class RectangularSection(_Section1D):
     """
     Solid rectangular cross-section for beam elements.
 
@@ -1633,8 +1579,8 @@ class RectangularSection(BeamSection):
     """
 
     def __init__(self, w, h, material, **kwargs):
-        self._shape = Rectangle(w, h)
-        super().__init__(**from_shape(self._shape, material, **kwargs))
+        shape = Rectangle(w, h)
+        super().__init__(**from_shape(shape, material, **kwargs))
         self.k = 5 / 6
 
     @property
@@ -1642,14 +1588,14 @@ class RectangularSection(BeamSection):
         data = super().__data__
         data.update(
             {
-                "w": self._shape.w,
-                "h": self._shape.h,
+                "w": self.shape.w,
+                "h": self.shape.h,
             }
         )
         return data
 
 
-class TrapezoidalSection(BeamSection):
+class TrapezoidalSection(_Section1D):
     """
     Solid trapezoidal cross-section for beam elements.
 
@@ -1749,7 +1695,7 @@ class TrapezoidalSection(BeamSection):
 # ==============================================================================
 
 
-class TrussSection(BeamSection):
+class TrussSection(_Section1D):
     """
     For use with truss elements.
 
@@ -1907,8 +1853,19 @@ class TieSection(TrussSection):
 # 2D
 # ==============================================================================
 
+class _Section2D(_Section):
+    """Base class for 2D sections.
 
-class ShellSection(_Section):
+    Attributes
+    ----------
+    t : float
+        Thickness.
+    """
+    def __init__(self, t: float, material: "_Material", **kwargs):
+        super().__init__(material=material, **kwargs)
+        self.t = t
+
+class ShellSection(_Section2D):
     """
     Section for shell elements.
 
@@ -1930,8 +1887,7 @@ class ShellSection(_Section):
     """
 
     def __init__(self, t, material, **kwargs):
-        super(ShellSection, self).__init__(material=material, **kwargs)
-        self.t = t
+        super(ShellSection, self).__init__(t=t, material=material, **kwargs)
 
     @property
     def __data__(self):
@@ -1944,7 +1900,7 @@ class ShellSection(_Section):
         return data
 
 
-class MembraneSection(_Section):
+class MembraneSection(_Section2D):
     """
     Section for membrane elements.
 
@@ -1966,8 +1922,7 @@ class MembraneSection(_Section):
     """
 
     def __init__(self, t, material, **kwargs):
-        super(MembraneSection, self).__init__(material=material, **kwargs)
-        self.t = t
+        super(MembraneSection, self).__init__(t=t, material=material, **kwargs)
 
     @property
     def __data__(self):
@@ -1984,8 +1939,17 @@ class MembraneSection(_Section):
 # 3D
 # ==============================================================================
 
+class _Section3D(_Section):
+    """Base class for 3D sections.
 
-class SolidSection(_Section):
+    Attributes
+    ----------
+    None specific to 3D sections.
+    """
+    def __init__(self, material: "_Material", **kwargs):
+        super().__init__(material=material, **kwargs)
+
+class SolidSection(_Section3D):
     """
     Section for solid elements.
 

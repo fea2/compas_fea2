@@ -610,6 +610,21 @@ class FacesGroup(_Group):
             for node in face.nodes:
                 nodes_set.add(node)
         return nodes_set
+    
+    @property
+    def area(self):
+        """Calculate the total area of the faces in the group."""
+        return sum(face.area for face in self.faces)
+    
+    @property
+    def normal(self)-> List[float]:
+        """Calculate the average normal vector of the faces in the group."""
+        from compas.geometry import normalize_vector
+        normals = [face.normal for face in self.faces]
+        if normals:
+            avg_normal = sum(normals) / len(normals)
+            return normalize_vector(avg_normal)
+        raise AttributeError("Could not calculate the average normal vector, no faces in the group.")
 
     def add_face(self, face):
         """

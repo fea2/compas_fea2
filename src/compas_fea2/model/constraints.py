@@ -13,7 +13,7 @@ class _Constraint(FEAData):
     @property
     def __data__(self):
         return {
-            "class": self.__class__.__base__.__name__,
+            "class": self.__class__.__name__,
         }
 
     @classmethod

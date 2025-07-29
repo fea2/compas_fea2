@@ -8,6 +8,7 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Union
+from typing import TYPE_CHECKING
 
 import compas
 import matplotlib.pyplot as plt
@@ -58,6 +59,11 @@ from .sections import ShellSection
 from .sections import SolidSection
 from .sections import _Section
 
+if TYPE_CHECKING:
+    from compas_fea2.model.interfaces import Interface
+    from compas_fea2.model.groups import FacesGroup
+    from compas_fea2.problem.loads import VectorLoad
+    from compas.geometry import Polygon
 
 class _Part(FEAData):
     """Base class for Parts.
@@ -1373,7 +1379,7 @@ class _Part(FEAData):
         """
         return self.nodes.subgroup(condition=lambda x: is_point_on_plane(x.point, plane, tol))
 
-    def find_closest_nodes_to_point(self, point: List[float], number_of_nodes: int = 1, report: bool = False, single: bool = False) -> Union[List[Node], Dict[Node, float]]:
+    def find_closest_nodes_to_point(self, point: List[float], number_of_nodes: int = 1, report: bool = False, single: bool = False) -> Union[List[Node], Dict[Node, float], None]:
         """
         Find the closest number_of_nodes nodes to a given point.
 
@@ -1916,7 +1922,7 @@ class _Part(FEAData):
     #                           Faces methods
     # =========================================================================
 
-    def find_faces_on_plane(self, plane: Plane, tol: float = 1) -> List["compas_fea2.model.Face"]:
+    def find_faces_on_plane(self, plane: Plane, tol: float = 1) -> FacesGroup:
         """Find the faces of the elements that belong to a given plane, if any.
 
         Parameters
@@ -1938,7 +1944,7 @@ class _Part(FEAData):
         faces_subgroup = faces_group.subgroup(condition=lambda x: all(is_point_on_plane(node.xyz, plane, tol=tol) for node in x.nodes))
         return faces_subgroup
 
-    def find_faces_in_polygon(self, polygon: "compas.geometry.Polygon", tol: float = 1.1) -> List["compas_fea2.model.Face"]:
+    def find_faces_in_polygon(self, polygon: "Polygon", tol: float = 1.1) -> FacesGroup:
         """Find the faces of the elements that are contained within a planar polygon.
 
         Parameters

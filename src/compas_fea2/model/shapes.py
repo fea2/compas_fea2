@@ -455,6 +455,8 @@ class Circle(Shape):
     """
 
     def __init__(self, radius: float, segments: int = 360, frame: Optional[Frame] = None):
+        if radius <= 0:
+            raise ValueError("Radius must be a positive value.")
         self._radius = radius
         self._segments = segments
         pts = self._set_points()
@@ -619,6 +621,8 @@ class Rectangle(Shape):
     """
 
     def __init__(self, w: float, h: float, frame: Optional[Frame] = None):
+        if w <= 0 or h <= 0:
+            raise ValueError("Width and height must be positive values.")
         self._w = w
         self._h = h
         pts = [
@@ -852,6 +856,8 @@ class IShape(Shape):
     """
 
     def __init__(self, w: float, h: float, tw: float, tbf: float, ttf: float, direction: str = "up", frame: Optional[Frame] = None):
+        if any(dim <= 0 for dim in [w, h, tw, ttf, tbf]):
+            raise ValueError("All dimensions must be positive values.")
         self._w = w
         self._h = h
         self._tw = tw

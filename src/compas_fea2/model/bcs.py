@@ -1,5 +1,6 @@
 from typing import Dict
 from typing import Optional
+from typing import Any
 
 from compas_fea2.base import FEAData
 
@@ -47,8 +48,8 @@ axes : str
 
 class _BoundaryCondition(FEAData):
     """Base class for all zero-valued boundary conditions."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, axes: str = "global", **kwargs):
         super().__init__(**kwargs)
@@ -103,8 +104,8 @@ class _BoundaryCondition(FEAData):
 
     @property
     def __data__(self) -> dict:
-        return {
-            "class": self.__class__.__base__.__name__,
+        data = super().__data__
+        data.update({
             "axes": self._axes,
             "x": self._x,
             "y": self._y,
@@ -113,25 +114,26 @@ class _BoundaryCondition(FEAData):
             "yy": self._yy,
             "zz": self._zz,
             "temp": self._temp,
-        }
+        })
+        return data
 
     @classmethod
     def __from_data__(cls, data: dict):
-        return cls(
-            axes=data.get("axes", "global"),
-            x=data.get("x", False),
-            y=data.get("y", False),
-            z=data.get("z", False),
-            xx=data.get("xx", False),
-            yy=data.get("yy", False),
-            zz=data.get("zz", False),
-        )
+        bc = cls(axes=data.get("axes", "global"))
+        bc._x = data.get("x", False)
+        bc._y = data.get("y", False)
+        bc._z = data.get("z", False)
+        bc._xx = data.get("xx", False)
+        bc._yy = data.get("yy", False)
+        bc._zz = data.get("zz", False)
+        bc._name = data.get("name")
+        return bc
 
 
 class GeneralBC(_BoundaryCondition):
     """Customized boundary condition."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     __doc__ += """
 Additional Parameters
@@ -162,8 +164,8 @@ zz : bool
 
 class FixedBC(_BoundaryCondition):
     """A fixed nodal displacement boundary condition."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs 
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -177,8 +179,8 @@ class FixedBC(_BoundaryCondition):
 
 class FixedBCX(_BoundaryCondition):
     """A fixed nodal displacement boundary condition along and around X."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -188,8 +190,8 @@ class FixedBCX(_BoundaryCondition):
 
 class FixedBCY(_BoundaryCondition):
     """A fixed nodal displacement boundary condition along and around Y."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -199,8 +201,8 @@ class FixedBCY(_BoundaryCondition):
 
 class FixedBCZ(_BoundaryCondition):
     """A fixed nodal displacement boundary condition along and around Z."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -210,8 +212,8 @@ class FixedBCZ(_BoundaryCondition):
 
 class PinnedBC(_BoundaryCondition):
     """A pinned nodal displacement boundary condition."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -222,8 +224,8 @@ class PinnedBC(_BoundaryCondition):
 
 class ClampBCXX(PinnedBC):
     """A pinned nodal displacement boundary condition clamped in XX."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -232,8 +234,8 @@ class ClampBCXX(PinnedBC):
 
 class ClampBCYY(PinnedBC):
     """A pinned nodal displacement boundary condition clamped in YY."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -242,8 +244,8 @@ class ClampBCYY(PinnedBC):
 
 class ClampBCZZ(PinnedBC):
     """A pinned nodal displacement boundary condition clamped in ZZ."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -252,8 +254,8 @@ class ClampBCZZ(PinnedBC):
 
 class RollerBCX(PinnedBC):
     """A pinned nodal displacement boundary condition released in X."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -262,8 +264,8 @@ class RollerBCX(PinnedBC):
 
 class RollerBCY(PinnedBC):
     """A pinned nodal displacement boundary condition released in Y."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -272,8 +274,8 @@ class RollerBCY(PinnedBC):
 
 class RollerBCZ(PinnedBC):
     """A pinned nodal displacement boundary condition released in Z."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -282,8 +284,8 @@ class RollerBCZ(PinnedBC):
 
 class RollerBCXY(PinnedBC):
     """A pinned nodal displacement boundary condition released in X and Y."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -293,8 +295,8 @@ class RollerBCXY(PinnedBC):
 
 class RollerBCYZ(PinnedBC):
     """A pinned nodal displacement boundary condition released in Y and Z."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -304,8 +306,8 @@ class RollerBCYZ(PinnedBC):
 
 class RollerBCXZ(PinnedBC):
     """A pinned nodal displacement boundary condition released in X and Z."""
-
-    __doc__ += docs  # type: ignore
+    __doc__ = __doc__ or ""
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -317,43 +319,49 @@ class RollerBCXZ(PinnedBC):
 #===================================================================
 
 class _ThermalBoundaryCondition(FEAData):
-    """Base class for temperature boundary conditions."""
+    """Base class for temperature boundary conditions.
 
+    Parameters
+    ----------
+    temp : float, optional
+        Imposed temperature for heat analysis. Defaults to None.
+    """
+    __doc__ = __doc__ or ""
     __doc__ += docs
 
-    def __init__(self, temp: float = None, **kwargs):
+    def __init__(self, temperature: Optional[float] = None, **kwargs):
         super().__init__(**kwargs)
-        self._temp = None
+        self._temperature = temperature
 
     @property
-    def temp(self) -> Optional[float]:
-        return self._temp
-
-    @property
-    def __data__(self) -> Dict[str, any]:
-        return {
-            "class": self.__class__.__base__.__name__,
-            "temp": self._temp,
-        }
+    def __data__(self) -> Dict[str, Any]:
+        data = super().__data__
+        if not isinstance(data, dict):
+            data = {}
+        data.update({
+            "temperature": self._temperature,
+        })
+        return data
 
     @classmethod
-    def __from_data__(cls, data: Dict[str, any]):
-        return cls(
-            temp=data.get("temp", None)
-        )
+    def __from_data__(cls, data: Dict[str, Any]):
+        temperature = data.get("temperature", None)
+        if temperature is not None and not isinstance(temperature, float):
+            raise TypeError(f"'temp' must be a float or None, got {type(temperature).__name__}")
+        return cls(temp=temperature)
+
 
 class ImposedTemperature(_ThermalBoundaryCondition):
     """Imposed temperature conidtion for heat analysis.
     
     Additional Parameters
 ---------------------
-temperature : float
+temp : float
     Value of imposed temperature applied
     """
-
+    __doc__ = __doc__ or ""
     __doc__ += docs
 
-    def __init__(self, temperature, **kwargs):
-        super().__init__(**kwargs)
-        self._temp = temperature
+    def __init__(self, temp: float, **kwargs):
+        super().__init__(temperature=temp, **kwargs)
 

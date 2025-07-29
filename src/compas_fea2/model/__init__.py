@@ -41,10 +41,11 @@ from .materials.steel import Steel
 from .materials.timber import Timber
 from .sections import (
     _Section,
-    MassSection,
+    _Section1D,
+    _Section2D,
+    _Section3D,
     SpringSection,
     ConnectorSection,
-    BeamSection,
     GenericBeamSection,
     AngleSection,
     BoxSection,

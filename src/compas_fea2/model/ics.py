@@ -17,7 +17,7 @@ class _InitialCondition(FEAData):
     @property
     def __data__(self) -> dict:
         return {
-            "type": self.__class__.__base__.__name__,
+            "type": self.__class__.__name__,
         }
 
     @classmethod
