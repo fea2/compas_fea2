@@ -2004,4 +2004,3 @@ class SolidSection(_Section):
 
     def __init__(self, material, **kwargs):
         super(SolidSection, self).__init__(material=material, **kwargs)
-        self._t = kwargs.get("t", None)

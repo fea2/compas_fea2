@@ -46,8 +46,8 @@ class InitialTemperatureField(_InitialCondition):
 
     """
 
-    def __init__(self, temperature=None, **kwargs):
-        super(InitialTemperatureField, self).__init__(**kwargs)
+    def __init__(self, temperature, **kwargs):
+        super().__init__(**kwargs)
         self._t = temperature
 
     @property
@@ -72,16 +72,11 @@ class InitialTemperatureField(_InitialCondition):
     def __from_data__(cls, data):
         temperature = data.pop("temperature")
         return cls(temperature, **data)
-    
-    @classmethod
-    def from_file(cls, path, **kwargs):
-        cls._path = path
-        return cls(path=path, **kwargs)
 
     @classmethod
     def from_file(cls, path, **kwargs):
-        cls._path = path
-        return cls(temperature=None, path=path, **kwargs)
+        return NotImplementedError(
+            "InitialTemperatureField is not implemented for the current backend. ")
 
 
 class InitialStressField(_InitialCondition):

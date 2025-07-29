@@ -86,7 +86,7 @@ class Node(FEAData):
         self._z = xyz[2]
 
         self._bc = None
-        self._bct = None
+        self._tbc = None
         self._dof = {"x": True, "y": True, "z": True, "xx": True, "yy": True, "zz": True}
 
         self._mass = mass if isinstance(mass, list) else list([mass] * 6)
@@ -239,8 +239,8 @@ class Node(FEAData):
         return self._bc
     
     @property
-    def bct(self):
-        return self._bct
+    def tbc(self):
+        return self._tbc
 
     @property
     def on_boundary(self) -> Optional[bool]:

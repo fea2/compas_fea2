@@ -848,11 +848,7 @@ class _Part(FEAData):
 
         # Get elements
         gmsh_elements = model.mesh.get_elements()
-        implementation = kwargs.get("implementation", None)
-        if 'C2D' in implementation and isinstance(section, SolidSection):
-            dimension = 1
-        else : 
-            dimension = 2 if isinstance(section, SolidSection) else 1
+        dimension = 2 if isinstance(section, SolidSection) else 1
         # gmsh keys start from 1
         ntags_per_element = np.split(gmsh_elements[2][dimension] - 1, len(gmsh_elements[1][dimension]))
 
@@ -861,10 +857,7 @@ class _Part(FEAData):
         implementation = kwargs.get("implementation", None)
         heat = kwargs.get("heat", False)
 
-        i=0
         for ntags in ntags_per_element:
-            i+=1
-            print(str(i)+'\\'+str(len(gmsh_elements[1][dimension])))
             if kwargs.get("split", False):
                 raise NotImplementedError("This feature is under development")
 

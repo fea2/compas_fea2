@@ -86,7 +86,7 @@ class _Element(FEAData):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
         super().__init__(**kwargs)
         self._part_key = None
         self._nodes = self._check_nodes(nodes)
@@ -99,6 +99,7 @@ class _Element(FEAData):
         self._volume = None
         self._results_format = {}
         self._rigid = rigid
+        self._heat = heat
         self._reference_point = None
         self._shape = None
 
@@ -204,6 +205,10 @@ class _Element(FEAData):
         return self._rigid
 
     @property
+    def heat(self) -> bool:
+        return self._heat
+
+    @property
     def mass(self) -> float:
         return self.volume * self.section.material.density
 
@@ -247,8 +252,8 @@ class MassElement(_Element):
 class _Element0D(_Element):
     """Element with 1 dimension."""
 
-    def __init__(self, nodes: List["Node"], frame: Frame, implementation: Optional[str] = None, rigid: bool = False, **kwargs):
-        super().__init__(nodes, section=None, implementation=implementation, rigid=rigid, **kwargs)
+    def __init__(self, nodes: List["Node"], frame: Frame, implementation: Optional[str] = None, **kwargs):
+        super().__init__(nodes, section=None, implementation=implementation, rigid=False, heat=False, **kwargs)
         self._frame = frame
         self._ndim = 0
 
@@ -269,8 +274,8 @@ class SpringElement(_Element0D):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, **kwargs):
-        super().__init__(nodes, section=section, implementation=implementation, rigid=rigid, **kwargs)
+    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, **kwargs):
+        super().__init__(nodes, section=section, implementation=implementation, rigid=False, **kwargs)
 
 
 class LinkElement(_Element0D):
@@ -283,7 +288,7 @@ class LinkElement(_Element0D):
     """
 
     def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, **kwargs):
-        super().__init__(nodes, section=section, implementation=implementation, rigid=rigid, **kwargs)
+        super().__init__(nodes, section=section, implementation=implementation, rigid=rigid, heat=False, **kwargs)
 
 
 class _Element1D(_Element):
@@ -313,8 +318,10 @@ class _Element1D(_Element):
         The volume of the element.
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", frame: Optional[Frame] = None, implementation: Optional[str] = None, rigid: bool = False, **kwargs):
-        super().__init__(nodes, section, implementation=implementation, rigid=rigid, **kwargs)
+    def __init__(
+        self, nodes: List["Node"], section: "_Section", frame: Optional[Frame] = None, implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs
+    ):
+        super().__init__(nodes, section, implementation=implementation, rigid=rigid, heat=heat, **kwargs)
         if not frame:
             raise ValueError("Frame is required for 1D elements")
         self._frame = frame if isinstance(frame, Frame) else Frame(nodes[0].point, Vector(*frame), Vector.from_start_end(nodes[0].point, nodes[-1].point))
@@ -455,8 +462,8 @@ class BeamElement(_Element1D):
 class TrussElement(_Element1D):
     """A 1D element that resists axial loads."""
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, **kwargs):
-        super().__init__(nodes, section, frame=[1, 1, 1], implementation=implementation, rigid=rigid, **kwargs)
+    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
+        super().__init__(nodes, section, frame=[1, 1, 1], implementation=implementation, rigid=rigid, heat=heat, **kwargs)
 
 
 class StrutElement(TrussElement):
@@ -466,14 +473,14 @@ class StrutElement(TrussElement):
 class TieElement(TrussElement):
     """A truss element that resists axial tensile loads."""
 
+
 class Edge(FEAData):
     def __init__(self, nodes: List["Node"], tag: str, element: Optional["_Element"] = None, **kwargs):
-        super().__init__( **kwargs)
+        super().__init__(**kwargs)
         self._nodes = nodes
         self._tag = tag
         self._line = Line(start=nodes[0].point, end=nodes[1].point)  # TODO check when more than 3 nodes
         self._registration = element  # FIXME: not updated when copying parts
-
 
     @property
     def nodes(self) -> List["Node"]:
@@ -633,12 +640,13 @@ class Face(FEAData):
 class _Element2D(_Element):
     """Element with 2 dimensions."""
 
-    __doc__ += _Element.__doc__
+    __doc__ = __doc__ or ""
+    __doc__ += _Element.__doc__ or ""
     __doc__ += """
     Additional Parameters
     ---------------------
-    frame :  :class:`compas.geometry.Frame` or list, optional.
-        Frame or local Y axis in global coordinates (longitudinal axis).
+    frame :  list, optional.
+        Local Y axis in global coordinates (longitudinal axis).
         This can be used to define the local orientation for anisotrop material.
     faces : [:class:`compas_fea2.model.elements.Face]
         The faces of the element.
@@ -653,13 +661,21 @@ class _Element2D(_Element):
     """
 
     def __init__(
-        self, nodes: List["Node"], section: Optional["_Section"] = None, implementation: Optional[str] = None, rigid: bool = False, frame: Optional[Frame] = None, **kwargs
+        self,
+        nodes: List["Node"],
+        section: Optional["_Section"] = None,
+        implementation: Optional[str] = None,
+        rigid: bool = False,
+        heat: bool = False,
+        frame: Optional[Frame] = None,
+        **kwargs,
     ):
         super().__init__(
             nodes=nodes,
             section=section,
             implementation=implementation,
             rigid=rigid,
+            heat=heat,
             **kwargs,
         )
         self._faces = None
@@ -681,7 +697,6 @@ class _Element2D(_Element):
             if isinstance(self.section.material, ElasticOrthotropic):
                 raise ValueError("For orthotropic or anisotropic materials, the frame must implemented to define the local orientation of the element.")
 
-
     @property
     def nodes(self) -> List["Node"]:
         return self._nodes
@@ -694,7 +709,7 @@ class _Element2D(_Element):
     @property
     def edge_indices(self) -> Optional[Dict[str, Tuple[int]]]:
         return self._edgee_indices
-    
+
     @property
     def edges(self) -> Optional[List[Face]]:
         return self._edges
@@ -702,7 +717,7 @@ class _Element2D(_Element):
     @property
     def face_indices(self) -> Optional[Dict[str, Tuple[int]]]:
         return self._face_indices
-    
+
     @property
     def faces(self) -> Optional[List[Face]]:
         return self._faces
@@ -750,7 +765,7 @@ class _Element2D(_Element):
             Dictionary with edge names and the corresponding nodes.
         """
         return [Edge(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in edge_indices.items()]
-    
+
     def stress_results(self, step: "Step") -> "Result":
         """Get the stress results for the element.
 
@@ -777,18 +792,19 @@ class ShellElement(_Element2D):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
             implementation=implementation,
             rigid=rigid,
+            heat=heat,
             **kwargs,
         )
 
         self._face_indices = {"SPOS": tuple(range(len(nodes))), "SNEG": tuple(range(len(nodes)))[::-1]}
         self._faces = self._construct_faces(self._face_indices)
-        self._edges_indices = {f"s{i+1}": (i,i+1) if i<len(nodes)-1 else (i,0) for i in range(len(nodes))}
+        self._edges_indices = {f"s{i+1}": (i, i + 1) if i < len(nodes) - 1 else (i, 0) for i in range(len(nodes))}
         # self._edge_indices[f"s{len(nodes)-1}"]= (len(nodes)-1, 0)
         self._edges = self._construct_edges(self._edges_indices)
 
@@ -822,11 +838,13 @@ class _Element3D(_Element):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, frame: Optional[List] = None, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, frame: Optional[List] = None, rigid=False, heat: bool = False, **kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
             implementation=implementation,
+            rigid=rigid,
+            heat=heat,
             **kwargs,
         )
         self._face_indices = None
@@ -1017,11 +1035,13 @@ class PentahedronElement(_Element3D):
 class HexahedronElement(_Element3D):
     """A Solid cuboid element with 6 faces (extruded rectangle)."""
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid=False,  heat: bool = False,**kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
             implementation=implementation,
+            rigid=rigid,
+            heat=heat,
             **kwargs,
         )
         self._faces_indices = {

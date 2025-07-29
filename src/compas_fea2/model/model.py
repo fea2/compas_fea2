@@ -103,7 +103,7 @@ class Model(FEAData):
         self._materials: Set[_Material] = set()
         self._sections: Set[_Section] = set()
         self._bcs = {}
-        self._bcst = {}
+        self._tbcs = {}
         self._ics = {}
         self._interfaces: Set[Interface] = set()
         self._connectors: Set[Connector] = set()
@@ -123,7 +123,7 @@ class Model(FEAData):
             "author": self.author,
             "parts": [part.__data__ for part in self.parts],
             "bcs": {bc.__data__: [node.__data__ for node in nodes] for bc, nodes in self.bcs.items()},
-            "bcst": {bct.__data__: [node.__data__ for node in nodes] for bct, nodes in self.bcst.items()},
+            "tbcs": {tbc.__data__: [node.__data__ for node in nodes] for tbc, nodes in self.tbcs.items()},
             "ics": {ic.__data__: [node.__data__ for node in nodes] for ic, nodes in self.ics.items()},
             "constraints": [constraint.__data__ for constraint in self.constraints],
             "partgroups": [group.__data__ for group in self.partgroups],
@@ -159,7 +159,7 @@ class Model(FEAData):
 
         bct_classes = {cls.__name__: cls for cls in _BoundaryCondition.__subclasses__()}
         for bct_data, nodes_data in data.get("bcs", {}).items():
-            model._bcst[bct_classes[bct_data["class"]].__from_data__(bct_data)] = [Node.__from_data__(node_data) for node_data in nodes_data]
+            model._tbcs[bct_classes[bct_data["class"]].__from_data__(bct_data)] = [Node.__from_data__(node_data) for node_data in nodes_data]
 
         ic_classes = {cls.__name__: cls for cls in _InitialCondition.__subclasses__()}
         for ic_data, nodes_data in data.get("ics", {}).items():
@@ -222,8 +222,8 @@ class Model(FEAData):
         return self._bcs
 
     @property
-    def bcst(self) -> dict:
-        return self._bcst
+    def tbcs(self) -> dict:
+        return self._tbcs
 
     @property
     def ics(self) -> dict:
@@ -1046,7 +1046,7 @@ class Model(FEAData):
     # =========================================================================
     #                           BCs methods
     # =========================================================================
-    def add_bcst(self, bct: _ThermalBoundaryCondition, nodes: Union[list[Node], NodesGroup], axes: str = "global") -> _BoundaryCondition:
+    def add_tbcs(self, bct: _ThermalBoundaryCondition, nodes: Union[list[Node], NodesGroup], axes: str = "global") -> _BoundaryCondition:
         """Add a :class:`compas_fea2.model._BoundaryCondition` to the model.
 
         Parameters
@@ -1078,10 +1078,10 @@ class Model(FEAData):
             if isinstance(node.part, RigidPart):
                 if len(nodes) != 1 or not node.is_reference:
                     raise ValueError("For rigid parts bundary conditions can be assigned only to the reference point")
-            node._bct = bct
+            node._tbc = bct
 
         bct._key = len(self.bcs)
-        self._bcst[bct] = set(nodes)
+        self._tbcs[bct] = set(nodes)
         bct._registration = self
 
         return bct
