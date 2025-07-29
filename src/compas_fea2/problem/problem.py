@@ -11,7 +11,8 @@ from compas_fea2.base import FEAData
 from compas_fea2.job.input_file import InputFile
 from compas_fea2.problem.steps import StaticStep
 from compas_fea2.problem.steps import Step
-from compas_fea2.results.database import ResultsDatabase, SQLiteResultsDatabase
+from compas_fea2.results.database import ResultsDatabase
+from compas_fea2.results.database import SQLiteResultsDatabase
 
 
 class Problem(FEAData):

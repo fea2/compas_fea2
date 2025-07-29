@@ -2,6 +2,7 @@ from typing import Iterable
 
 from compas_fea2.base import FEAData
 from compas_fea2.problem.loads import GravityLoad
+from compas_fea2.problem.loads import HeatFluxLoad
 
 # TODO implement __*__ magic method for combination
 
@@ -53,9 +54,18 @@ class LoadField(FEAData):
         self.load_case = load_case
         self._registration = None
 
+        self._amplitudes = set()
+        for load in self._loads:
+            if load.amplitude:
+                self._amplitudes.add(load.amplitude)
+
     @property
     def loads(self):
         return self._loads
+
+    @property
+    def amplitudes(self):
+        return self._amplitudes
 
     @property
     def distribution(self):
@@ -66,7 +76,7 @@ class LoadField(FEAData):
         if self._registration:
             return self._registration
         else:
-            raise ValueError("Register the Pattern to a Step first.")
+            raise ValueError("Register the LoadField to a Step first.")
 
     @property
     def problem(self):
@@ -220,9 +230,9 @@ class _PrescribedField(FEAData):
 
 
 class PrescribedTemperatureField(_PrescribedField):
-    """Temperature field"""
+    """Temperature field."""
 
-    def __init__(self, temperature, **kwargs):
+    def __init__(self, temperature=None, **kwargs):
         super(PrescribedTemperatureField, self).__init__(**kwargs)
         self._t = temperature
 
@@ -233,3 +243,100 @@ class PrescribedTemperatureField(_PrescribedField):
     @temperature.setter
     def temperature(self, value):
         self._t = value
+    
+    @classmethod
+    def from_file(cls, path, **kwargs):
+        cls._path = path
+        return cls(path=path, **kwargs)
+    
+# =====================================================================
+# HEAT ANALYSIS
+# =====================================================================
+
+class TemperatureField(NodeLoadField):
+    def __init__(self, temperature, nodes, **kwargs):
+        nodes = nodes if isinstance(nodes, Iterable) else [nodes]
+        loads = temperature if isinstance(temperature, Iterable) else [temperature] * len(nodes)
+        super().__init__(loads=loads, nodes=nodes,**kwargs)
+
+
+class SurfaceLoadField(LoadField):
+    def __init__(self, loads, surface, **kwargs):
+        super().__init__(loads=loads, distribution=surface, **kwargs)
+        
+    @property
+    def surface(self):
+        return self.distribution
+        
+    @property
+    def load_surface(self):
+        return zip(self.loads, self.surface)
+
+
+class HeatFluxField(SurfaceLoadField):
+    """A distribution of a uniform convection flux on a set of face elements.
+    A non-uniform distribution is not yet implemented.
+
+    Parameters
+    ----------
+    heatflux : object
+        The heatflux to be applied.
+    face_elements : list
+        List of elements face where the surface heat flux is applied.
+    load_case : object, optional
+        The load case to which this pattern belongs.
+    """
+
+    def __init__(self, heatflux: HeatFluxLoad, surface, **kwargs):
+        surface = surface if isinstance(surface, Iterable) else [surface]
+        heatflux = heatflux if isinstance(heatflux, Iterable) else [heatflux] * len(surface)
+        super().__init__(loads=heatflux, surface=surface,**kwargs)
+    
+    @property
+    def heatflux(self):
+        return self.loads
+
+class ConvectionField(SurfaceLoadField):
+    """
+    """
+
+    def __init__(self, h, temperature, surface, **kwargs):
+        surface = surface if isinstance(surface, Iterable) else [surface]
+        temperature = temperature if isinstance(temperature, Iterable) else [temperature] * len(surface)
+        super().__init__(loads=temperature, surface=surface,**kwargs)
+        self._h = h
+
+    @property
+    def surface(self):
+        return self._distribution
+    
+    @property
+    def temperature(self):
+        return self._loads
+
+    @property
+    def h(self):
+        return self._h
+    
+
+class RadiationField(SurfaceLoadField):
+    """
+    """
+
+    def __init__(self, eps, temperature, surface, **kwargs):
+        surface = surface if isinstance(surface, Iterable) else [surface]
+        temperature = temperature if isinstance(temperature, Iterable) else [temperature] * len(surface)
+        super().__init__(loads=temperature, surface=surface,**kwargs)
+        self._eps = eps
+
+    @property
+    def surface(self):
+        return self._distribution
+
+    @property
+    def temperature(self):
+        return self._loads
+
+    @property
+    def eps(self):
+        return self._eps

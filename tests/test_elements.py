@@ -1,6 +1,6 @@
 import unittest
 from compas_fea2.model.elements import BeamElement, ShellElement, TetrahedronElement
-from compas_fea2.model import Node, Steel, RectangularSection
+from compas_fea2.model import Node, Steel, RectangularSection, ShellSection
 
 
 class TestBeamElement(unittest.TestCase):
@@ -18,7 +18,9 @@ class TestShellElement(unittest.TestCase):
         node1 = Node([0, 0, 0])
         node2 = Node([1, 0, 0])
         node3 = Node([1, 1, 0])
-        element = ShellElement(nodes=[node1, node2, node3], section=None)
+        mat = Steel.S355()
+        sec = ShellSection(t=1, material=mat)
+        element = ShellElement(nodes=[node1, node2, node3], section=sec)
         self.assertEqual(element.nodes, [node1, node2, node3])
 
 

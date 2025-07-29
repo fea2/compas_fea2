@@ -8,8 +8,8 @@ from itertools import groupby
 from pathlib import Path
 from typing import Optional
 from typing import Set
-from typing import Union
 from typing import Tuple
+from typing import Union
 
 from compas.datastructures import Graph
 from compas.geometry import Box
@@ -25,6 +25,7 @@ from pint import UnitRegistry
 import compas_fea2
 from compas_fea2.base import FEAData
 from compas_fea2.model.bcs import _BoundaryCondition
+from compas_fea2.model.bcs import _ThermalBoundaryCondition
 from compas_fea2.model.connectors import Connector
 from compas_fea2.model.constraints import _Constraint
 from compas_fea2.model.elements import _Element
@@ -34,6 +35,7 @@ from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.groups import PartsGroup
 from compas_fea2.model.groups import _Group
 from compas_fea2.model.ics import _InitialCondition
+from compas_fea2.model.interactions import ThermalInteraction
 from compas_fea2.model.interfaces import Interface
 from compas_fea2.model.materials.material import _Material
 from compas_fea2.model.nodes import Node
@@ -101,6 +103,7 @@ class Model(FEAData):
         self._materials: Set[_Material] = set()
         self._sections: Set[_Section] = set()
         self._bcs = {}
+        self._tbcs = {}
         self._ics = {}
         self._interfaces: Set[Interface] = set()
         self._connectors: Set[Connector] = set()
@@ -108,6 +111,8 @@ class Model(FEAData):
         self._partsgroups: Set[PartsGroup] = set()
         self._groups: Set[_Group] = set()
         self._problems: Set[Problem] = set()
+        self._thermalinteraction: Set[_Group] = set()
+        self._amplitudes = set()
 
         self._constants: dict = {"g": None}
 
@@ -118,6 +123,7 @@ class Model(FEAData):
             "author": self.author,
             "parts": [part.__data__ for part in self.parts],
             "bcs": {bc.__data__: [node.__data__ for node in nodes] for bc, nodes in self.bcs.items()},
+            "tbcs": {tbc.__data__: [node.__data__ for node in nodes] for tbc, nodes in self.tbcs.items()},
             "ics": {ic.__data__: [node.__data__ for node in nodes] for ic, nodes in self.ics.items()},
             "constraints": [constraint.__data__ for constraint in self.constraints],
             "partgroups": [group.__data__ for group in self.partgroups],
@@ -150,6 +156,10 @@ class Model(FEAData):
         bc_classes = {cls.__name__: cls for cls in _BoundaryCondition.__subclasses__()}
         for bc_data, nodes_data in data.get("bcs", {}).items():
             model._bcs[bc_classes[bc_data["class"]].__from_data__(bc_data)] = [Node.__from_data__(node_data) for node_data in nodes_data]
+
+        bct_classes = {cls.__name__: cls for cls in _BoundaryCondition.__subclasses__()}
+        for bct_data, nodes_data in data.get("bcs", {}).items():
+            model._tbcs[bct_classes[bct_data["class"]].__from_data__(bct_data)] = [Node.__from_data__(node_data) for node_data in nodes_data]
 
         ic_classes = {cls.__name__: cls for cls in _InitialCondition.__subclasses__()}
         for ic_data, nodes_data in data.get("ics", {}).items():
@@ -212,6 +222,10 @@ class Model(FEAData):
         return self._bcs
 
     @property
+    def tbcs(self) -> dict:
+        return self._tbcs
+
+    @property
     def ics(self) -> dict:
         return self._ics
 
@@ -262,6 +276,14 @@ class Model(FEAData):
     @property
     def interactions(self) -> Set[Interface]:
         return self.interfaces.group_by(lambda x: getattr(x, "behavior"))
+    
+    @property
+    def thermalinteraction(self):
+        return _Group(self._thermalinteraction)
+        
+    @property
+    def amplitudes(self):
+        return self._amplitudes
 
     @property
     def problems(self) -> Set[Problem]:
@@ -1024,7 +1046,46 @@ class Model(FEAData):
     # =========================================================================
     #                           BCs methods
     # =========================================================================
+    def add_tbcs(self, bct: _ThermalBoundaryCondition, nodes: Union[list[Node], NodesGroup], axes: str = "global") -> _BoundaryCondition:
+        """Add a :class:`compas_fea2.model._BoundaryCondition` to the model.
 
+        Parameters
+        ----------
+        bct : :class:`compas_fea2.model._ThermalBoundaryCondition`
+        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
+
+        Returns
+        -------
+        :class:`compas_fea2.model._ThermalBoundaryCondition`
+
+        """
+        if isinstance(nodes, _Group):
+            nodes = nodes._members
+
+        if isinstance(nodes, Node):
+            nodes = [nodes]
+
+        if not isinstance(bct, _ThermalBoundaryCondition):
+            raise TypeError("{!r} is not a thermal Boundary Condition.".format(bct))
+
+        for node in nodes:
+            if not isinstance(node, Node):
+                raise TypeError("{!r} is not a Node.".format(node))
+            if not node.part:
+                raise ValueError("{!r} is not registered to any part.".format(node))
+            elif node.part not in self.parts:
+                raise ValueError("{!r} belongs to a part not registered to this model.".format(node))
+            if isinstance(node.part, RigidPart):
+                if len(nodes) != 1 or not node.is_reference:
+                    raise ValueError("For rigid parts bundary conditions can be assigned only to the reference point")
+            node._tbc = bct
+
+        bct._key = len(self.bcs)
+        self._tbcs[bct] = set(nodes)
+        bct._registration = self
+
+        return bct
+    
     def add_bcs(self, bc: _BoundaryCondition, nodes: Union[list[Node], NodesGroup], axes: str = "global") -> _BoundaryCondition:
         """Add a :class:`compas_fea2.model._BoundaryCondition` to the model.
 
@@ -1478,9 +1539,10 @@ class Model(FEAData):
             List of interfaces extracted from the model.
 
         """
-        from compas.geometry import distance_point_plane_signed
         import itertools
         from typing import List
+
+        from compas.geometry import distance_point_plane_signed
 
         # --- Nested helper function to check coplanarity ---
         def _are_two_planes_coplanar(pln1: Plane, pln2: Plane, tol: float) -> bool:
@@ -1504,6 +1566,28 @@ class Model(FEAData):
                     coplanar_pairs.append((p1, p2))
 
         return coplanar_pairs
+
+    def add_thermalinteraction(self, interaction):
+        """Add a :class:`compas_fea2.model.ThermalInteraction` to the model.
+
+        Parameters
+        ----------
+        interface : :class:`compas_fea2.model.Interface`
+            The interface object to add to the model.
+
+        Returns
+        -------
+        :class:`compas_fea2.model.Interface`
+
+        """
+        if not isinstance(interaction, ThermalInteraction):
+            raise TypeError("{!r} is not a thermal interaction.".format(interaction))
+        self._thermalinteraction.add(interaction)
+        if isinstance(interaction.surface, _Group):
+            self.add_group(interaction.surface)
+        if interaction.temperature.amplitude:
+            self._amplitudes.add(interaction.temperature.amplitude)
+        interaction._registration = self
 
     # ==============================================================================
     # Summary

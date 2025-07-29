@@ -17,6 +17,8 @@ from .quasistatic import (
     DirectCyclicStep,
 )
 
+from .heattransfer import HeatTransferStep
+
 from .perturbations import (
     _Perturbation,
     ModalAnalysis,
@@ -42,4 +44,5 @@ __all__ = [
     "DynamicStep",
     "QuasiStaticStep",
     "DirectCyclicStep",
+    "HeatTransferStep"
 ]

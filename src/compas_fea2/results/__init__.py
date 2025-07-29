@@ -8,6 +8,7 @@ from .results import (
     MembraneStressResult,
     ShellStressResult,
     SolidStressResult,
+    TemperatureResult
 )
 
 from .fields import (
@@ -18,6 +19,7 @@ from .fields import (
     ReactionFieldResults,
     SectionForcesFieldResults,
     ContactForcesFieldResults,
+    TemperatureFieldResults
 )
 
 from .modal import (

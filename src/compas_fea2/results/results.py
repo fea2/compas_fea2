@@ -283,6 +283,49 @@ class ReactionResult(NodeResult):
     def __init__(self, node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
         super(ReactionResult, self).__init__(node, x, y, z, xx, yy, zz, **kwargs)
 
+class TemperatureResult(NodeResult):
+    """DisplacementResult object.
+
+    Parameters
+    ----------
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    rf1 : float
+        The x component of the reaction vector.
+    rf2 : float
+        The y component of the reaction vector.
+    rf3 : float
+        The z component of the reaction vector.
+
+    Attributes
+    ----------
+    location : :class:`compas_fea2.model.Node` `
+        The location of the result.
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    components : dict
+        A dictionary with {"component name": component value} for each component of the result.
+
+    Notes
+    -----
+    ReactionResults are registered to a :class:`compas_fea2.model.Node`
+    """
+
+    _field_name = "t"
+    _results_func = "find_node_by_key"
+    _results_func_output = "find_node_by_inputkey"
+    _components_names = ["temp"]
+    _invariants_names = ["magnitude"]
+
+    def __init__(self, node, temp, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
+        super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
+        self._temp = temp
+
+
+    @property
+    def temp(self):
+        return self._temp
+
 
 # ---------------------------------------------------------------------------------------------
 # Element Results

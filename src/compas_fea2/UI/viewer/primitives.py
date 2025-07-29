@@ -1,7 +1,6 @@
 from compas.geometry import Box
 from compas.geometry import Circle
 from compas.geometry import Cone
-from compas.geometry import Cylinder
 from compas.geometry import Frame
 from compas.geometry import Plane
 
@@ -102,12 +101,15 @@ class RollerBCShape(_BCShape):
         The scale factor to apply when drawing. Default is 1.
     """
 
-    def __init__(self, xyz, direction=[1, 0, 0], scale=1):
+    def __init__(self, xyz, direction=[0, 0, 1], scale=1):
         super(RollerBCShape, self).__init__(xyz, direction, scale)
-        self.height = 800 * self.scale
-        p = Plane([self.x, self.y, self.z / 2], [0, 1, 0])
-        c = Circle(plane=p, radius=self.height / 2)
-        self.shape = Cylinder(circle=c, height=self.height)
+        self.height = 400 * self.scale
+        self.diameter = 400 * self.scale
+        # FIXME this is wrong because it should follow the normal
+        self.plane = Plane([self.x, self.y, self.z - self.height], direction)
+        self.circle = Circle(frame=Frame.from_plane(self.plane), radius=self.diameter / 2)
+        self.shape = Cone(radius=self.circle.radius, height=self.height, frame=Frame.from_plane(self.plane))
+
 
 
 class MomentShape(_BCShape):

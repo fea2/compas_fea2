@@ -2,38 +2,154 @@ from compas_fea2.base import FEAData
 
 # TODO: make units independent using the utilities function
 
-
-class Load(FEAData):
-    """Initialises base Load object.
+class _Load(FEAData):
+    """Initialises base _Load object.
 
     Parameters
     ----------
-    name : str
-        Uniqe identifier. If not provided it is automatically generated. Set a
-        name if you want a more human-readable input file.
-    components : dict
-        Load components.
-    axes : str, optional
-        Load applied via 'local' or 'global' axes, by default 'global'.
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal.  
 
     Attributes
     ----------
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal.
+    
+    field : :class:`compas_fea2.problem.LoadField`
+        Field associated with the load.
+
+    step : :class:`compas_fea2.problem.Step`
+        Step associated with the load.
+
+    problem : :class:`compas_fea2.problem.Problem`
+        Problem associated with the load.
+
+    model : :class:`compas_fea2.model.Model`
+        Model associated with the load.
+
     name : str
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
-    components : dict
-        Load components. These differ according to each Load type
-    axes : str, optional
-        Load applied via 'local' or 'global' axes, by default 'global'.
+    """
+    def __init__(self, amplitude = None, **kwargs):
+        super().__init__(**kwargs)
+        self._amplitude = amplitude
+    
+    @property
+    def amplitude(self):
+        return self._amplitude
 
-    Notes
-    -----
-    Loads are registered to a :class:`compas_fea2.problem.Pattern`.
+
+    @property
+    def field(self):
+        return self._registration
+
+    @property
+    def step(self):
+        return self.field._registration
+
+    @property
+    def problem(self):
+        return self.step._registration
+
+    @property
+    def model(self):
+        return self.problem._registration
+
+class ScalarLoad(_Load):
+    """Scalar load object.
+
+    Parameters
+    ----------
+    scalar_load : float
+        Scalar value of the load.
+    
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal.  
+
+    Attributes
+    ----------
+    scalar_load : float
+        Scalar value of the load
+    
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal. 
+    """
+    def __init__(self, scalar_load, amplitude = None, **kwargs):
+        super().__init__(amplitude=amplitude, **kwargs)
+        if not(isinstance(scalar_load, (int,float))) :
+            raise ValueError("The scalar_load must be a float.")
+        self._scalar_load = scalar_load
+    
+    @property
+    def scalar_load(self):
+        return self._scalar_load
+
+
+class VectorLoad(_Load):
+    """Vector load object.
+
+    Parameters
+    ----------
+    axes : str, "local" or "global"
+        The load is either defined in the local frame or the global one.
+        If not indicated, the global frame is considered.
+
+    x : float
+        x-axis force value of the load.
+    
+    y : float
+        y-axis force value of the load.
+    
+    z : float
+        z-axis force value of the load.
+
+    xx : float
+        Moment value of the load about the x-axis. 
+    
+    yy : float
+        Moment value of the load about the y-axis. 
+    
+    zz : float
+        Moment value of the load about the z-axis.
+    
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal.  
+
+    Attributes
+    ----------
+    axes : str, "local" or "global"
+        The load is either defined in the local frame or the global one.
+        If not indicated, the global frame is considered.
+
+    x : float
+        x-axis force value of the load.
+    
+    y : float
+        y-axis force value of the load.
+    
+    z : float
+        z-axis force value of the load.
+
+    xx : float
+        Moment value of the load about the x-axis. 
+    
+    yy : float
+        Moment value of the load about the y-axis. 
+    
+    zz : float
+        Moment value of the load about the z-axis.
+    
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal.  
+    
+    components : {str: float}
+        Dictionnary of the components of the load and values
 
     """
 
     def __init__(self, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
-        super(Load, self).__init__(**kwargs)
+        super(VectorLoad, self).__init__(**kwargs)
         self.axes = axes
         self.x = x
         self.y = y
@@ -51,24 +167,7 @@ class Load(FEAData):
         for k, v in value:
             setattr(self, k, v)
 
-    @property
-    def pattern(self):
-        return self._registration
-
-    @property
-    def step(self):
-        return self.pattern._registration
-
-    @property
-    def problem(self):
-        return self.step._registration
-
-    @property
-    def model(self):
-        return self.problem._registration
-
-
-class ConcentratedLoad(Load):
+class ConcentratedLoad(VectorLoad):
     """Concentrated forces and moments [units:N, Nm].
 
     Parameters
@@ -133,7 +232,7 @@ class ConcentratedLoad(Load):
         return self.__add__(other)
 
 
-class PressureLoad(Load):
+class PressureLoad(VectorLoad):
     """Distributed area force [e.g. units:N/m2] applied to element(s).
 
     Parameters
@@ -167,7 +266,7 @@ class PressureLoad(Load):
         raise NotImplementedError
 
 
-class GravityLoad(Load):
+class GravityLoad(VectorLoad):
     """Gravity load [units:N/m3] applied to element(s).
 
     Parameters
@@ -234,7 +333,7 @@ class GravityLoad(Load):
         return self.__mul__(other)
 
 
-class PrestressLoad(Load):
+class PrestressLoad(VectorLoad):
     """Prestress load"""
 
     def __init__(self, components, axes="global", **kwargs):
@@ -242,14 +341,14 @@ class PrestressLoad(Load):
         raise NotImplementedError
 
 
-class ThermalLoad(Load):
+class ThermalLoad(VectorLoad):
     """Thermal load"""
 
     def __init__(self, components, axes="global", **kwargs):
         super(ThermalLoad, self).__init__(components, axes, **kwargs)
 
 
-class TributaryLoad(Load):
+class TributaryLoad(VectorLoad):
     """Tributary load"""
 
     def __init__(self, components, axes="global", **kwargs):
@@ -257,7 +356,7 @@ class TributaryLoad(Load):
         raise NotImplementedError
 
 
-class HarmonicPointLoad(Load):
+class HarmonicPointLoad(VectorLoad):
     """"""
 
     def __init__(self, components, axes="global", **kwargs):
@@ -265,9 +364,68 @@ class HarmonicPointLoad(Load):
         raise NotImplementedError
 
 
-class HarmonicPressureLoad(Load):
+class HarmonicPressureLoad(VectorLoad):
     """"""
 
     def __init__(self, components, axes="global", **kwargs):
         super(HarmonicPressureLoad, self).__init__(components, axes, **kwargs)
         raise NotImplementedError
+
+
+#===================================================================
+# HEAT ANALYSIS
+#===================================================================
+
+class HeatFluxLoad(ScalarLoad):
+    """ Heat flux load for heat analysis.
+    
+    Parameters
+    ----------
+    q : float
+        Heat flux value of the load.
+    
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal.  
+
+    Attributes
+    ----------
+    q : float
+        Heat flux value of the load.
+    
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal. 
+    """
+
+    def __init__(self, q, amplitude = None,  **kwargs):
+        super().__init__(scalar_load=q, amplitude=amplitude, **kwargs)
+    
+    @property
+    def q(self):
+        return self._scalar_load
+    
+class TemperatureLoad(ScalarLoad):
+    """ Temperature load for heat analysis
+    
+    Parameters
+    ----------
+    temperature : float
+        Value of the temperature load.
+    
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal.  
+
+    Attributes
+    ----------
+    temperature : float
+        Value of the temperature load.
+    
+    amplitude :  :class:`compas_fea2.problem.Amplitude`
+        Amplitude associated to the load, optionnal. 
+    """
+
+    def __init__(self, temperature, amplitude = None, **kwargs):
+        super().__init__(scalar_load=temperature, amplitude=amplitude, **kwargs)
+    
+    @property
+    def temperature(self):
+        return self._scalar_load
