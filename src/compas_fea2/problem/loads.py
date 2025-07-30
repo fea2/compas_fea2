@@ -99,22 +99,16 @@ class VectorLoad(_Load):
 
     x : float
         x-axis force value of the load.
-    
     y : float
         y-axis force value of the load.
-    
     z : float
         z-axis force value of the load.
-
     xx : float
         Moment value of the load about the x-axis. 
-    
     yy : float
         Moment value of the load about the y-axis. 
-    
     zz : float
         Moment value of the load about the z-axis.
-    
     amplitude :  :class:`compas_fea2.problem.Amplitude`
         Amplitude associated to the load, optionnal.  
 
@@ -123,31 +117,22 @@ class VectorLoad(_Load):
     axes : str, "local" or "global"
         The load is either defined in the local frame or the global one.
         If not indicated, the global frame is considered.
-
     x : float
         x-axis force value of the load.
-    
     y : float
         y-axis force value of the load.
-    
     z : float
         z-axis force value of the load.
-
     xx : float
         Moment value of the load about the x-axis. 
-    
     yy : float
         Moment value of the load about the y-axis. 
-    
     zz : float
         Moment value of the load about the z-axis.
-    
     amplitude :  :class:`compas_fea2.problem.Amplitude`
         Amplitude associated to the load, optionnal.  
-    
     components : {str: float}
         Dictionnary of the components of the load and values
-
     """
 
     def __init__(self, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
@@ -159,6 +144,26 @@ class VectorLoad(_Load):
         self.xx = xx
         self.yy = yy
         self.zz = zz
+        
+    def __mul__(self, scalar):
+        """Multiply the load by a scalar."""
+        for attr in ["x", "y", "z", "xx", "yy", "zz"]:
+            if getattr(self, attr) is not None:
+                setattr(self, attr, getattr(self, attr) * scalar)
+        return self
+    
+    def __rmul__(self, scalar):
+        """Multiply the load by a scalar."""
+        return self.__mul__(scalar)
+    
+    def __add__(self, other):
+        """Add two VectorLoad objects."""
+        if not isinstance(other, VectorLoad):
+            raise TypeError("Can only add VectorLoad objects.")
+        for attr in ["x", "y", "z", "xx", "yy", "zz"]:
+            if getattr(self, attr) is not None and getattr(other, attr) is not None:
+                setattr(self, attr, getattr(self, attr) + getattr(other, attr))
+        return self
 
     @property
     def components(self):

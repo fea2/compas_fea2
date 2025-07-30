@@ -201,7 +201,7 @@ class Problem(FEAData):
         self._steps_order.append(step)
         return step
 
-    def add_static_step(self, **kwargs) -> Step:
+    def add_static_step(self, **kwargs) -> StaticStep:
         # # type: (_Step) -> Step
         """Adds a :class:`compas_fea2.problem._Step` to the problem. The name of
         the Step must be unique

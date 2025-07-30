@@ -57,22 +57,22 @@ class _LoadField(FEAData):
     def __init__(
         self,
         loads: Iterable["_Load"] | Iterable["GeneralDisplacement"],
-        distribution: "Node | _Element | Iterable[Node] | Iterable[_Element]",
+        distribution: "Node | Iterable[Node]",
         load_case: Optional[str] = None,
         **kwargs,
     ):
         super(_LoadField, self).__init__(**kwargs)
-        self._distribution = list(distribution) if isinstance(distribution, Iterable) and not isinstance(distribution, str) else [distribution]
+        self._distribution: list["Node"] = list(distribution) if isinstance(distribution, Iterable) else [distribution]
         self._loads = loads if isinstance(loads, Iterable) else [loads * (1 / len(self._distribution))] * len(self._distribution)
         self._load_case = load_case
-        self._registration = None
+        self._registration: "Step | None" = None
 
     @property
     def loads(self) -> Iterable["_Load"] | Iterable["GeneralDisplacement"] | list[float]:
         return self._loads
 
     @property
-    def distribution(self) -> list["Node"] | list["_Element"]:
+    def distribution(self) -> list["Node"]:
         return self._distribution
 
     @property

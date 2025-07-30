@@ -16,13 +16,13 @@ from compas.geometry import Vector
 from compas_fea2.base import FEAData
 
 from .database import SQLiteResultsDatabase
-from .results import AccelerationResult  # noqa: F401
-from .results import DisplacementResult  # noqa: F401
-from .results import ReactionResult  # noqa: F401
-from .results import SectionForcesResult  # noqa: F401
-from .results import ShellStressResult  # noqa: F401
-from .results import SolidStressResult  # noqa: F401
-from .results import VelocityResult  # noqa: F401
+from .results import AccelerationResult
+from .results import DisplacementResult
+from .results import ReactionResult
+from .results import SectionForcesResult
+from .results import ShellStressResult 
+from .results import SolidStressResult
+from .results import VelocityResult
 
 
 class FieldResults(FEAData):
