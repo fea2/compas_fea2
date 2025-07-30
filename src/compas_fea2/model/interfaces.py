@@ -52,26 +52,3 @@ class Interface(FEAData):
     @property
     def behavior(self):
         return self._behavior
-
-
-# class ContactInterface(Interface):
-#     """Interface for contact behavior
-
-#     Parameters
-#     ----------
-#     Interface : _type_
-#         _description_
-#     """
-#     def __init__(self, master, slave, behavior, name=None, **kwargs):
-#         super().__init__(master, slave, behavior, name, **kwargs)
-
-# class ConstraintInterface(Interface):
-#     """Interface for contact behavior
-
-#     Parameters
-#     ----------
-#     Interface : _type_
-#         _description_
-#     """
-#     def __init__(self, master, slave, behavior, name=None, **kwargs):
-#         super().__init__(master, slave, behavior, name, **kwargs)

@@ -48,7 +48,7 @@ class Contact(_Interaction):
         tangent to each face.
     """
 
-    def __init__(self, *, normal, tangent, **kwargs):
+    def __init__(self, normal, tangent, **kwargs):
         super().__init__(**kwargs)
         self._tangent = tangent
         self._normal = normal
@@ -152,7 +152,7 @@ class LinearContactFrictionPenalty(Contact):
         Slippage tollerance during contact.
     """
 
-    def __init__(self, *, stiffness, mu, tolerance, **kwargs) -> None:
+    def __init__(self, stiffness, mu, tolerance, **kwargs) -> None:
         super().__init__(normal="Linear", tangent=mu, **kwargs)
         self._tolerance = tolerance
         self._stiffness = stiffness

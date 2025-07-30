@@ -50,6 +50,7 @@ from compas_fea2.utilities._utils import problem_method
 
 if TYPE_CHECKING:
     from compas_fea2.model.groups import FacesGroup
+    from compas_fea2.model.groups import MaterialsGroup
 
 
 class Model(FEAData):
@@ -231,9 +232,10 @@ class Model(FEAData):
         self._constants["g"] = value
 
     @property
-    def materials_dict(self) -> dict[Union[_Part, "Model"], list[_Material]]:
+    def materials_dict(self) -> dict[_Part, "MaterialsGroup"]:
         materials = {part: part.materials for part in self.parts if not isinstance(part, RigidPart)}
-        materials[self] = list(self._materials)
+        if not materials:
+            raise ValueError("No materials found in the model.")
         return materials
 
     @property
@@ -244,7 +246,6 @@ class Model(FEAData):
     @property
     def sections_dict(self) -> dict[Union[_Part, "Model"], list[_Section]]:
         sections = {part: part.sections for part in self.parts if not isinstance(part, RigidPart)}
-        sections[self] = list(self._sections)
         return sections
 
     @property

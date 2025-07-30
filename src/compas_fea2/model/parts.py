@@ -270,15 +270,14 @@ class _Part(FEAData):
         return self.elements.sorted_by(key=lambda x: x.part_key)
 
     @property
-    def elements_grouped(self) -> Dict[int, List[_Element]]:
+    def elements_grouped(self) -> Dict[type, List[_Element]]:
         sub_groups = self.elements.group_by(key=lambda x: x.__class__.__base__)
         return {key: group.members for key, group in sub_groups}
 
     @property
-    def elements_faces(self) -> List[List[List["Face"]]]:  # noqa: F821
+    def elements_faces(self) -> Dict[_Element, FacesGroup]: 
         face_group = FacesGroup([face for element in self.elements for face in element.faces])
-        face_group.group_by(key=lambda x: x.element)
-        return face_group
+        return face_group.group_by(key=lambda x: getattr(x, "element", None))
 
     @property
     def elements_faces_grouped(self) -> Dict[int, List[List["Face"]]]:  # noqa: F821
