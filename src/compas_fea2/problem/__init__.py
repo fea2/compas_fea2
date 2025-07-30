@@ -40,26 +40,9 @@ from .steps import (
 )
 
 
-__all__ = [
-    "Problem",
-    "GeneralDisplacement",
-    "VectorLoad",
-    "_LoadField",
-    "DisplacementField",
-    "NodeLoadField",
-    "PointLoadField",
-    "_PrescribedField",
-    "PrescribedTemperatureField",
-    "LoadCombination",
-    "Step",
-    "GeneralStep",
-    "_Perturbation",
-    "ModalAnalysis",
-    "ComplexEigenValue",
-    "StaticStep",
-    "LinearStaticPerturbation",
-    "BucklingAnalysis",
-    "DynamicStep",
-    "QuasiStaticStep",
-    "DirectCyclicStep",
+__all__ = [  # type: ignore[reportUnsupportedDunderAll]
+    name for name, obj in globals().items()
+    if not name.startswith(" _") and not name.startswith("__")
+    and not callable(name) and not name.startswith("_")
+    and name.isidentifier()
 ]
