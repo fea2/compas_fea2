@@ -8,7 +8,6 @@ from compas.geometry import centroid_points_weighted
 from compas.geometry import sum_vectors
 
 from compas_fea2.base import FEAData
-from compas_fea2.UI import FEA2Viewer
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.elements import _Element
 from compas_fea2.model.groups import NodesGroup
@@ -19,7 +18,6 @@ from compas_fea2.problem.fields import NodeLoadField
 from compas_fea2.problem.fields import PointLoadField
 from compas_fea2.problem.fields import _PrescribedField
 from compas_fea2.results import TemperatureFieldResults
-from compas_fea2.UI import FEA2Viewer
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
@@ -383,7 +381,7 @@ class GeneralStep(Step):
     #                               Load Fields
     # ==============================================================================
 
-    def add_load_field(self, field: NodeLoadField):
+    def add_load_field(self, field: NodeLoadField | DisplacementField):
         """Add a general :class:`compas_fea2.problem.patterns.Pattern` to the Step.
 
         Parameters
@@ -817,7 +815,7 @@ Z : {applied_load[2]}
     # Visualisation
     # ==============================================================================
 
-    def show_deformed(self, opacity=1, show_bcs=1, scale_results=1, scale_model=1, show_loads=0.1, show_original=False, **kwargs):
+    def show_deformed(self, viewer, opacity=1, show_bcs=1, scale_results=1, scale_model=1, show_loads=0.1, show_original=False, **kwargs):
         """Display the structure in its deformed configuration.
 
         Parameters
@@ -839,7 +837,6 @@ Z : {applied_load[2]}
         -------
         None
         """
-        viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
 
         if show_original:
             viewer.add_model(self.model, fast=True, opacity=show_original, show_bcs=False, **kwargs)
@@ -853,7 +850,7 @@ Z : {applied_load[2]}
             viewer.add_step(self, show_loads=show_loads)
         viewer.show()
 
-    def show_displacements(self, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=True, show_contour=True, **kwargs):
+    def show_displacements(self, viewer, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=True, show_contour=True, **kwargs):
         """Display the displacement field results for a given step.
 
         Parameters
@@ -872,7 +869,6 @@ Z : {applied_load[2]}
         if not self.displacement_field:
             raise ValueError("No displacement field results available for this step")
 
-        viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
         viewer.add_model(self.model, fast=fast, show_parts=True, opacity=0.5, show_bcs=show_bcs, show_loads=show_loads, **kwargs)
         viewer.add_displacement_field(self.displacement_field, fast=fast, model=self.model, component=component, show_vectors=show_vectors, show_contour=show_contour, **kwargs)
         if show_loads:
@@ -880,7 +876,7 @@ Z : {applied_load[2]}
         viewer.show()
         viewer.scene.clear()
 
-    def show_reactions(self, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=1, show_contour=False, **kwargs):
+    def show_reactions(self, viewer, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=1, show_contour=False, **kwargs):
         """Display the reaction field results for a given step.
 
         Parameters
@@ -907,7 +903,6 @@ Z : {applied_load[2]}
         if not self.reaction_field:
             raise ValueError("No reaction field results available for this step")
 
-        viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
         viewer.add_model(self.model, fast=fast, show_parts=True, opacity=0.5, show_bcs=bool(show_bcs), show_loads=bool(show_loads), **kwargs)
         viewer.add_reaction_field(self.reaction_field, fast=fast, model=self.model, component=component, show_vectors=bool(show_vectors), show_contour=show_contour, **kwargs)
 
@@ -915,12 +910,11 @@ Z : {applied_load[2]}
             viewer.add_step(self, show_loads=int(show_loads))
         viewer.show()
 
-    def show_stress(self, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=1, show_contour=False, plane="mid", **kwargs):
+    def show_stress(self, viewer, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=1, show_contour=False, plane="mid", **kwargs):
 
         if not self.stress_field:
             raise ValueError("No reaction field results available for this step")
 
-        viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
         viewer.add_model(self.model, fast=fast, show_parts=True, opacity=0.5, show_bcs=show_bcs, show_loads=show_loads, **kwargs)
         viewer.add_stress2D_field(self.stress_field, fast=fast, model=self.model, component=component, show_vectors=show_vectors, show_contour=show_contour, plane=plane, **kwargs)
 
