@@ -702,6 +702,13 @@ class Face(FEAData):
 
     def __init__(self, nodes: List["Node"], tag: str, element: Optional["_Element"] = None, **kwargs):
         super().__init__(**kwargs)
+        if len(nodes) < 3:
+            raise ValueError("A face must have at least 3 nodes.")
+        # Check for degenerate (zero-area) face
+        coords = [node.xyz for node in nodes]
+        poly = Polygon(coords)
+        if poly.area == 0:
+            raise ValueError(f"Degenerate face: area is zero. Vertices {[n.xyz for n in nodes]}")
         self._nodes = nodes
         self._tag = tag
         self._plane = Plane.from_three_points(*[node.xyz for node in nodes[:3]])  # TODO check when more than 3 nodes
