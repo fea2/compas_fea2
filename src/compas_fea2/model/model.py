@@ -1026,7 +1026,7 @@ class Model(FEAData):
             The group with the matching parts.
 
         """
-        return self.add_parts_group(PartsGroup(parts=set(filter(lambda p: getattr(p, attr) == value), self.parts)))
+        return self.add_parts_group(PartsGroup(members=set(filter(lambda p: getattr(p, attr) == value), self.parts)))
 
     # =========================================================================
     #                           BCs methods

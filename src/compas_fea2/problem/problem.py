@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 from typing import Optional
 from typing import Union
+from typing import TYPE_CHECKING
 
 from compas.geometry import Vector, Point
 
@@ -13,6 +14,10 @@ from compas_fea2.problem.steps import StaticStep
 from compas_fea2.problem.steps import Step
 from compas_fea2.results.database import ResultsDatabase
 from compas_fea2.results.database import SQLiteResultsDatabase
+
+if TYPE_CHECKING:
+    from compas_fea2.model.model import Model  
+    from compas_fea2.problem.steps import Step
 
 
 class Problem(FEAData):
@@ -77,7 +82,7 @@ class Problem(FEAData):
         self._rdb = None
 
     @property
-    def model(self) -> "Model":  # noqa: F821
+    def model(self) -> "Model | None":
         return self._registration
 
     @property
@@ -192,7 +197,7 @@ class Problem(FEAData):
         if not isinstance(step, Step):
             raise TypeError("You must provide a valid compas_fea2 Step object")
 
-        if self.find_step_by_name(step):
+        if self.find_step_by_name(step.name):
             raise ValueError("There is already a step with the same name in the model.")
 
         step._key = len(self._steps)

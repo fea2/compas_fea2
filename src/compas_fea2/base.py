@@ -3,7 +3,15 @@ import json
 import uuid
 from abc import abstractmethod
 from copy import deepcopy
+from typing import Any
+from typing import Dict
 from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Type
+from typing import TypeVar
+from typing import Union
+from typing import TYPE_CHECKING
 
 import h5py
 import numpy as np
@@ -13,11 +21,14 @@ import compas_fea2
 
 from .utilities._utils import to_dimensionless
 
+# Type variable for FEAData subclasses
+T = TypeVar('T', bound='FEAData')
+
 
 class DimensionlessMeta(type):
     """Metaclass for converting pint Quantity objects to dimensionless."""
 
-    def __new__(meta, name, bases, class_dict):
+    def __new__(meta: Type[type], name: str, bases: tuple, class_dict: Dict[str, Any]) -> type:
         # Decorate each method
         for attributeName, attribute in class_dict.items():
             if callable(attribute) or isinstance(attribute, (classmethod, staticmethod)):
@@ -58,7 +69,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
 
     """
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> 'FEAData':
         """Try to get the backend plug-in implementation, otherwise use the base
         one.
         """
@@ -67,21 +78,29 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             return super(FEAData, cls).__new__(cls)
         return super(FEAData, imp).__new__(imp)
 
-    def __init__(self, name=None, **kwargs):
-        self.uid = uuid.uuid4()
+    def __init__(self, name: Optional[str] = None, **kwargs: Any) -> None:
+        self.uid: uuid.UUID = uuid.uuid4()
         super().__init__()
-        self._name = name or "".join([c for c in type(self).__name__ if c.isupper()]) + "_" + str(id(self))
-        self._registration = None
-        self._key = None
+        self._name: str = name or "".join([c for c in type(self).__name__ if c.isupper()]) + "_" + str(id(self))
+        self._registration: Optional[Any] = None
+        self._key: Optional[Any] = None
 
     @property
-    def key(self):
+    def key(self) -> Optional[Any]:
         return self._key
 
-    def __repr__(self):
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self._name = value
+
+    def __repr__(self) -> str:
         return "{0}({1})".format(self.__class__.__name__, id(self))
 
-    def __str__(self):
+    def __str__(self) -> str:
         title = "compas_fea2 {0} object".format(self.__class__.__name__)
         separator = "-" * (len(title))
         data_extended = []
@@ -97,19 +116,19 @@ class FEAData(Data, metaclass=DimensionlessMeta):
                 pass
         return """\n{}\n{}\n{}\n""".format(title, separator, "\n".join(data_extended))
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         return self.__dict__
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Dict[str, Any]) -> None:
         self.__dict__.update(state)
 
     @abstractmethod
-    def jobdata(self, *args, **kwargs):
+    def jobdata(self, *args: Any, **kwargs: Any) -> Any:
         """Generate the job data for the backend-specific input file."""
         raise NotImplementedError("This function is not available in the selected plugin.")
 
     @classmethod
-    def from_name(cls, name, **kwargs):
+    def from_name(cls: Type[T], name: str, **kwargs: Any) -> T:
         """Create an instance of a class of the registered plugin from its name.
 
         Parameters
@@ -136,7 +155,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
     # Copy and Serialization
     # ==========================================================================
 
-    def copy(self, cls=None, copy_guid=False, copy_name=False):
+    def copy(self, cls: Optional[Type[T]] = None, copy_guid: bool = False, copy_name: bool = False) -> T:
         """Make an independent copy of the data object.
 
         Parameters
@@ -146,6 +165,8 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             Defaults to the type of the current data object.
         copy_guid : bool, optional
             If True, the copy will have the same guid as the original.
+        copy_name : bool, optional
+            If True, the copy will have the same name as the original.
 
         Returns
         -------
@@ -153,8 +174,8 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             An independent copy of this object.
 
         """
-        if not cls:
-            cls = type(self)
+        if cls is None:
+            cls = type(self)  # type: ignore
         obj = cls.__from_data__(deepcopy(self.__data__))
         if copy_name and self._name is not None:
             obj._name = self.name
@@ -162,60 +183,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             obj._guid = self.guid
         return obj  # type: ignore
 
-    def to_hdf5(self, hdf5_path, group_name, mode="w"):
-        """
-        Save the object to an HDF5 file using the __data__ property.
-        """
-        with h5py.File(hdf5_path, mode) as hdf5_file:  # "a" mode to append data
-            group = hdf5_file.require_group(f"{group_name}/{self.uid}")  # Create a group for this object
-
-            for key, value in self.to_hdf5_data().items():
-                if isinstance(value, (list, np.ndarray)):
-                    group.create_dataset(key, data=value)
-                else:
-                    group.attrs[key] = json.dumps(value)
-
-    @classmethod
-    def from_hdf5(
-        cls,
-        hdf5_path,
-        group_name,
-        uid,
-    ):
-        """
-        Load an object from an HDF5 file using the __data__ property.
-        """
-        with h5py.File(hdf5_path, "r") as hdf5_file:
-            group = hdf5_file[f"{group_name}/{uid}"]
-            data = {}
-
-            # Load datasets (numerical values)
-            for key in group.keys():
-                dataset = group[key][:]
-                data[key] = dataset.tolist() if dataset.shape != () else dataset.item()
-
-            # Load attributes (strings, dictionaries, JSON lists)
-            for key, value in group.attrs.items():
-                if isinstance(value, str):
-                    # Convert "None" back to NoneType
-                    if value == "None":
-                        data[key] = None
-                    # Convert JSON back to Python objects
-                    elif value.startswith("[") or value.startswith("{"):
-                        try:
-                            data[key] = json.loads(value)
-                        except json.JSONDecodeError:
-                            data[key] = value  # Keep it as a string if JSON parsing fails
-                    else:
-                        data[key] = value
-                else:
-                    data[key] = value
-
-        if not hasattr(cls, "__from_data__"):
-            raise NotImplementedError(f"{cls.__name__} does not implement the '__from_data__' method.")
-        return cls.__from_data__(data)
-
-    def to_json(self, filepath, pretty=False, compact=False, minimal=False):
+    def to_json(self, filepath: str, pretty: bool = False, compact: bool = False, minimal: bool = False) -> None:
         """Convert an object to its native data representation and save it to a JSON file.
 
         Parameters
