@@ -106,6 +106,8 @@ class Node(FEAData):
     >>> node = Node(xyz=(1.0, 2.0, 3.0))
 
     """
+    
+    _registration: Optional["_Part"]
 
     def __init__(self, xyz: Sequence[float], mass: Optional[Union[float, List[float]]] = None, temperature: Optional[float] = None, **kwargs):
         super().__init__(**kwargs)
@@ -246,7 +248,7 @@ class Node(FEAData):
         return self._mass
 
     @mass.setter
-    def mass(self, value: float):
+    def mass(self, value: float | Sequence[float]):
         self._mass = _parse_mass(value)
 
     @property

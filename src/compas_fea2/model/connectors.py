@@ -4,16 +4,16 @@ from typing import Optional
 from typing import Union
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from compas_fea2.model.nodes import Node
-    from compas_fea2.model.groups import NodesGroup
-    from compas_fea2.model.parts import RigidPart
-
 from compas_fea2.base import FEAData
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.groups import _Group
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import RigidPart
+
+if TYPE_CHECKING:
+    from compas_fea2.model.nodes import Node
+    from compas_fea2.model.groups import NodesGroup
+    from compas_fea2.model.parts import RigidPart
 
 
 class _Connector(FEAData):

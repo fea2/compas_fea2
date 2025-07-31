@@ -2,6 +2,9 @@ import base64
 import os
 from io import BytesIO
 
+from typing import Dict, List, Optional
+from typing import TYPE_CHECKING
+
 import matplotlib.pyplot as plt
 import numpy as np
 from compas.geometry import Frame
@@ -11,6 +14,10 @@ from compas.geometry import Vector
 from compas_fea2.base import FEAData
 from compas_fea2.model.materials.material import ElasticIsotropic
 
+if TYPE_CHECKING:
+    from compas_fea2.model import Node
+    from compas_fea2.model import _Element
+    from compas_fea2.model import _Section1D, _Section3D
 
 class Result(FEAData):
     """Result object defined at the nodes or elements. This ensures that the results from all
@@ -510,7 +517,7 @@ class SectionForcesResult(ElementResult):
         return self._moment_vector_2
 
     @property
-    def forces(self):
+    def forces(self) -> Dict["Node", "Vector"]:
         """Returns a dictionary of force vectors for both ends."""
         return {
             self.end_1: self.force_vector_1,

@@ -71,7 +71,6 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         The mother object where this object is registered to.
 
     """
-    _registration: Optional["Model"]
 
     def __new__(cls: Type[T], *args: Any, **kwargs: Any) -> T:
         """Try to get the backend plug-in implementation, otherwise use the base
@@ -86,7 +85,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         self.uid: uuid.UUID = uuid.uuid4()
         super().__init__()
         self._name: str = name or "".join([c for c in type(self).__name__ if c.isupper()]) + "_" + str(id(self))
-        self._registration = None
+        self._registration: Any = None
         self._key: Optional[Any] = None
 
     @property

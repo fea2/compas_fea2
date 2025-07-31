@@ -1,11 +1,13 @@
 from typing import TYPE_CHECKING
-from typing import Union
+from typing import Union, Optional, List, Sequence
 
 from compas_fea2.base import FEAData
 
 if TYPE_CHECKING:
     from .elements import BeamElement
+    from .parts import _Part
 
+_registration: Optional["_Part"]
 
 class _BeamEndRelease(FEAData):
     """Assign a general end release to a `compas_fea2.model.BeamElement`.

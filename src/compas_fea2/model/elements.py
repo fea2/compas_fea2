@@ -4,6 +4,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
+from typing import Iterator
 
 from compas.datastructures import Mesh
 from compas.geometry import Frame
@@ -31,6 +33,7 @@ if TYPE_CHECKING:
     from compas_fea2.model.sections import _Section2D
     from compas_fea2.model.sections import _Section3D
     
+    from compas_fea2.results.results import SectionForcesResult
 
     from .model import Model
     from .nodes import Node
@@ -95,26 +98,36 @@ class _Element(FEAData):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section | None", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
+    _registration: Optional["_Part"]
+
+    def __init__(
+        self,
+        nodes: List["Node"],
+        section: "Union[_Section, _Section1D, _Section2D, _Section3D, None]",
+        implementation: Optional[str] = None,
+        rigid: bool = False,
+        heat: bool = False,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self._part_key = None
         self._nodes = self._check_nodes(nodes)
-        self._registration = nodes[0]._registration
+        self._registration = nodes[0]._registration if nodes else None
         self._section = section
         self._implementation = implementation
         self._frame = None
         self._on_boundary = None
-        self._area = 0.0  
+        self._area = 0.0
         self._volume = 0.0
         self._results_format = {}
         self._rigid = rigid
         self._heat = heat
         self._reference_point = None
-        self._shape = None  
-        self._ndim = 0  
-        self._faces = []  
-        self._face_indices = {}  
-        self._length = 0.0  
+        self._shape = None
+        self._ndim = 0
+        self._faces = []
+        self._face_indices = {}
+        self._length = 0.0
 
     @property
     def __data__(self):
@@ -149,7 +162,7 @@ class _Element(FEAData):
         return cls(nodes, section, implementation=data.get("implementation"), rigid=data.get("rigid"))
 
     @property
-    def part(self) -> "_Part | None" :
+    def part(self) -> "_Part | None":
         """Return the part to which the element is registered."""
         return self._registration
 
@@ -177,9 +190,14 @@ class _Element(FEAData):
         self._nodes = self._check_nodes(value)
 
     @property
-    def nodes_key(self) -> List[int]:
+    def nodes_partkey(self) -> List[int]:
         """Return a unique identifier based on the connected nodes."""
-        return [n.part_key for n in self.nodes]
+        nk = []
+        for node in self.nodes:
+            if not node.part_key:
+                raise ValueError("All nodes must be registered to a part")
+            nk.append(node.part_key)
+        return nk
 
     @property
     def nodes_inputkey(self) -> str:
@@ -192,12 +210,12 @@ class _Element(FEAData):
         return [node.point for node in self.nodes]
 
     @property
-    def section(self) -> "_Section | None":
+    def section(self) -> "Union[_Section, _Section1D, _Section2D, _Section3D, None]":
         """Return the section object assigned to the element."""
         return self._section
 
     @section.setter
-    def section(self, value: "_Section"):
+    def section(self, value: "Union[_Section, _Section1D, _Section2D, _Section3D, None]"):
         """Set the section object for the element.
 
         Parameters
@@ -235,7 +253,8 @@ class _Element(FEAData):
         """
         self._on_boundary = value
 
-    def _check_nodes(self, nodes: List["Node"]) -> List["Node"]:
+    @staticmethod
+    def _check_nodes(nodes: List["Node"]):
         """Check that all nodes are registered to the same part.
 
         Parameters
@@ -253,7 +272,8 @@ class _Element(FEAData):
         ValueError
             If at least one node is registered to a different part or not registered.
         """
-        if len(set([node._registration for node in nodes])) != 1:
+        registration = set([node._registration for node in nodes])
+        if len(registration) != 1:
             raise ValueError("At least one of the nodes is registered to a different part or not registered")
         return nodes
 
@@ -266,7 +286,7 @@ class _Element(FEAData):
     def area(self) -> float:
         """Return the area of the element."""
         return self._area
-    
+
     @property
     def volume(self) -> float:
         return self._volume
@@ -345,21 +365,14 @@ class _Element(FEAData):
     def ndim(self) -> int:
         return self._ndim
 
-    def plot_section(self):
-        """Plot the section of the element."""
-        if self.section and hasattr(self.section, "plot"):
-            self.section.plot()
-        else:
-            raise AttributeError("Section does not have a 'plot' method")
-
     @property
-    def faces(self) -> Optional[List['Face']]:
+    def faces(self) -> Optional[List["Face"]]:
         """Return the faces of the element."""
         if self._faces is None:
             raise ValueError("Faces have not been constructed")
         return self._faces
 
-    def _construct_faces(self, face_indices: Dict[str, Tuple[int]]) -> List['Face']:
+    def _construct_faces(self, face_indices: Dict[str, Tuple[int, ...]]) -> List["Face"]:
         """Construct the face-nodes dictionary.
 
         Parameters
@@ -435,7 +448,7 @@ class LinkElement(_Element0D):
     use :class:`compas_fea2.model.connectors.RigidLinkConnector`.
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section", implementation: Optional[str] = None, rigid: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section2D", implementation: Optional[str] = None, rigid: bool = False, **kwargs):
         super().__init__(nodes, section=section, implementation=implementation, rigid=rigid, heat=False, **kwargs)
 
 
@@ -465,6 +478,8 @@ class _Element1D(_Element):
     volume : float
         The volume of the element.
     """
+    
+    _section: Optional["_Section1D"]
 
     def __init__(
         self, nodes: List["Node"], section: "_Section1D", frame: Optional[Frame] = None, implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs
@@ -480,13 +495,18 @@ class _Element1D(_Element):
         data = super().__data__
         data["frame"] = self.frame.__data__
         return data
+    
+    @property
+    def section(self) -> "_Section1D | None":
+        """Return the section object assigned to the element."""
+        return self._section
 
     @classmethod
     def __from_data__(cls, data):
         nodes = [node_data.pop("class").__from_data__(node_data) for node_data in data["nodes"]]
         section = data["section"].pop("class").__from_data__(data["section"])
         frame = Frame.__from_data__(data["frame"])
-        return cls(nodes=nodes, section=section, frame=frame, implementation=data.get("implementation"), rigid=data.get("rigid"))
+        return cls(nodes=nodes, section=section, frame=frame, implementation=data.get("implementation"), rigid=data.get("rigid"))  # type: ignore
 
     @property
     def curve(self) -> Line:
@@ -519,11 +539,13 @@ class _Element1D(_Element):
         return distance_point_point(*[node.point for node in self.nodes])
 
     @property
-    def volume(self) -> float:
-        return self.section.A * self.length
+    def volume(self) -> float | None:
+        if self.section:
+            return self.section.A * self.length
 
     def plot_section(self):
-        self.section.plot()
+        if self.section:
+            self.section.plot()
 
     def plot_stress_distribution(self, step: "_Step", end: str = "end_1", nx: int = 100, ny: int = 100, *args, **kwargs):  # noqa: F821
         """Plot the stress distribution along the element.
@@ -548,7 +570,7 @@ class _Element1D(_Element):
         r = step.section_forces_field.get_element_forces(self)
         r.plot_stress_distribution(*args, **kwargs)
 
-    def section_forces_result(self, step: "_Step") -> "Result":
+    def section_forces_result(self, step: "_Step") -> "SectionForcesResult":
         """Get the section forces result for the element.
         Parameters
         ----------
@@ -565,7 +587,7 @@ class _Element1D(_Element):
             raise ValueError("The step does not have a section_forces_field")
         return step.section_forces_field.get_result_at(self)
 
-    def forces(self, step: "_Step") -> "Result":
+    def forces(self, step: "_Step") -> Dict["Node", "Vector"]:
         """Get the forces result for the element.
 
         Parameters
@@ -581,7 +603,7 @@ class _Element1D(_Element):
         r = self.section_forces_result(step)
         return r.forces
 
-    def moments(self, step: "_Step") -> "Result":  # noqa: F821
+    def moments(self, step: "_Step") -> Dict["Node", "Vector"]:
         """Get the moments result for the element.
 
         Parameters
@@ -613,7 +635,7 @@ class TrussElement(_Element1D):
     """A 1D element that resists axial loads."""
 
     def __init__(self, nodes: List["Node"], section: "_Section1D", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
-        super().__init__(nodes, section, frame=[1, 1, 1], implementation=implementation, rigid=rigid, heat=heat, **kwargs)
+        super().__init__(nodes, section, frame=None, implementation=implementation, rigid=rigid, heat=heat, **kwargs)
 
 
 class StrutElement(TrussElement):
@@ -641,24 +663,22 @@ class Edge(FEAData):
         return self._tag
 
     @property
-    def plane(self) -> Plane:
-        return self._plane
-
-    @property
     def element(self) -> Optional["_Element"]:
         return self._registration
 
     @property
-    def part(self) -> "_Part":
-        return self.element.part
+    def part(self) -> "_Part | None":
+        if self.element:
+            return self.element.part
 
     @property
-    def model(self) -> "Model":
-        return self.element.model
+    def model(self) -> "Model | None":
+        if self.element:
+            return self.element.model
 
     @property
     def centroid(self) -> "Point":
-        return centroid_points([node.xyz for node in self.nodes])
+        return Point(*centroid_points([node.xyz for node in self.nodes]))
 
     @property
     def nodes_key(self) -> List:
@@ -752,12 +772,16 @@ class Face(FEAData):
         return self._registration
 
     @property
-    def part(self) -> "_Part":
-        return self.element.part
+    def part(self) -> "_Part | None":
+        """Return the part to which the face belongs."""
+        if self.element:
+            return self.element.part
 
     @property
-    def model(self) -> "Model":
-        return self.element.model
+    def model(self) -> "Model | None":
+        """Return the model to which the face belongs."""
+        if self.element:
+            return self.element.model
 
     @property
     def polygon(self) -> Polygon:
@@ -769,7 +793,7 @@ class Face(FEAData):
 
     @property
     def centroid(self) -> "Point":
-        return centroid_points([node.xyz for node in self.nodes])
+        return Point(*centroid_points([node.xyz for node in self.nodes]))
 
     @property
     def nodes_key(self) -> List:
@@ -788,7 +812,7 @@ class Face(FEAData):
         return Mesh.from_vertices_and_faces(self.points, [[c for c in range(len(self.points))]])
 
     @property
-    def node_area(self) -> float:
+    def node_area(self) -> Iterator[Tuple["Node", float]]:
         mesh = self.mesh
         vertex_area = [mesh.vertex_area(vertex) for vertex in mesh.vertices()]
         return zip(self.nodes, vertex_area)
@@ -816,6 +840,8 @@ class _Element2D(_Element):
         Dictionary providing for each edge the node indices. For example:
         {'e1': (0,1), ...}
     """
+    
+    _section: Optional["_Section2D"]
 
     def __init__(
         self,
@@ -835,24 +861,25 @@ class _Element2D(_Element):
             heat=heat,
             **kwargs,
         )
-        self._faces = None
-        self._face_indices = None
-        self._edges = None
-        self._edges_indices = None
+        
+        self._faces: Optional[List[Face]] = None
+        self._face_indices: Optional[Dict[str, Tuple[int, ...]]] = None
+        
+        self._edges: Optional[List[Edge]] = None
+        self._edges_indices: Optional[Dict[str, Tuple[int, ...]]] = None
+        
         self._ndim = 2
-        if frame:
-            if isinstance(frame, (Vector, List, Tuple)):
-                compas_polygon = Polygon(points=[node.point for node in nodes])
-                # the third axis is built from the y-axis (frame input) and z-axis (normal of the element)
-                x_axis = cross_vectors(frame, compas_polygon.normal)
-                frame = Frame(nodes[0].point, Vector(*x_axis), Vector(*frame))
-                self._frame = frame
-            else:
-                raise ValueError("The frame must be a Frame object or a Vector object.")
-
-        else:
-            if isinstance(self.section.material, ElasticOrthotropic):
-                raise ValueError("For orthotropic or anisotropic materials, the frame must implemented to define the local orientation of the element.")
+        
+        #BUG this is not correct!
+        # if frame:
+        #     if isinstance(frame, (Vector, List, Tuple)):
+        #         compas_polygon = Polygon(points=[node.point for node in nodes])
+        #         # the third axis is built from the y-axis (frame input) and z-axis (normal of the element)
+        #         x_axis = cross_vectors(frame, compas_polygon.normal)
+        #         frame = Frame(nodes[0].point, Vector(*x_axis), Vector(*frame))
+        #         self._frame = frame
+        #     else:
+        #         raise ValueError("The frame must be a Frame object or a Vector object.")
 
     @property
     def nodes(self) -> List["Node"]:
@@ -861,18 +888,36 @@ class _Element2D(_Element):
     @nodes.setter
     def nodes(self, value: List["Node"]):
         self._nodes = self._check_nodes(value)
-        self._faces = self._construct_faces(self._face_indices)
+        if self._face_indices:
+            self._faces = self._construct_faces(self._face_indices)
 
     @property
-    def edge_indices(self) -> Optional[Dict[str, Tuple[int]]]:
-        return self._edgee_indices
+    def section(self) -> "_Section2D | None":
+        """Return the section object assigned to the element."""
+        return self._section
+
+    @section.setter
+    def section(self, value: "_Section2D"):
+        """Set the section object for the element.
+
+        Parameters
+        ----------
+        value : :class:`compas_fea2.model._Section`
+            The section object to assign to the element.
+        """
+        self._section = value
 
     @property
-    def edges(self) -> Optional[List[Face]]:
+    def edge_indices(self) -> Optional[Dict[str, Tuple[int, ...]]]:
+        """Return the edge indices of the element."""
+        return self._edges_indices
+
+    @property
+    def edges(self) -> Optional[List[Edge]]:
         return self._edges
 
     @property
-    def face_indices(self) -> Optional[Dict[str, Tuple[int]]]:
+    def face_indices(self) -> Optional[Dict[str, Tuple[int, ...]]]:
         return self._face_indices
 
     @property
@@ -880,18 +925,21 @@ class _Element2D(_Element):
         return self._faces
 
     @property
-    def volume(self) -> float:
-        return self._faces[0].area * self.section.t
+    def volume(self) -> float | None:
+        if self._faces and self.section:
+            return self._faces[0].area * self.section.t
 
     @property
-    def reference_point(self) -> "Point":
-        return centroid_points([face.centroid for face in self.faces])
+    def reference_point(self) -> "Point | None":
+        if self.faces:
+            return Point(*centroid_points([face.centroid for face in self.faces]))
 
     @property
-    def outermesh(self) -> Mesh:
-        return Mesh.from_vertices_and_faces(self.points, list(self._face_indices.values()))
+    def outermesh(self) -> Mesh | None:
+        if self.face_indices:
+            return Mesh.from_vertices_and_faces(self.points, list(self.face_indices.values()))
 
-    def _construct_faces(self, face_indices: Dict[str, Tuple[int]]) -> List[Face]:
+    def _construct_faces(self, face_indices: Dict[str, Tuple[int, ...]]) -> List[Face]:
         """Construct the face-nodes dictionary.
 
         Parameters
@@ -907,7 +955,7 @@ class _Element2D(_Element):
         """
         return [Face(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in face_indices.items()]
 
-    def _construct_edges(self, edge_indices: Dict[str, Tuple[int]]) -> List[Edge]:
+    def _construct_edges(self, edge_indices: Dict[str, Tuple[int, ...]]) -> List[Edge]:
         """Construct the face-nodes dictionary.
 
         Parameters
@@ -961,12 +1009,12 @@ class ShellElement(_Element2D):
 
         self._face_indices = {"SPOS": tuple(range(len(nodes))), "SNEG": tuple(range(len(nodes)))[::-1]}
         self._faces = self._construct_faces(self._face_indices)
+        
         self._edges_indices = {f"s{i+1}": (i, i + 1) if i < len(nodes) - 1 else (i, 0) for i in range(len(nodes))}
-        # self._edge_indices[f"s{len(nodes)-1}"]= (len(nodes)-1, 0)
         self._edges = self._construct_edges(self._edges_indices)
 
     @property
-    def results_cls(self) -> "Result":
+    def results_cls(self) -> Dict[str, type]:
         return {"s": ShellStressResult}
 
 
@@ -1004,13 +1052,18 @@ class _Element3D(_Element):
             heat=heat,
             **kwargs,
         )
-        self._face_indices = None
-        self._faces = None
+        self._faces: Optional[List[Face]] = None
+        self._face_indices: Optional[Dict[str, Tuple[int, ...]]] = None
+        
+        self._edges: Optional[List[Edge]] = None
+        self._edges_indices: Optional[Dict[str, Tuple[int, ...]]] = None
+        
         self._frame = Frame.worldXY()
+        
         self._ndim = 3
 
     @property
-    def results_cls(self) -> "Result":
+    def results_cls(self) -> Dict[str, type]:
         return {"s": SolidStressResult}
 
     @property
@@ -1024,35 +1077,33 @@ class _Element3D(_Element):
     @nodes.setter
     def nodes(self, value: List["Node"]):
         self._nodes = value
-        self._faces = self._construct_faces(self._face_indices)
+        if self._face_indices:
+            self._faces = self._construct_faces(self._face_indices)
 
     @property
-    def face_indices(self) -> Optional[Dict[str, Tuple[int]]]:
+    def face_indices(self) -> Optional[Dict[str, Tuple[int, ...]]]:
+        """Return the face indices of the element."""
         return self._face_indices
 
     @property
     def faces(self) -> Optional[List[Face]]:
         return self._faces
-
+    
     @property
-    def edges(self):
-        seen = set()
-        for _, face in self._faces.items():
-            for u, v in pairwise(face + face[:1]):
-                if (u, v) not in seen:
-                    seen.add((u, v))
-                    seen.add((v, u))
-                    yield u, v
+    def edges(self) -> Optional[List[Edge]]:
+        """Return the edges of the element."""
+        return self._edges
+
 
     @property
     def centroid(self) -> "Point":
-        return centroid_points([node.point for node in self.nodes])
+        return Point(*centroid_points([node.point for node in self.nodes]))
 
     @property
     def reference_point(self) -> "Point":
         return self._reference_point or self.centroid
 
-    def _construct_faces(self, face_indices: Dict[str, Tuple[int]]) -> List[Face]:
+    def _construct_faces(self, face_indices: Dict[str, Tuple[int,...]]) -> List[Face]:
         """Construct the face-nodes dictionary.
 
         Parameters
@@ -1074,15 +1125,16 @@ class _Element3D(_Element):
         return self._area
 
     @classmethod
-    def from_polyhedron(cls, polyhedron: Polyhedron, section: "_Section", implementation: Optional[str] = None, **kwargs) -> "_Element3D":
+    def from_polyhedron(cls, polyhedron: Polyhedron, section: "_Section3D", implementation: Optional[str] = None, **kwargs) -> "_Element3D":
         from compas_fea2.model import Node
 
         element = cls([Node(vertex) for vertex in polyhedron.vertices], section, implementation, **kwargs)
         return element
 
     @property
-    def outermesh(self) -> Mesh:
-        return Polyhedron(self.points, list(self._face_indices.values())).to_mesh()
+    def outermesh(self) -> Mesh | None:
+        if self._face_indices:
+            return Polyhedron(self.points, list(self._face_indices.values())).to_mesh()
 
 
 class TetrahedronElement(_Element3D):
@@ -1143,32 +1195,33 @@ class TetrahedronElement(_Element3D):
 
         self._faces = self._construct_faces(self._face_indices)
 
-    @property
-    def edges(self):
-        """Yields edges as (start_node, end_node), including midside nodes if present."""
-        seen = set()
-        edges = [
-            (0, 1, 4),
-            (1, 2, 5),
-            (2, 0, 6),
-            (0, 3, 7),
-            (1, 3, 8),
-            (2, 3, 9),
-        ]
+    #BUG this is not correct!
+    # @property
+    # def edges(self):
+    #     """Yields edges as (start_node, end_node), including midside nodes if present."""
+    #     seen = set()
+    #     edges = [
+    #         (0, 1, 4),
+    #         (1, 2, 5),
+    #         (2, 0, 6),
+    #         (0, 3, 7),
+    #         (1, 3, 8),
+    #         (2, 3, 9),
+    #     ]
 
-        for edge in edges:
-            if self.element_type == "C3D10":
-                u, v, mid = edge
-                edge_pairs = [(u, mid), (mid, v)]  # Split each edge into two segments
-            else:
-                u, v = edge[:2]
-                edge_pairs = [(u, v)]
+    #     for edge in edges:
+    #         if self.element_type == "C3D10":
+    #             u, v, mid = edge
+    #             edge_pairs = [(u, mid), (mid, v)]  # Split each edge into two segments
+    #         else:
+    #             u, v = edge[:2]
+    #             edge_pairs = [(u, v)]
 
-            for u, v in edge_pairs:
-                if (u, v) not in seen:
-                    seen.add((u, v))
-                    seen.add((v, u))
-                    yield u, v
+    #         for u, v in edge_pairs:
+    #             if (u, v) not in seen:
+    #                 seen.add((u, v))
+    #                 seen.add((v, u))
+    #                 yield u, v
 
     @property
     def volume(self) -> float:
@@ -1192,7 +1245,7 @@ class PentahedronElement(_Element3D):
 class HexahedronElement(_Element3D):
     """A Solid cuboid element with 6 faces (extruded rectangle)."""
 
-    def __init__(self, nodes: List["Node"], section: "_Section3D", implementation: Optional[str] = None, rigid=False,  heat: bool = False,**kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section3D", implementation: Optional[str] = None, rigid=False, heat: bool = False, **kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
@@ -1201,7 +1254,7 @@ class HexahedronElement(_Element3D):
             heat=heat,
             **kwargs,
         )
-        self._faces_indices = {
+        self._face_indices = {
             "s1": (0, 1, 2, 3),
             "s2": (4, 5, 6, 7),
             "s3": (0, 1, 4, 5),

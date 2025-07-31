@@ -724,7 +724,7 @@ class _Part(FEAData):
     @property
     def elements_faces_indices(self) -> List[List[List[float]]]:
         """The indices of the faces of the part's elements."""
-        return [face.nodes_key for face in self.elements_faces]
+        return [face.nodes_partkey for face in self.elements_faces]
 
     @property
     def elements_faces_indices_grouped(self) -> Dict[int, List[List[float]]]:
@@ -734,13 +734,13 @@ class _Part(FEAData):
     @property
     def elements_connectivity(self) -> List[List[int]]:
         """The connectivity of the part's elements."""
-        return [element.nodes_key for element in self.elements]
+        return [element.nodes_partkey for element in self.elements]
 
     @property
     def elements_connectivity_grouped(self) -> Dict[int, List[List[float]]]:
         """The connectivity of the part's elements grouped by element type."""
         elements_group = groupby(self.elements, key=lambda x: x.__class__.__base__)
-        return {key: [element.nodes_key for element in group] for key, group in elements_group}
+        return {key: [element.nodes_partkey for element in group] for key, group in elements_group}
 
     @property
     def elements_centroids(self) -> List[List[float]]:

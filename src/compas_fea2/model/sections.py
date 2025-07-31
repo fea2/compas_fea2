@@ -2,6 +2,7 @@ from math import pi
 from math import sqrt
 
 from typing import TYPE_CHECKING
+from typing import Union, Optional, List, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,9 +16,11 @@ from compas_fea2.model.shapes import LShape
 from compas_fea2.model.shapes import Rectangle
 
 if TYPE_CHECKING:
-    from compas_fea2.model.materials.material import _Material  # noqa: F401
-    from compas_fea2.model.shapes import Shape  # noqa: F401
+    from compas_fea2.model.materials.material import _Material
+    from compas_fea2.model.shapes import Shape
+    from compas_fea2.model import Model
 
+_registration: Optional["Model"]
 
 def from_shape(shape: "Shape", material: "_Material", g0=None, gw=None, **kwargs) -> dict:  # noqa: F821
     return {
