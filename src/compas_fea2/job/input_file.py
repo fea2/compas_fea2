@@ -1,4 +1,8 @@
 import os
+from typing import Optional, Any, Union, cast
+from pathlib import Path
+from compas_fea2.problem import Problem
+from compas_fea2.model import Model
 
 from compas_fea2 import VERBOSE
 from compas_fea2.base import FEAData
@@ -26,29 +30,33 @@ class InputFile(FEAData):
 
     """
 
-    def __init__(self, problem, **kwargs):
+    _registration: Problem
+    _extension: Optional[str]
+    path: Optional[str]
+
+    def __init__(self, problem: Problem, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._registration = problem
         self._extension = None
         self.path = None
 
     @property
-    def file_name(self):
-        return "{}.{}".format(self.problem._name, self._extension)
+    def file_name(self) -> str:
+        return "{}.{}".format(self.problem.name, self._extension)
 
     @property
-    def problem(self):
+    def problem(self) -> Problem:
         return self._registration
 
     @property
-    def model(self):
-        return self.problem._registration
+    def model(self) -> Model:
+        return cast(Model, self.problem._registration)
 
     # ==============================================================================
     # General methods
     # ==============================================================================
 
-    def write_to_file(self, path=None):
+    def write_to_file(self, path: Optional[Union[str, Path]] = None) -> None:
         """Writes the InputFile to a file in a specified location.
 
         Parameters
@@ -63,7 +71,7 @@ class InputFile(FEAData):
             Information about the results of the writing process.
 
         """
-        path = path or self.problem.path
+        path = str(path or self.problem.path)
         if not path:
             raise ValueError("A path to the folder for the input file must be provided")
         file_path = os.path.join(path, self.file_name)
@@ -76,6 +84,6 @@ class InputFile(FEAData):
 class ParametersFile(InputFile):
     """Input file object for Optimizations."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         raise NotImplementedError
