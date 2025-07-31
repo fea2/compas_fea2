@@ -126,8 +126,25 @@ class _BoundaryCondition(FEAData):
         bc._xx = data.get("xx", False)
         bc._yy = data.get("yy", False)
         bc._zz = data.get("zz", False)
-        bc._name = data.get("name")
+        bc._name = data.get("name", "")
         return bc
+
+    def __add__(self, other: '_BoundaryCondition') -> 'GeneralBC':
+        """Combine two boundary conditions by OR-ing their component restraints."""
+        if not isinstance(other, _BoundaryCondition):
+            return NotImplemented
+        combined = GeneralBC(
+            x=self.x or other.x,
+            y=self.y or other.y,
+            z=self.z or other.z,
+            xx=self.xx or other.xx,
+            yy=self.yy or other.yy,
+            zz=self.zz or other.zz,
+            axes=self.axes,
+        )
+        combined._temp = self.temp or other.temp
+        return combined
+        
 
 
 class GeneralBC(_BoundaryCondition):
