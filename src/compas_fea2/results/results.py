@@ -487,37 +487,37 @@ class SectionForcesResult(ElementResult):
         return self._Mz_2
 
     @property
-    def end_1(self):
+    def end_1(self) -> "Node":
         """Returns the first end node of the element."""
         return self.element.nodes[0]
 
     @property
-    def end_2(self):
+    def end_2(self) -> "Node":
         """Returns the second end node of the element."""
         return self.element.nodes[1]
 
     @property
-    def force_vector_1(self):
+    def force_vector_1(self) -> Vector:
         """Returns the force vector at the first end of the element."""
         return self._force_vector_1
 
     @property
-    def moment_vector_1(self):
+    def moment_vector_1(self) -> Vector:
         """Returns the moment vector at the first end of the element."""
         return self._moment_vector_1
 
     @property
-    def force_vector_2(self):
+    def force_vector_2(self) -> Vector:
         """Returns the force vector at the second end of the element."""
         return self._force_vector_2
 
     @property
-    def moment_vector_2(self):
+    def moment_vector_2(self) -> Vector:
         """Returns the moment vector at the second end of the element."""
         return self._moment_vector_2
 
     @property
-    def forces(self) -> Dict["Node", "Vector"]:
+    def forces(self) -> Dict["Node", Vector]:
         """Returns a dictionary of force vectors for both ends."""
         return {
             self.end_1: self.force_vector_1,
@@ -525,7 +525,7 @@ class SectionForcesResult(ElementResult):
         }
 
     @property
-    def moments(self):
+    def moments(self) -> Dict["Node", Vector]:
         """Returns a dictionary of moment vectors for both ends."""
         return {
             self.end_1: self.moment_vector_1,
@@ -533,12 +533,12 @@ class SectionForcesResult(ElementResult):
         }
 
     @property
-    def net_force(self):
+    def net_force(self) -> Vector:
         """Returns the net force vector across the element."""
         return self.force_vector_2 + self.force_vector_1
 
     @property
-    def net_moment(self):
+    def net_moment(self) -> Vector:
         """Returns the net moment vector across the element."""
         return self.moment_vector_2 + self.moment_vector_1
 

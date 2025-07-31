@@ -84,8 +84,9 @@ class _Step(FEAData):
         return self._registration
 
     @property
-    def model(self) -> "Model":
-        return self.problem.model
+    def model(self) -> "Model | None":
+        if self.problem:
+            return self.problem.model
 
     @property
     def field_outputs(self):
@@ -456,7 +457,7 @@ class GeneralStep(_Step):
             raise TypeError("nodes must be a list, tuple or NodesGroup, not {}".format(type(nodes)))
         nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
         load = VectorLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, amplitude=amplitude)
-        field = NodeLoadField(loads=load, nodes=nodes, load_case=load_case, **kwargs)
+        field = NodeLoadField(loads=[load], nodes=nodes, load_case=load_case, **kwargs)
 
         return self.add_load_field(field)
 
@@ -485,8 +486,8 @@ class GeneralStep(_Step):
         if not isinstance(nodes, (list, tuple, NodesGroup)):
             raise TypeError("nodes must be a list, tuple or NodesGroup, not {}".format(type(nodes)))
         nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
-        load = ScalarLoad(value=value, amplitude=amplitude)
-        field = NodeLoadField(loads=load, nodes=nodes, load_case=load_case, **kwargs)
+        load = ScalarLoad(scalar_load=value, amplitude=amplitude)
+        field = NodeLoadField(loads=[load], nodes=nodes, load_case=load_case, **kwargs)
 
         return self.add_load_field(field)
 
@@ -500,11 +501,13 @@ class GeneralStep(_Step):
         from compas_fea2.problem.fields import UniformSurfaceLoadField
         from compas_fea2.problem.loads import VectorLoad
 
+        if not self.model:
+            raise AttributeError("Step is not registered to a Model.")
         surface = self.model.find_faces_in_polygon(polygon)
 
         load = VectorLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes)
 
-        field = UniformSurfaceLoadField(load=load, surface=surface, load_case=load_case, **kwargs)
+        field = UniformSurfaceLoadField(load=[load], surface=surface, load_case=load_case, **kwargs)
 
         return self.add_load_field(field)
 

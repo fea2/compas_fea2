@@ -1170,7 +1170,7 @@ class _Part(FEAData):
     #                           Materials methods
     # =========================================================================
 
-    def find_materials_by_name(self, name: str) -> List[_Material]:
+    def find_materials_by_name(self, name: str) -> Set[_Material]:
         """Find all materials with a given name.
 
         Parameters
@@ -1407,7 +1407,7 @@ class _Part(FEAData):
         print(f"No nodes found with key {key}")
         return None
 
-    def find_node_by_name(self, name: str) -> List[Node]:
+    def find_node_by_name(self, name: str) -> "Node | None":
         """Find a node with a given name.
 
         Parameters
@@ -1426,7 +1426,7 @@ class _Part(FEAData):
         print(f"No nodes found with name {name}")
         return None
 
-    def find_nodes_on_plane(self, plane: Plane, tol: float = 1.0) -> List[Node]:
+    def find_nodes_on_plane(self, plane: Plane, tol: float = 1.0) -> NodesGroup:
         """Find all nodes on a given plane.
 
         Parameters
@@ -1443,7 +1443,7 @@ class _Part(FEAData):
         """
         return self.nodes.subgroup(condition=lambda x: is_point_on_plane(x.point, plane, tol))
 
-    def find_closest_nodes_to_point(self, point: List[float], number_of_nodes: int = 1, report: bool = False, single: bool = False) -> Union[List[Node], Dict[Node, float], None]:
+    def find_closest_nodes_to_point(self, point: List[float], number_of_nodes: int = 1, report: Optional[bool] = False, single: bool = False) -> "NodesGroup | None | Dict[Node, float]":
         """
         Find the closest number_of_nodes nodes to a given point.
 
@@ -1476,7 +1476,7 @@ class _Part(FEAData):
         distances, indices = tree.query(point, k=number_of_nodes)
         if number_of_nodes == 1:
             if single:
-                return list(self.nodes)[indices]
+                return NodesGroup([list(self.nodes)[indices]])
             else:
                 distances = [distances]
                 indices = [indices]
@@ -1490,7 +1490,7 @@ class _Part(FEAData):
 
         return NodesGroup(closest_nodes)
 
-    def find_closest_nodes_to_node(self, node: Node, number_of_nodes: int = 1, report: Optional[bool] = False, single: bool = False) -> List[Node]:
+    def find_closest_nodes_to_node(self, node: Node, number_of_nodes: int = 1, report: Optional[bool] = False, single: bool = False) -> "NodesGroup | None | Dict[Node, float]":
         """Find the n closest nodes around a given node (excluding the node itself).
 
         Parameters
@@ -1511,7 +1511,7 @@ class _Part(FEAData):
         """
         return self.find_closest_nodes_to_point(node.xyz, number_of_nodes, report=report, single=single)
 
-    def find_nodes_in_polygon(self, polygon: "compas.geometry.Polygon", tol: float = 1.1) -> List[Node]:
+    def find_nodes_in_polygon(self, polygon: "Polygon", tol: float = 1.1) -> "NodesGroup | None":
         """Find the nodes of the part that are contained within a planar polygon.
 
         Parameters
@@ -1526,11 +1526,6 @@ class _Part(FEAData):
         List[Node]
             List of nodes within the polygon.
         """
-        if not hasattr(polygon, "plane"):
-            try:
-                polygon.plane = Frame.from_points(*polygon.points[:3])
-            except Exception:
-                polygon.plane = Frame.from_points(*polygon.points[-3:])
         S = Scale.from_factors([tol] * 3, polygon.frame)
         T = Transformation.from_frame_to_frame(Frame.from_plane(polygon.plane), Frame.worldXY())
         nodes_on_plane: NodesGroup = self.find_nodes_on_plane(Plane.from_frame(polygon.plane))

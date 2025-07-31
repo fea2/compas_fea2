@@ -167,21 +167,21 @@ class LinearContactFrictionPenalty(Contact):
         self._tolerance = tolerance
         self._stiffness = stiffness
 
-        @property
-        def stiffness(self):
-            return self._stiffness
+    @property
+    def stiffness(self):
+        return self._stiffness
 
-        @stiffness.setter
-        def stiffness(self, value):
-            self._stiffness = value
+    @stiffness.setter
+    def stiffness(self, value):
+        self._stiffness = value
 
-        @property
-        def tolerance(self):
-            return self._tolerance
+    @property
+    def tolerance(self):
+        return self._tolerance
 
-        @tolerance.setter
-        def tolerance(self, value):
-            self._tolerance = value
+    @tolerance.setter
+    def tolerance(self, value):
+        self._tolerance = value
 
 
 class HardContactRough(Contact):

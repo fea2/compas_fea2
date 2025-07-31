@@ -160,7 +160,7 @@ class NodeLoadField(_LoadField):
         The load case to which this pattern belongs.
     """
 
-    def __init__(self, loads: Iterable["_Load"], nodes: Iterable["Node"], load_case: str | None = None, **kwargs):
+    def __init__(self, loads: Iterable["VectorLoad"] | Iterable["ScalarLoad"], nodes: Iterable["Node"], load_case: str | None = None, **kwargs):
         super().__init__(loads=loads, distribution=nodes, load_case=load_case, **kwargs)
 
     @property

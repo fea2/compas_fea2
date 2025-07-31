@@ -4,6 +4,7 @@ import compas_fea2
 from compas_fea2.base import FEAData
 
 if TYPE_CHECKING:
+    from compas_fea2.model import Model
     from compas_fea2.problem import Problem
     from compas_fea2.problem import _Step
 
@@ -28,19 +29,19 @@ class LoadCombination(FEAData):
             yield k
 
     @property
-    def step(self) -> "_Step":
+    def step(self) -> "_Step | None":
         if self._registration:
             return self._registration
-        else:
-            raise ValueError("Register the LoadCombination to a Step first.")
 
     @property
-    def problem(self) -> "Problem":
-        return self.step.problem
+    def problem(self) -> "Problem | None":
+        if self.step:
+            return self.step.problem
 
     @property
-    def model(self):
-        self.problem.model
+    def model(self) -> "Model | None":
+        if self.problem:
+            return self.problem.model
 
     @classmethod
     def ULS(cls):
