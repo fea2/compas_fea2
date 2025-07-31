@@ -40,6 +40,14 @@ Backends
 
     backends/index
 
+Viewers
+=======
+
+.. toctree::
+    :maxdepth: 2
+    :titlesonly:
+
+    viewers/index
 
 Development
 ===========

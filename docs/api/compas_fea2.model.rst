@@ -4,13 +4,19 @@ model
 
 .. currentmodule:: compas_fea2.model
 
+.. rst-class:: lead
+
+This package defines the core data structures of COMPAS FEA2. It is data 
+structure of the package and lets your build your FEA model. 
+
 Model
 =====
 
-.. autosummary::
-    :toctree: generated/
+.. toctree::
+    :maxdepth: 1
+    :titlesonly:
 
-    Model
+    compas_fea2.model.model
 
 Parts
 =====
@@ -35,7 +41,6 @@ Elements
 .. autosummary::
     :toctree: generated/
 
-    _Element
     MassElement
     BeamElement
     SpringElement
@@ -44,7 +49,6 @@ Elements
     TieElement
     ShellElement
     MembraneElement
-    _Element3D
     TetrahedronElement
     HexahedronElement
 
@@ -54,7 +58,6 @@ Releases
 .. autosummary::
     :toctree: generated/
 
-    _BeamEndRelease
     BeamEndPinRelease
     BeamEndSliderRelease
 
@@ -64,8 +67,6 @@ Constraints
 .. autosummary::
     :toctree: generated/
 
-    _Constraint
-    _MultiPointConstraint
     TieMPC
     BeamMPC
     TieConstraint
@@ -76,7 +77,6 @@ Materials
 .. autosummary::
     :toctree: generated/
 
-    _Material
     UserMaterial
     Stiff
     ElasticIsotropic
@@ -94,7 +94,6 @@ Sections
 .. autosummary::
     :toctree: generated/
 
-    _Section
     BeamSection
     SpringSection
     AngleSection
@@ -119,7 +118,6 @@ Boundary Conditions
 .. autosummary::
     :toctree: generated/
 
-    _BoundaryCondition
     GeneralBC
     FixedBC
     PinnedBC
@@ -139,7 +137,6 @@ Initial Conditions
 .. autosummary::
     :toctree: generated/
 
-    _InitialCondition
     InitialTemperatureField
     InitialStressField
 
@@ -149,8 +146,37 @@ Groups
 .. autosummary::
     :toctree: generated/
 
-    _Group
     NodesGroup
     ElementsGroup
     FacesGroup
     PartsGroup
+
+
+Base Classes
+============
+
+As user, you never interact with the following classes. They define the basic
+behavior of each component in FEA2.
+
+.. autosummary::
+    :toctree: generated/
+
+    _Part
+    _BoundaryCondition
+    _Material
+    _Section
+    _Section1D
+    _Section2D
+    _Section3D
+    _Element
+    _Element1D
+    _Element2D
+    _Element3D
+    _Group
+    _Connector
+    _Constraint
+    _InitialCondition
+    _Interaction
+    _BeamEndRelease
+
+    

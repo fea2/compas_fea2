@@ -14,8 +14,8 @@ class Timber(ElasticOrthotropic):
     """Base class for Timber material (elastic orthotropic behaviour).
     The longitudinal axis (along the grain) is defined along the y-axis.
     
-    Parameters
-    ----------
+    Additional Parameters
+    ---------------------
     fmk : float
         Bending resistance.
     ft0k : float
@@ -43,8 +43,8 @@ class Timber(ElasticOrthotropic):
     name : str, optional
         Name of the material.
     
-    Attributes :
-    ------------
+    Additional Attributes
+    ---------------------
 
     fmk : float
         Bending resistance.
@@ -78,7 +78,8 @@ class Timber(ElasticOrthotropic):
         Shear modulus Gzx in z-x directions (EN383 - G mean).
 
     """
-    __doc__+=ElasticOrthotropic.__doc__
+    __doc__ = __doc__ or ""
+    __doc__+=ElasticOrthotropic.__doc__ or ""
 
     def __init__(self, fmk, ft0k, fc0k, ft90k, fc90k, fvk, vLT, vTT, E0mean, E90mean, Gmean, densityk, density, **kwargs):
 
