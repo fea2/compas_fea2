@@ -1,12 +1,14 @@
 import os
 from typing import Optional, Any, Union, cast
+from typing import TYPE_CHECKING
 from pathlib import Path
-from compas_fea2.problem import Problem
-from compas_fea2.model import Model
 
 from compas_fea2 import VERBOSE
 from compas_fea2.base import FEAData
 
+if TYPE_CHECKING:
+    from compas_fea2.problem import Problem
+    from compas_fea2.model import Model
 
 class InputFile(FEAData):
     """Input file object for standard FEA.
@@ -30,11 +32,11 @@ class InputFile(FEAData):
 
     """
 
-    _registration: Problem
+    _registration: "Problem"
     _extension: Optional[str]
     path: Optional[str]
 
-    def __init__(self, problem: Problem, **kwargs: Any) -> None:
+    def __init__(self, problem: "Problem", **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._registration = problem
         self._extension = None
@@ -45,12 +47,13 @@ class InputFile(FEAData):
         return "{}.{}".format(self.problem.name, self._extension)
 
     @property
-    def problem(self) -> Problem:
+    def problem(self) -> "Problem":
         return self._registration
 
     @property
-    def model(self) -> Model:
-        return cast(Model, self.problem._registration)
+    def model(self) -> "Model | None":
+        if self.problem:
+            return self.problem._registration
 
     # ==============================================================================
     # General methods
