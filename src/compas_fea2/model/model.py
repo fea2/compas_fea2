@@ -10,12 +10,7 @@ from compas.geometry import Box, Plane, Point, Transformation
 
 import compas_fea2
 from compas_fea2.base import FEAData
-from compas_fea2.model.groups import (
-    _Group,
-    InterfacesGroup,
-    NodesGroup,
-    PartsGroup,
-)
+
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import _Part, Part, RigidPart
 from compas_fea2.model.bcs import _BoundaryCondition, _ThermalBoundaryCondition
@@ -23,6 +18,20 @@ from compas_fea2.model.connectors import _Connector
 from compas_fea2.model.constraints import _Constraint
 from compas_fea2.model.interfaces import _Interface
 from compas_fea2.model.ics import _InitialCondition
+from compas_fea2.model.groups import (
+    _Group,
+    InterfacesGroup,
+    NodesGroup,
+    PartsGroup,
+    MaterialsGroup,
+    PartsGroup,
+    SectionsGroup,
+    ConnectorsGroup,
+    InteractionsGroup,
+    ElementsGroup,
+    ConstraintsGroup,
+    InterfacesGroup,
+)
 
 from compas_fea2.problem import Problem
 from compas_fea2.utilities._utils import get_docstring, part_method
