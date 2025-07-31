@@ -997,6 +997,7 @@ class Model(FEAData):
             if isinstance(node.part, RigidPart):
                 if len(nodes) != 1 or not node.is_reference:
                     raise ValueError("For rigid parts bundary conditions can be assigned only to the reference point")
+            node._bcs.add(bc)
 
         bc._key = len(self._bcs)
         self._bcs[bc] = set(nodes)

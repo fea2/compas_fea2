@@ -8,6 +8,7 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Union
+from typing import Sequence
 from typing import TYPE_CHECKING
 
 import compas
@@ -64,6 +65,15 @@ if TYPE_CHECKING:
     from compas_fea2.model.groups import FacesGroup
     from compas_fea2.problem.loads import VectorLoad
     from compas.geometry import Polygon
+    from compas_fea2.model.model import Model
+    from compas_fea2.model.bcs import _BoundaryCondition
+    from compas_fea2.model.groups import MaterialsGroup
+    from compas_fea2.model.groups import SectionsGroup
+    from compas_fea2.model.groups import NodesGroup
+    from compas_fea2.model.groups import ElementsGroup
+    from compas_fea2.model.groups import EdgesGroup
+    from compas_fea2.model.groups import _Group
+    from compas_fea2.model.nodes import Node
 
 
 class _Part(FEAData):
@@ -109,6 +119,7 @@ class _Part(FEAData):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._registration: Optional["Model"] = None
         self._ndm = None
         self._ndf = None
         self._graph = nx.DiGraph()
@@ -1125,6 +1136,35 @@ class _Part(FEAData):
             return filter(lambda x: isinstance(x, _Element3D), self.elements)
         else:
             raise ValueError("dimension not supported")
+        
+    # =========================================================================
+    #                           BCs methods
+    # =========================================================================
+    def add_bc(self, nodes: "List[Node]", bc: _BoundaryCondition) -> _BoundaryCondition:
+        """Add a boundary condition to the part.
+
+        Parameters
+        ----------
+        bc : _BoundaryCondition
+            The boundary condition to add.
+
+        Returns
+        -------
+        _BoundaryCondition
+            The added boundary condition.
+
+        Raises
+        ------
+        TypeError
+            If the boundary condition is not a valid type.
+        """
+        if not self.model:
+            raise ValueError("Part must be registered to a model before adding boundary conditions.")
+        
+        if not isinstance(bc, _BoundaryCondition):
+            raise TypeError(f"{bc!r} is not a boundary condition.")
+        self.model.add_bcs(bc, nodes=nodes)
+        return bc
 
     # =========================================================================
     #                           Materials methods
