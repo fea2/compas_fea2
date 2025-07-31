@@ -1,10 +1,10 @@
 from compas.geometry import Vector
 from compas.geometry import sum_vectors
 
-from .step import Step
+from .step import _Step
 
 
-class _Perturbation(Step):
+class _Perturbation(_Step):
     """A perturbation is a change of the state of the structure after an analysis
     step. Perturbations' changes are not carried over to the next step.
     """

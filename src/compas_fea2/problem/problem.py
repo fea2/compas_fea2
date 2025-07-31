@@ -11,13 +11,13 @@ from compas.geometry import Vector, Point
 from compas_fea2.base import FEAData
 from compas_fea2.job.input_file import InputFile
 from compas_fea2.problem.steps import StaticStep
-from compas_fea2.problem.steps import Step
+from compas_fea2.problem.steps import _Step
 from compas_fea2.results.database import ResultsDatabase
 from compas_fea2.results.database import SQLiteResultsDatabase
 
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model  
-    from compas_fea2.problem.steps import Step
+    from compas_fea2.problem.steps import _Step
 
 
 class Problem(FEAData):
@@ -113,11 +113,11 @@ class Problem(FEAData):
         self._rdb = getattr(ResultsDatabase, value)(self)
 
     @property
-    def steps_order(self) -> List[Step]:
+    def steps_order(self) -> List[_Step]:
         return self._steps_order
 
     @steps_order.setter
-    def steps_order(self, value: List[Step]):
+    def steps_order(self, value: List[_Step]):
         for step in value:
             if not self.is_step_in_problem(step, add=False):
                 raise ValueError("{!r} must be previously added to {!r}".format(step, self))
@@ -131,8 +131,8 @@ class Problem(FEAData):
     #                           Step methods
     # =========================================================================
 
-    def find_step_by_name(self, name: str) -> Optional[Step]:
-        # type: (str) -> Step
+    def find_step_by_name(self, name: str) -> Optional[_Step]:
+        # type: (str) -> _Step
         """Find if there is a step with the given name in the problem.
 
         Parameters
@@ -148,7 +148,7 @@ class Problem(FEAData):
             if step.name == name:
                 return step
 
-    def is_step_in_problem(self, step: Step, add: bool = True) -> Union[bool, Step]:
+    def is_step_in_problem(self, step: _Step, add: bool = True) -> Union[bool, _Step]:
         """Check if a :class:`compas_fea2.problem._Step` is defined in the Problem.
 
         Parameters
@@ -169,7 +169,7 @@ class Problem(FEAData):
             name of a Step already defined in the Problem.
         """
 
-        if not isinstance(step, Step):
+        if not isinstance(step, _Step):
             raise TypeError("{!r} is not a Step".format(step))
         if step not in self.steps:
             print("{!r} not found".format(step))
@@ -180,7 +180,7 @@ class Problem(FEAData):
             return False
         return True
 
-    def add_step(self, step: Step) -> Step:
+    def add_step(self, step: _Step) -> _Step:
         # # type: (_Step) -> Step
         """Adds a :class:`compas_fea2.problem._Step` to the problem. The name of
         the Step must be unique
@@ -194,7 +194,7 @@ class Problem(FEAData):
         -------
         :class:`compas_fea2.problem._Step`
         """
-        if not isinstance(step, Step):
+        if not isinstance(step, _Step):
             raise TypeError("You must provide a valid compas_fea2 Step object")
 
         if self.find_step_by_name(step.name):
@@ -231,7 +231,7 @@ class Problem(FEAData):
         self._steps_order.append(step)
         return step
 
-    def add_steps(self, steps: List[Step]) -> List[Step]:
+    def add_steps(self, steps: List[_Step]) -> List[_Step]:
         """Adds multiple :class:`compas_fea2.problem._Step` objects to the problem.
 
         Parameters
@@ -245,7 +245,7 @@ class Problem(FEAData):
         """
         return [self.add_step(step) for step in steps]
 
-    def define_steps_order(self, order: List[Step]):
+    def define_steps_order(self, order: List[_Step]):
         """Defines the order in which the steps are applied during the analysis.
 
         Parameters
@@ -263,7 +263,7 @@ class Problem(FEAData):
         Not implemented yet!
         """
         for step in order:
-            if not isinstance(step, Step):
+            if not isinstance(step, _Step):
                 raise TypeError("{} is not a step".format(step))
         self._steps_order = order
 
@@ -505,7 +505,7 @@ Analysis folder path : {self.path or "N/A"}
     #                         Viewer methods
     # =========================================================================
     def show(
-        self, steps: Optional[List[Step]] = None, fast: bool = True, scale_model: float = 1.0, show_parts: bool = True, show_bcs: float = 1.0, show_loads: float = 1.0, **kwargs
+        self, steps: Optional[List[_Step]] = None, fast: bool = True, scale_model: float = 1.0, show_parts: bool = True, show_bcs: float = 1.0, show_loads: float = 1.0, **kwargs
     ):
         """Visualise the model in the viewer.
 
@@ -550,7 +550,7 @@ Analysis folder path : {self.path or "N/A"}
         problem = cls(description=data.get("description"))
         problem.path = data.get("path")
         problem._path_db = data.get("path_db")
-        problem._steps = set(Step.__from_data__(step_data) for step_data in data.get("steps", []))
+        problem._steps = set(_Step.__from_data__(step_data) for step_data in data.get("steps", []))
         problem._steps_order = list(problem._steps)
         return problem
     

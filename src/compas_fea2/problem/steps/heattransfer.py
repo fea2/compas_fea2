@@ -1,10 +1,10 @@
 from compas_fea2.problem.fields import HeatFluxField
 from compas_fea2.problem.fields import TemperatureField
 
-from .step import Step
+from .step import _Step
 
 
-class HeatTransferStep(Step):
+class HeatTransferStep(_Step):
     """HeatTransfer for use in a heat transfer analysis. 
     Specific for now to a transient heat transfer analysis as defined in Abaqus.
 

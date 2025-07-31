@@ -1,11 +1,11 @@
 from compas_fea2.results.fields import DisplacementFieldResults
-from compas_fea2.problem import Step
+from compas_fea2.problem import _Step
 
 
 def test_displacement_field_results():
     """Test the DisplacementFieldResults class."""
     # Create a mock step object
-    step = Step(name="test_step")
+    step = _Step(name="test_step")
 
     # Create an instance of DisplacementFieldResults
     results = DisplacementFieldResults(step)

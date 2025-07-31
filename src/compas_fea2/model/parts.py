@@ -1140,7 +1140,7 @@ class _Part(FEAData):
     # =========================================================================
     #                           BCs methods
     # =========================================================================
-    def add_bc(self, nodes: "List[Node]", bc: _BoundaryCondition) -> _BoundaryCondition:
+    def add_bc(self, nodes: "List[Node]", bc: "_BoundaryCondition") -> "_BoundaryCondition":
         """Add a boundary condition to the part.
 
         Parameters

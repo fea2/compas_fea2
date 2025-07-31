@@ -21,7 +21,7 @@ from compas_fea2.base import FEAData
 from compas_fea2.model.materials.material import ElasticOrthotropic
 
 if TYPE_CHECKING:
-    from compas_fea2.problem import Step
+    from compas_fea2.problem import _Step
     from compas_fea2.results import Result
     from compas_fea2.results import ShellStressResult
     from compas_fea2.results import SolidStressResult
@@ -525,7 +525,7 @@ class _Element1D(_Element):
     def plot_section(self):
         self.section.plot()
 
-    def plot_stress_distribution(self, step: "Step", end: str = "end_1", nx: int = 100, ny: int = 100, *args, **kwargs):  # noqa: F821
+    def plot_stress_distribution(self, step: "_Step", end: str = "end_1", nx: int = 100, ny: int = 100, *args, **kwargs):  # noqa: F821
         """Plot the stress distribution along the element.
 
         Parameters
@@ -548,7 +548,7 @@ class _Element1D(_Element):
         r = step.section_forces_field.get_element_forces(self)
         r.plot_stress_distribution(*args, **kwargs)
 
-    def section_forces_result(self, step: "Step") -> "Result":
+    def section_forces_result(self, step: "_Step") -> "Result":
         """Get the section forces result for the element.
         Parameters
         ----------
@@ -565,7 +565,7 @@ class _Element1D(_Element):
             raise ValueError("The step does not have a section_forces_field")
         return step.section_forces_field.get_result_at(self)
 
-    def forces(self, step: "Step") -> "Result":
+    def forces(self, step: "_Step") -> "Result":
         """Get the forces result for the element.
 
         Parameters
@@ -923,7 +923,7 @@ class _Element2D(_Element):
         """
         return [Edge(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in edge_indices.items()]
 
-    def stress_results(self, step: "Step") -> "Result":
+    def stress_results(self, step: "_Step") -> "Result":
         """Get the stress results for the element.
 
         Parameters

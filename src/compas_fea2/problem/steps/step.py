@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 # ==============================================================================
 
 
-class Step(FEAData):
+class _Step(FEAData):
     """Initialises base Step object.
 
     Parameters
@@ -65,7 +65,7 @@ class Step(FEAData):
     """
 
     def __init__(self, replace=False, **kwargs):
-        super(Step, self).__init__(**kwargs)
+        super(_Step, self).__init__(**kwargs)
         self.replace = replace
         self._field_outputs = set()
         self._history_outputs = set()
@@ -256,7 +256,7 @@ class Step(FEAData):
 # ==============================================================================
 
 
-class GeneralStep(Step):
+class GeneralStep(_Step):
     """General Step object for use as a base class in a general static, dynamic
     or multiphysics analysis.
 

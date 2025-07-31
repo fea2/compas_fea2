@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from compas_fea2.model import Model
     from compas_fea2.problem import Problem
-    from compas_fea2.problem import Step
+    from compas_fea2.problem import _Step
 
 from itertools import groupby
 from typing import Iterable
@@ -64,7 +64,7 @@ class FieldResults(FEAData):
     FieldResults are registered to a :class:`compas_fea2.problem.Step`.
     """
 
-    def __init__(self, step: "Step", *args, **kwargs):
+    def __init__(self, step: "_Step", *args, **kwargs):
         super(FieldResults, self).__init__(*args, **kwargs)
         self._registration = step
     
@@ -101,7 +101,7 @@ class FieldResults(FEAData):
         }
 
     @property
-    def step(self) -> "Step":
+    def step(self) -> "_Step":
         return self._registration
 
     @property

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from compas_fea2.problem.amplitudes import Amplitude
     from compas_fea2.model.nodes import Node
     from compas_fea2.model.elements import _Element
-    from compas_fea2.problem.steps import Step
+    from compas_fea2.problem.steps import _Step
     from compas_fea2.problem import Problem
     from compas_fea2.model import Model
     from compas_fea2.model.groups import FacesGroup
@@ -65,7 +65,7 @@ class _LoadField(FEAData):
         self._distribution: list["Node"] = list(distribution) if isinstance(distribution, Iterable) else [distribution]
         self._loads = loads if isinstance(loads, Iterable) else [loads * (1 / len(self._distribution))] * len(self._distribution)
         self._load_case = load_case
-        self._registration: "Step | None" = None
+        self._registration: "_Step | None" = None
 
     @property
     def loads(self) -> Iterable["_Load"] | Iterable["GeneralDisplacement"] | list[float]:
@@ -76,7 +76,7 @@ class _LoadField(FEAData):
         return self._distribution
 
     @property
-    def step(self) -> "Step":
+    def step(self) -> "_Step":
         if self._registration:
             return self._registration
         else:

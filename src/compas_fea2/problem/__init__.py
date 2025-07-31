@@ -25,7 +25,7 @@ from .combinations import LoadCombination
 from.amplitudes import Amplitude
 
 from .steps import (
-    Step,
+    _Step,
     GeneralStep,
     _Perturbation,
     ModalAnalysis,
