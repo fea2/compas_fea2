@@ -254,13 +254,13 @@ class TestSpecificGroupTypes(unittest.TestCase):
         
         # Test adding nodes
         new_node = Node([10, 0, 0])
-        added = group.add_node(new_node)
+        added = group.add_member(new_node)
         self.assertEqual(added, new_node)
         self.assertIn(new_node, group.nodes)
         
         # Test adding multiple nodes
         more_nodes = [Node([20, 0, 0]), Node([30, 0, 0])]
-        added_list = group.add_nodes(more_nodes)
+        added_list = group.add_members(more_nodes)
         self.assertEqual(len(added_list), 2)
         for node in more_nodes:
             self.assertIn(node, group.nodes)
@@ -271,7 +271,7 @@ class TestSpecificGroupTypes(unittest.TestCase):
         self.assertEqual(len(group.elements), 1)
         
         # Test adding element
-        added = group.add_element(self.shell_element)
+        added = group.add_member(self.shell_element)
         self.assertEqual(added, self.shell_element)
         self.assertIn(self.shell_element, group.elements)
     
@@ -299,7 +299,7 @@ class TestSpecificGroupTypes(unittest.TestCase):
         
         # Test adding part
         new_part = Part()
-        added = group.add_part(new_part)
+        added = group.add_member(new_part)
         self.assertEqual(added, new_part)
         self.assertIn(new_part, group.parts)
 
