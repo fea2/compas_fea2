@@ -7,20 +7,20 @@ class TestNode(unittest.TestCase):
     def test_initialization(self):
         node = Node([1, 2, 3])
         self.assertEqual(node.xyz, [1, 2, 3])
-        self.assertEqual(node.mass, [None, None, None, None, None, None])
-        self.assertIsNone(node.temperature)
+        self.assertEqual(node.mass, [0., 0., 0., 0., 0., 0.])
+        self.assertIsNone(node.t0)
 
     def test_mass_setter(self):
         node = Node([1, 2, 3], mass=[10, 10, 10, 10, 10, 10])
         self.assertEqual(node.mass, [10, 10, 10, 10, 10, 10])
-        node.mass = [5, 5, 5, 5, 5, 5]
+        node.mass = [5., 5., 5., 5., 5., 5.]
         self.assertEqual(node.mass, [5, 5, 5, 5, 5, 5])
 
     def test_temperature_setter(self):
         node = Node([1, 2, 3], temperature=100)
-        self.assertEqual(node.temperature, 100)
-        node.temperature = 200
-        self.assertEqual(node.temperature, 200)
+        self.assertEqual(node.t0, 100)
+        node.t0 = 200
+        self.assertEqual(node.t0, 200)
 
     def test_gkey(self):
         node = Node([1, 2, 3])
