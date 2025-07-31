@@ -5,8 +5,7 @@ API Reference
 model
 -----
 
-This package is the core package of COMPAS FEA2. It defines and builds an FEA 
-mMdel.
+This package is the core of COMPAS FEA2. It provides the data structures and functionality to define and build finite element models, including parts, nodes, elements, materials, sections, boundary conditions, and groups.
 
 .. toctree::
     :maxdepth: 1
@@ -18,8 +17,7 @@ mMdel.
 Problem
 -------
 
-This is where you put your Model to action. You can define a wide set of analyses
-problems that are fed to the selected backend to be solved.
+This module allows you to define and configure analysis problems based on a finite element model. It supports various analysis steps (static, dynamic, modal, buckling, etc.), load patterns, boundary conditions, and output requests. Once configured, problems can be submitted to supported solvers for execution.
 
 .. toctree::
     :maxdepth: 1
@@ -31,8 +29,7 @@ problems that are fed to the selected backend to be solved.
 Results
 -------
 
-Finally, you can enjoy the fruits of your hard work! The results module lets use
-query the results generated from your analysis.
+After running an analysis, the results module provides classes to access and query simulation outputs, such as displacements, stresses, forces, and reaction forces. You can extract field outputs, history outputs, and other result types for further post-processing or visualization.
 
 .. toctree::
     :maxdepth: 1
@@ -41,11 +38,10 @@ query the results generated from your analysis.
     compas_fea2.results
 
 
-Additional stuff
-----------------
+Utilities and Supporting Modules
+--------------------------------
 
-These are things that keep the package running, but are not useful for working
-with FEA2.
+This section includes auxiliary modules for unit handling, job file generation, and general utilities that support the core functionalities but are not directly part of the finite element workflow.
 
 .. toctree::
     :maxdepth: 1

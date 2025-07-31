@@ -6,17 +6,16 @@ model
 
 .. rst-class:: lead
 
-This package defines the core data structures of COMPAS FEA2. It is data 
-structure of the package and lets your build your FEA model. 
+This package provides the core data structures of COMPAS FEA2, enabling the definition and construction of finite element models. It includes classes for models, parts, nodes, elements, materials, sections, boundary conditions, loads, constraints, releases, and groups.
 
 Model
 =====
 
-.. toctree::
-    :maxdepth: 1
-    :titlesonly:
+.. autosummary::
+    :toctree: generated/
 
-    compas_fea2.model.model
+    Model
+
 
 Parts
 =====
@@ -41,16 +40,16 @@ Elements
 .. autosummary::
     :toctree: generated/
 
-    MassElement
     BeamElement
+    HexahedronElement
+    MassElement
+    MembraneElement
+    ShellElement
     SpringElement
-    TrussElement
     StrutElement
     TieElement
-    ShellElement
-    MembraneElement
     TetrahedronElement
-    HexahedronElement
+    TrussElement
 
 Releases
 ========
@@ -67,9 +66,9 @@ Constraints
 .. autosummary::
     :toctree: generated/
 
-    TieMPC
     BeamMPC
     TieConstraint
+    TieMPC
 
 Materials
 =========
@@ -77,16 +76,16 @@ Materials
 .. autosummary::
     :toctree: generated/
 
-    UserMaterial
-    Stiff
+    Concrete
+    ConcreteDamagedPlasticity
+    ConcreteSmearedCrack
     ElasticIsotropic
     ElasticOrthotropic
     ElasticPlastic
-    Concrete
-    ConcreteSmearedCrack
-    ConcreteDamagedPlasticity
     Steel
+    Stiff
     Timber
+    UserMaterial
 
 Sections
 ========
@@ -94,23 +93,23 @@ Sections
 .. autosummary::
     :toctree: generated/
 
-    BeamSection
-    SpringSection
     AngleSection
+    BeamSection
     BoxSection
     CircularSection
     HexSection
     ISection
+    MassSection
+    MembraneSection
     PipeSection
     RectangularSection
     ShellSection
-    MembraneSection
     SolidSection
-    TrapezoidalSection
-    TrussSection
+    SpringSection
     StrutSection
     TieSection
-    MassSection
+    TrapezoidalSection
+    TrussSection
 
 Boundary Conditions
 ===================
@@ -118,18 +117,18 @@ Boundary Conditions
 .. autosummary::
     :toctree: generated/
 
-    GeneralBC
-    FixedBC
-    PinnedBC
     ClampBCXX
     ClampBCYY
     ClampBCZZ
+    FixedBC
+    GeneralBC
+    PinnedBC
     RollerBCX
-    RollerBCY
-    RollerBCZ
     RollerBCXY
-    RollerBCYZ
     RollerBCXZ
+    RollerBCY
+    RollerBCYZ
+    RollerBCZ
 
 Initial Conditions
 ==================
@@ -137,8 +136,8 @@ Initial Conditions
 .. autosummary::
     :toctree: generated/
 
-    InitialTemperatureField
     InitialStressField
+    InitialTemperatureField
 
 Groups
 ======
@@ -146,9 +145,9 @@ Groups
 .. autosummary::
     :toctree: generated/
 
-    NodesGroup
     ElementsGroup
     FacesGroup
+    NodesGroup
     PartsGroup
 
 
@@ -161,22 +160,21 @@ behavior of each component in FEA2.
 .. autosummary::
     :toctree: generated/
 
-    _Part
+    _BeamEndRelease
     _BoundaryCondition
-    _Material
-    _Section
-    _Section1D
-    _Section2D
-    _Section3D
+    _Connector
+    _Constraint
     _Element
     _Element1D
     _Element2D
     _Element3D
     _Group
-    _Connector
-    _Constraint
     _InitialCondition
     _Interaction
-    _BeamEndRelease
+    _Material
+    _Part
+    _Section
+    _Section1D
+    _Section2D
+    _Section3D
 
-    

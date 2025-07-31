@@ -578,6 +578,7 @@ class _Part(FEAData):
     @classmethod
     def from_brep(cls, brep, name: Optional[str] = None, **kwargs) -> "_Part":
         """Create a Part object from a BREP file.
+        
         Parameters
         ----------
         brep : str
@@ -592,6 +593,7 @@ class _Part(FEAData):
             Maximum mesh size, by default None.
         meshsize_min : float, optional
             Minimum mesh size, by default None.
+            
         Returns
         -------
         _Part
@@ -649,7 +651,6 @@ class _Part(FEAData):
     @property
     def graph(self):
         """The directed graph of the part."""
-        raise NotImplementedError("Graph property is not implemented yet.")
         return self._graph
 
     @property
