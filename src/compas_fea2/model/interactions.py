@@ -2,10 +2,20 @@ from compas_fea2.base import FEAData
 
 
 class _Interaction(FEAData):
-    """Base class for all interactions."""
+    """Base class for all interactions.
+    
+    Note
+    ----
+    Interactions are registered to a :class:`compas_fea2.model.Model` and can be
+    assigned to multiple interfaces."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        
+    @property
+    def model(self):
+        """Get the model to which this interaction belongs."""
+        return self._registration
 
 
 # ------------------------------------------------------------------------------

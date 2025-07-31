@@ -1,7 +1,7 @@
 from compas_fea2.base import FEAData
 
 
-class Interface(FEAData):
+class _Interface(FEAData):
     """An interface is defined as a pair of master and slave surfaces
     with a behavior property between them.
 
@@ -52,3 +52,49 @@ class Interface(FEAData):
     @property
     def behavior(self):
         return self._behavior
+
+
+class PartPartInterface(_Interface):
+    """A surface interface is defined as a pair of master and slave surfaces
+    with a behavior property between them.
+
+    Note
+    ----
+    Surface interfaces are registered to a :class:`compas_fea2.model.Model`.
+
+    Parameters
+    ----------
+    master : :class:`compas_fea2.model.FacesGroup`
+        Group of element faces determining the Master surface.
+    slave : :class:`compas_fea2.model.FacesGroup`
+        Group of element faces determining the Slave surface.
+    behavior : :class:`compas_fea2.model._Interaction`
+        behavior type between master and slave.
+        
+    """
+    
+    def __init__(self, master, slave, behavior, **kwargs):
+        super().__init__(master=master, slave=slave, behavior=behavior, **kwargs)
+        
+
+class BoundaryInterface(_Interface):
+    """A boundary interface is defined as a pair of master and slave surfaces
+    with a behavior property between them.
+
+    Note
+    ----
+    Boundary interfaces are registered to a :class:`compas_fea2.model.Model`.
+
+    Parameters
+    ----------
+    master : :class:`compas_fea2.model.FacesGroup`
+        Group of element faces determining the Master surface.
+    slave : :class:`compas_fea2.model.FacesGroup`
+        Group of element faces determining the Slave surface.
+    behavior : :class:`compas_fea2.model._Interaction`
+        behavior type between master and slave.
+        
+    """
+    
+    def __init__(self, master, behavior, **kwargs):
+        super().__init__(master=master, slave=None, behavior=behavior, **kwargs)

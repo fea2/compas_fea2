@@ -70,7 +70,7 @@ from .constraints import (
     TieConstraint,
 )
 from .connectors import (
-    Connector,
+    _Connector,
     LinearConnector,
     RigidLinkConnector,
     SpringConnector,
@@ -116,7 +116,7 @@ from .ics import (
 )
 
 from .interfaces import (
-    Interface,
+    _Interface,
 )
 
 from .interactions import (

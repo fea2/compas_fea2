@@ -60,19 +60,18 @@ from .sections import SolidSection
 from .sections import _Section
 
 if TYPE_CHECKING:
-    from compas_fea2.model.interfaces import Interface
+    from compas_fea2.model.interfaces import _Interface
     from compas_fea2.model.groups import FacesGroup
     from compas_fea2.problem.loads import VectorLoad
     from compas.geometry import Polygon
+
 
 class _Part(FEAData):
     """Base class for Parts.
 
     Parameters
     ----------
-    name : str, optional
-        Unique identifier. If not provided it is automatically generated. Set a
-        name if you want a more human-readable input file.
+    None
 
     Attributes
     ----------
@@ -144,10 +143,9 @@ class _Part(FEAData):
             "discretized_boundary_mesh": self._discretized_boundary_mesh.__data__ if self._discretized_boundary_mesh else None,
         }
 
-    def to_hdf5_data(self, hdf5_file, mode="a"):
-        group = hdf5_file.require_group(f"model/{'parts'}/{self.uid}")  # Create a group for this object
-        group.attrs["class"] = str(self.__data__["class"])
-
+    # =========================================================================
+    #                       Constructors
+    # =========================================================================
     @classmethod
     def __from_data__(cls, data):
         """Create a part instance from a data dictionary.
@@ -224,456 +222,6 @@ class _Part(FEAData):
             part.reference_point = Node.__from_data__(rp)
         return part
 
-    @property
-    def reference_point(self) -> Optional[Node]:
-        return self._reference_point
-
-    @reference_point.setter
-    def reference_point(self, value: Node):
-        self._reference_point = self.add_node(value)
-        value._is_reference = True
-
-    @property
-    def graph(self):
-        return self._graph
-
-    @property
-    def nodes(self) -> NodesGroup:
-        return NodesGroup(self._nodes)
-
-    @property
-    def nodes_sorted(self) -> List[Node]:
-        return self.nodes.sorted_by(key=lambda x: x.part_key)
-
-    @property
-    def points(self) -> List[Point]:
-        return [node.point for node in self._nodes]
-
-    @property
-    def points_sorted(self) -> List[Point]:
-        return [node.point for node in self.nodes.sorted_by(key=lambda x: x.part_key)]
-
-    @property
-    def elements(self) -> ElementsGroup:
-        return ElementsGroup(self._elements)
-
-    @property
-    def edges(self) -> EdgesGroup:
-        return EdgesGroup([edge for element in self.elements for edge in element.edges])
-
-    @property
-    def faces(self) -> FacesGroup:
-        return FacesGroup([face for element in self.elements for face in element.faces])
-
-    @property
-    def elements_sorted(self) -> List[_Element]:
-        return self.elements.sorted_by(key=lambda x: x.part_key)
-
-    @property
-    def elements_grouped(self) -> Dict[type, List[_Element]]:
-        sub_groups = self.elements.group_by(key=lambda x: x.__class__.__base__)
-        return {key: group.members for key, group in sub_groups}
-
-    @property
-    def elements_faces(self) -> Dict[_Element, FacesGroup]: 
-        face_group = FacesGroup([face for element in self.elements for face in element.faces])
-        return face_group.group_by(key=lambda x: getattr(x, "element", None))
-
-    @property
-    def elements_faces_grouped(self) -> Dict[int, List[List["Face"]]]:  # noqa: F821
-        return {key: [face for face in element.faces] for key, element in self.elements_grouped.items()}
-
-    @property
-    def elements_faces_indices(self) -> List[List[List[float]]]:
-        return [face.nodes_key for face in self.elements_faces]
-
-    @property
-    def elements_faces_indices_grouped(self) -> Dict[int, List[List[float]]]:
-        return {key: [face.nodes_key for face in element.faces] for key, element in self.elements_grouped.items()}
-
-    @property
-    def elements_connectivity(self) -> List[List[int]]:
-        return [element.nodes_key for element in self.elements]
-
-    @property
-    def elements_connectivity_grouped(self) -> Dict[int, List[List[float]]]:
-        elements_group = groupby(self.elements, key=lambda x: x.__class__.__base__)
-        return {key: [element.nodes_key for element in group] for key, group in elements_group}
-
-    @property
-    def elements_centroids(self) -> List[List[float]]:
-        return [element.centroid for element in self.elements]
-
-    @property
-    def sections(self) -> SectionsGroup:
-        return SectionsGroup(self._sections)
-
-    @property
-    def sections_sorted(self) -> List[_Section]:
-        return self.sections.sorted_by(key=lambda x: x.part_key)
-
-    @property
-    def sections_grouped_by_element(self) -> Dict[int, List[_Section]]:
-        sections_group = self.sections.group_by(key=lambda x: x.element)
-        return {key: group.members for key, group in sections_group}
-
-    @property
-    def materials(self) -> MaterialsGroup:
-        return MaterialsGroup(self._materials)
-
-    @property
-    def materials_sorted(self) -> List[_Material]:
-        return self.materials.sorted_by(key=lambda x: x.part_key)
-
-    @property
-    def materials_grouped_by_section(self) -> Dict[int, List[_Material]]:
-        materials_group = self.materials.group_by(key=lambda x: x.section)
-        return {key: group.members for key, group in materials_group}
-
-    @property
-    def releases(self) -> Set[_BeamEndRelease]:
-        return self._releases
-
-    @property
-    def gkey_node(self) -> Dict[str, Node]:
-        return self._gkey_node
-
-    @property
-    def boundary_mesh(self):
-        return self._boundary_mesh
-
-    @property
-    def discretized_boundary_mesh(self):
-        return self._discretized_boundary_mesh
-
-    @property
-    def outer_faces(self):
-        """Extract the outer faces of the part."""
-        # FIXME: extend to shell elements
-        face_count = defaultdict(int)
-        for tet in self.elements_connectivity:
-            faces = [
-                tuple(sorted([tet[0], tet[1], tet[2]])),
-                tuple(sorted([tet[0], tet[1], tet[3]])),
-                tuple(sorted([tet[0], tet[2], tet[3]])),
-                tuple(sorted([tet[1], tet[2], tet[3]])),
-            ]
-            for face in faces:
-                face_count[face] += 1
-        # Extract faces that appear only once (boundary faces)
-        outer_faces = np.array([face for face, count in face_count.items() if count == 1])
-        return outer_faces
-
-    @property
-    def outer_mesh(self):
-        """Extract the outer mesh of the part."""
-        unique_vertices, unique_indices = np.unique(self.outer_faces, return_inverse=True)
-        vertices = np.array(self.points_sorted)[unique_vertices]
-        faces = unique_indices.reshape(self.outer_faces.shape).tolist()
-        return Mesh.from_vertices_and_faces(vertices.tolist(), faces)
-
-    def extract_clustered_planes(self, tol: float = 1e-3, angle_tol: float = 2.0, verbose: bool = False):
-        """Extract unique planes from the part boundary mesh.
-
-        This revised version correctly handles offset comparisons for planes
-        whose normals might be flipped relative to each other.
-
-        Parameters
-        ----------
-        tol : float, optional
-            Tolerance for comparing plane offsets, by default 1e-3.
-        angle_tol : float, optional
-            Angular tolerance in degrees for comparing normal vectors, by default 2.0.
-        verbose : bool, optional
-            If ``True`` print the extracted planes, by default False.
-
-        Returns
-        -------
-        list[:class:`compas.geometry.Plane`]
-            A list of unique COMPAS Plane objects.
-        """
-        # Ensure self.discretized_boundary_mesh is available and is a COMPAS mesh
-        if not hasattr(self, "discretized_boundary_mesh"):
-            # Or handle this error/condition as appropriate for your class
-            print("Error: discretized_boundary_mesh not found.")
-            return []
-
-        mesh = self.discretized_boundary_mesh
-
-        unique_raw_planes = []  # Stores (normal_array, offset_float) for unique planes
-        all_face_plane_data = []  # Stores (normal_array, offset_float) for all face planes
-
-        # 1. Extract normal and offset for all face planes
-        # COMPAS mesh.face_plane(fkey) returns a Plane object.
-        # The normal of a COMPAS plane is a unit vector.
-        for fkey in mesh.faces():
-            plane = mesh.face_plane(fkey)  # compas.geometry.Plane
-            normal = np.array(plane.normal)  # Unit normal vector as numpy array
-            # Offset is the signed distance from origin to the plane along its normal
-            offset = np.dot(normal, np.array(plane.point))
-            all_face_plane_data.append({"normal": normal, "offset": offset, "original_fkey": fkey})
-
-        # 2. Cluster planes based on angular similarity of normals and proximity of offsets
-        cos_angle_tol = np.cos(np.radians(angle_tol))  # Pre-calculate cosine of angle tolerance
-
-        for new_plane_data in all_face_plane_data:
-            current_normal = new_plane_data["normal"]
-            current_offset = new_plane_data["offset"]
-            is_considered_unique = True
-
-            for existing_unique_plane in unique_raw_planes:
-                existing_normal = existing_unique_plane["normal"]
-                existing_offset = existing_unique_plane["offset"]
-
-                # Compare normals: check for collinearity (same or opposite direction)
-                # np.dot of two unit vectors is cos(angle between them)
-                dot_product = np.dot(current_normal, existing_normal)
-
-                if np.abs(dot_product) > cos_angle_tol:
-                    # Normals are considered collinear (angle is within +/- angle_tol or 180 +/- angle_tol)
-
-                    # Now, compare offsets considering the relative direction of normals
-                    if dot_product > 0:  # Normals are in roughly the same direction
-                        if np.abs(current_offset - existing_offset) < tol:
-                            is_considered_unique = False
-                            break
-                    else:  # Normals are in roughly opposite directions (dot_product < 0)
-                        # For the same plane, current_offset should be approx. -existing_offset
-                        if np.abs(current_offset + existing_offset) < tol:
-                            is_considered_unique = False
-                            break
-
-            if is_considered_unique:
-                unique_raw_planes.append({"normal": current_normal, "offset": current_offset})
-
-        # 3. Convert unique raw plane data back to COMPAS Plane objects
-        extracted_planes = []
-        for unique_plane_data in unique_raw_planes:
-            normal_vec = Vector(*unique_plane_data["normal"])  # Convert numpy array to COMPAS Vector
-            # Point on the plane: normal_vec scaled by offset (since normal_vec is unit length)
-            point_on_plane = normal_vec * unique_plane_data["offset"]
-            extracted_planes.append(Plane(point_on_plane, normal_vec))
-
-        if verbose:
-            num_unique_planes = len(extracted_planes)
-            print(f"Number of unique planes extracted: {num_unique_planes}")
-            for i, plane_obj in enumerate(extracted_planes, 1):
-                # For consistency with original verbose, re-calculate offset for printing if needed
-                # or print directly from plane_obj properties.
-                # The offset here is plane_obj.normal.dot(plane_obj.point)
-                # which should be very close to unique_plane_data['offset'] used for its creation.
-                print(f"Plane {i}: Point = {list(plane_obj.point)}, Normal = {list(plane_obj.normal)}")
-                # To print the offset as calculated before:
-                # norm_arr = unique_raw_planes[i-1]['normal']
-                # offs_val = unique_raw_planes[i-1]['offset']
-                # print(f"Plane {i}: Stored Normal = {list(norm_arr)}, Stored Offset = {offs_val:.6f}")
-
-        return extracted_planes
-
-    def extract_submeshes(self, planes: List[Plane], tol: float = 1e-3, normal_tol: float = 2, split=False):
-        """Extract submeshes from the part based on the planes provided.
-
-        Parameters
-        ----------
-        planes : list[:class:`compas.geometry.Plane`]
-            Planes to slice the part.
-        tol : float, optional
-            Tolerance for geometric operations, by default 1e-3.
-        normal_tol : float, optional
-            Tolerance for normal vector comparison, by default 2.
-        split : bool, optional
-            If ``True`` split each submesh into connected components, by default False.
-
-        Returns
-        -------
-        list[:class:`compas.datastructures.Mesh`]
-        """
-
-        def split_into_subsubmeshes(submeshes):
-            """Split each submesh into connected components."""
-            subsubmeshes = []
-
-            for mesh in submeshes:
-                mesh: Mesh
-                components = connected_components(mesh.adjacency)
-
-                for comp in components:
-                    faces = [fkey for fkey in mesh.faces() if set(mesh.face_vertices(fkey)).issubset(comp)]
-                    submesh = Mesh()
-
-                    vkey_map = {
-                        v: submesh.add_vertex(
-                            x=mesh.vertex_attribute(v, "x"),
-                            y=mesh.vertex_attribute(v, "y"),
-                            z=mesh.vertex_attribute(v, "z"),
-                        )
-                        for v in comp
-                    }
-
-                    for fkey in faces:
-                        submesh.add_face([vkey_map[v] for v in mesh.face_vertices(fkey)])
-
-                    subsubmeshes.append(submesh)
-
-            return subsubmeshes
-
-        mesh: Mesh = self.discretized_boundary_mesh
-        submeshes = [Mesh() for _ in planes]
-
-        # Step 1: Compute normalized plane and face normals
-        planes_normals = np.array([plane.normal for plane in planes])
-        faces_normals = np.array([mesh.face_normal(face) for face in mesh.faces()])
-        dot_products = np.dot(planes_normals, faces_normals.T)  # (num_planes, num_faces)
-        plane_indices, face_indices = np.where(abs(dot_products) >= (1 - normal_tol))
-
-        for face_idx in np.unique(face_indices):  # Loop over unique faces
-            face_vertices = mesh.face_vertices(face_idx)
-            face_coords = [mesh.vertex_coordinates(v) for v in face_vertices]
-
-            # Get all planes matching this face's normal
-            matching_planes = [planes[p_idx] for p_idx in plane_indices[face_indices == face_idx]]
-
-            # Step 5: Check if all vertices of the face lie on any of the matching planes
-            for plane in matching_planes:
-                if all(is_point_on_plane(coord, plane, tol) for coord in face_coords):
-                    face_mesh = Mesh.from_vertices_and_faces(face_coords, [[c for c in range(len(face_coords))]])
-                    submeshes[planes.index(plane)].join(face_mesh)
-                    break  # Assign to first valid plane
-        if split:
-            for submesh in submeshes:
-                submesh.weld(precision=2)
-            submeshes = split_into_subsubmeshes(submeshes)
-        return submeshes
-
-    @property
-    def all_interfaces(self):
-        from compas_fea2.model.interfaces import Interface
-
-        planes = self.extract_clustered_planes(tol=1, angle_tol=2)
-        submeshes = self.extract_submeshes(planes, tol=1, normal_tol=2, split=True)
-        return [Interface(mesh=mesh) for mesh in submeshes]
-
-    @property
-    def bounding_box(self) -> Box:
-        # FIXME: add bounding box for linear elements (bb of the section outer boundary)
-        return Box.from_bounding_box(bounding_box([n.xyz for n in self.nodes]))
-
-    @property
-    def bb_center(self) -> Point:
-        """The geometric center of the part."""
-        return Point(*centroid_points(self.bounding_box.points))
-
-    @property
-    def center(self) -> Point:
-        """The geometric center of the part."""
-        return Point(*centroid_points(self.points))
-
-    @property
-    def centroid(self) -> Point:
-        """The geometric center of the part."""
-        self.compute_nodal_masses()
-        points = [node.point for node in self.nodes]
-        weights = [sum(node.mass) / len(node.mass) for node in self.nodes]
-        return Point(*centroid_points_weighted(points, weights))
-
-    @property
-    def bottom_plane(self) -> Plane:
-        return Plane.from_three_points(*[self.bounding_box.points[i] for i in self.bounding_box.bottom[:3]])
-
-    @property
-    def top_plane(self) -> Plane:
-        return Plane.from_three_points(*[self.bounding_box.points[i] for i in self.bounding_box.top[:3]])
-
-    @property
-    def volume(self) -> float:
-        self._volume = 0.0
-        for element in self.elements:
-            if element.volume:
-                self._volume += element.volume
-        return self._volume
-
-    @property
-    def weight(self) -> float:
-        self._weight = 0.0
-        for element in self.elements:
-            if element.weight:
-                self._weight += element.weight
-        return self._weight
-
-    @property
-    def model(self):
-        return self._registration
-
-    @property
-    def nodes_count(self) -> int:
-        return len(self.nodes) - 1
-
-    @property
-    def elements_count(self) -> int:
-        return len(self.elements) - 1
-
-    @property
-    def element_types(self) -> Dict[type, List[_Element]]:
-        element_types = {}
-        for element in self.elements:
-            element_types.setdefault(type(element), []).append(element)
-        return element_types
-
-    @property
-    def groups(self) -> Set[_Group]:
-        return self._groups
-
-    def transform(self, transformation: Transformation) -> None:
-        """Transform the part.
-
-        Parameters
-        ----------
-        transformation : :class:`compas.geometry.Transformation`
-            The transformation to apply.
-
-        """
-        for node in self.nodes:
-            node.transform(transformation)
-        self._boundary_mesh.transform(transformation) if self._boundary_mesh else None
-        self._discretized_boundary_mesh.transform(transformation) if self._discretized_boundary_mesh else None
-
-    def transformed(self, transformation: Transformation) -> "_Part":
-        """Return a transformed copy of the part.
-
-        Parameters
-        ----------
-        transformation : :class:`compas.geometry.Transformation`
-            The transformation to apply.
-        """
-        part: Part = self.copy()
-        part.transform(transformation)
-        return part
-
-    def elements_by_dimension(self, dimension: int = 1) -> Iterable[_Element]:
-        """Get elements by dimension.
-        Parameters
-        ----------
-        dimension : int
-            The dimension of the elements to get. 1 for 1D, 2 for 2D, and 3 for 3D.
-        Returns
-        -------
-        Iterable[:class:`compas_fea2.model._Element`]
-            The elements of the specified dimension.
-        """
-
-        if dimension == 1:
-            return filter(lambda x: isinstance(x, _Element1D), self.elements)
-        elif dimension == 2:
-            return filter(lambda x: isinstance(x, _Element2D), self.elements)
-        elif dimension == 3:
-            return filter(lambda x: isinstance(x, _Element3D), self.elements)
-        else:
-            raise ValueError("dimension not supported")
-
-    # =========================================================================
-    #                       Constructor methods
-    # =========================================================================
-
     @classmethod
     def from_compas_lines_discretized(cls, lines, targetlength, element_model, section, frame, name=None, **kwargs):
         """Generate a discretized model from a list of :class:`compas.geometry.Line`.
@@ -685,7 +233,7 @@ class _Part(FEAData):
             {'L1': [targetlenght1, BeamElement, section1, frame1], 'L2': [targetlenght2, BeamElement, section2, frame2]...}
         target_length : int
             The targetted lenght of the discretization of the lines.
-        section : :class:`compas_fea2.model.BeamSection`
+        section : :class:`compas_fea2.model.Section1D`
             The section to be assigned to the elements, by default None.
         element_model : str, optional
             Implementation model for the element, by default 'BeamElement'.
@@ -700,17 +248,18 @@ class _Part(FEAData):
             The part.
 
         """
-        polyline = Polyline(points = [line.start for line in lines] + [lines[-1].end])
+        polyline = Polyline(points=[line.start for line in lines] + [lines[-1].end])
         dividedline_points = polyline.divide_by_length(targetlength, strict=False)
-        prt = Part.from_compas_lines(lines=[Line(start=dividedline_points[i], end=dividedline_points[i+1]) for i in range(len(dividedline_points)-1)],
-                                     section=section,
-                                     element_model=element_model,
-                                     frame=frame,
-                                     name=name)
+        prt = Part.from_compas_lines(
+            lines=[Line(start=dividedline_points[i], end=dividedline_points[i + 1]) for i in range(len(dividedline_points) - 1)],
+            section=section,
+            element_model=element_model,
+            frame=frame,
+            name=name,
+        )
 
         return prt
 
-    
     @classmethod
     def from_compas_lines(
         cls,
@@ -731,7 +280,7 @@ class _Part(FEAData):
             Implementation model for the element, by default 'BeamElement'.
         frame : :class:`compas.geometry.Line` or list[float], optional
             The x-axis direction, by default [0,1,0].
-        section : :class:`compas_fea2.model.BeamSection`, optional
+        section : :class:`compas_fea2.model.Section1D`, optional
             The section to be assigned to the elements, by default None.
         name : str, optional
             The name of the part, by default None (one is automatically generated).
@@ -747,7 +296,7 @@ class _Part(FEAData):
         prt = cls(name=name)
         mass = kwargs.get("mass", None)
         for line in lines:
-            if not(isinstance(frame, Frame)):
+            if not (isinstance(frame, Frame)):
                 frame = Frame(line.start, frame, line.vector)
 
             nodes = []
@@ -869,29 +418,11 @@ class _Part(FEAData):
             element_nodes = fea2_nodes[ntags]
 
             if ntags.size == 3:
-                part.add_element(
-                    ShellElement(
-                        nodes=element_nodes,
-                        section=section,
-                        rigid=rigid,
-                        implementation=implementation,
-                        heat=heat
-                        **kwargs
-                    )
-                )
+                part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=rigid, implementation=implementation, heat=heat**kwargs))
 
             elif ntags.size == 4:
                 if isinstance(section, ShellSection):
-                    part.add_element(
-                        ShellElement(
-                            nodes=element_nodes,
-                            section=section,
-                            rigid=rigid,
-                            implementation=implementation,
-                            heat=heat
-                            **kwargs
-                        )
-                    )
+                    part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=rigid, implementation=implementation, heat=heat**kwargs))
                 else:
                     part.add_element(TetrahedronElement(nodes=element_nodes, section=section, rigid=rigid, heat=heat))
                     part.ndf = 3  # FIXME: move outside the loop
@@ -1100,6 +631,499 @@ class _Part(FEAData):
         print("Part created.")
 
         return part
+
+    # =========================================================================
+    #                       Properties
+    # =========================================================================
+
+    @property
+    def reference_point(self) -> Optional[Node]:
+        """The reference point of the part."""
+        return self._reference_point
+
+    @reference_point.setter
+    def reference_point(self, value: Node):
+        self._reference_point = self.add_node(value)
+        value._is_reference = True
+
+    @property
+    def graph(self):
+        """The directed graph of the part."""
+        raise NotImplementedError("Graph property is not implemented yet.")
+        return self._graph
+
+    @property
+    def nodes(self) -> NodesGroup:
+        """The nodes of the part."""
+        return NodesGroup(self._nodes)
+
+    @property
+    def nodes_sorted(self) -> List[Node]:
+        """The nodes of the part sorted by their part key."""
+        return self.nodes.sorted_by(key=lambda x: x.part_key)
+
+    @property
+    def points(self) -> List[Point]:
+        """The points of the part's nodes."""
+        return [node.point for node in self._nodes]
+
+    @property
+    def points_sorted(self) -> List[Point]:
+        """The points of the part's nodes sorted by their part key."""
+        return [node.point for node in self.nodes.sorted_by(key=lambda x: x.part_key)]
+
+    @property
+    def elements(self) -> ElementsGroup:
+        """The elements of the part."""
+        return ElementsGroup(self._elements)
+
+    @property
+    def edges(self) -> EdgesGroup:
+        """The edges of the part's elements."""
+        return EdgesGroup([edge for element in self.elements for edge in element.edges])
+
+    @property
+    def faces(self) -> FacesGroup:
+        """The faces of the part's elements."""
+        return FacesGroup([face for element in self.elements for face in element.faces])
+
+    @property
+    def elements_sorted(self) -> List[_Element]:
+        """The elements of the part sorted by their part key."""
+        return self.elements.sorted_by(key=lambda x: x.part_key)
+
+    @property
+    def elements_grouped(self) -> Dict[type, List[_Element]]:
+        """The elements of the part grouped by their element type."""
+        sub_groups = self.elements.group_by(key=lambda x: x.__class__.__base__)
+        return {key: group.members for key, group in sub_groups}
+
+    @property
+    def elements_faces(self) -> Dict[_Element, FacesGroup]:
+        """The faces of the part's elements grouped by element."""
+        face_group = FacesGroup([face for element in self.elements for face in element.faces])
+        return face_group.group_by(key=lambda x: getattr(x, "element", None))
+
+    @property
+    def elements_faces_grouped(self) -> Dict[int, List[List["Face"]]]:
+        """The faces of the part's elements grouped by element key."""
+        return {key: [face for face in element.faces] for key, element in self.elements_grouped.items()}
+
+    @property
+    def elements_faces_indices(self) -> List[List[List[float]]]:
+        """The indices of the faces of the part's elements."""
+        return [face.nodes_key for face in self.elements_faces]
+
+    @property
+    def elements_faces_indices_grouped(self) -> Dict[int, List[List[float]]]:
+        """The indices of the faces of the part's elements grouped by element key."""
+        return {key: [face.nodes_key for face in element.faces] for key, element in self.elements_grouped.items()}
+
+    @property
+    def elements_connectivity(self) -> List[List[int]]:
+        """The connectivity of the part's elements."""
+        return [element.nodes_key for element in self.elements]
+
+    @property
+    def elements_connectivity_grouped(self) -> Dict[int, List[List[float]]]:
+        """The connectivity of the part's elements grouped by element type."""
+        elements_group = groupby(self.elements, key=lambda x: x.__class__.__base__)
+        return {key: [element.nodes_key for element in group] for key, group in elements_group}
+
+    @property
+    def elements_centroids(self) -> List[List[float]]:
+        """The centroids of the part's elements."""
+        return [element.centroid for element in self.elements]
+
+    @property
+    def sections(self) -> SectionsGroup:
+        """The sections of the part."""
+        return SectionsGroup(self._sections)
+
+    @property
+    def sections_sorted(self) -> List[_Section]:
+        """The sections of the part sorted by their part key."""
+        return self.sections.sorted_by(key=lambda x: x.part_key)
+
+    @property
+    def sections_grouped_by_element(self) -> Dict[int, List[_Section]]:
+        """The sections of the part grouped by element."""
+        sections_group = self.sections.group_by(key=lambda x: x.element)
+        return {key: group.members for key, group in sections_group}
+
+    @property
+    def materials(self) -> MaterialsGroup:
+        """The materials of the part."""
+        return MaterialsGroup(self._materials)
+
+    @property
+    def materials_sorted(self) -> List[_Material]:
+        """The materials of the part sorted by their part key."""
+        return self.materials.sorted_by(key=lambda x: x.part_key)
+
+    @property
+    def materials_grouped_by_section(self) -> Dict[int, List[_Material]]:
+        """The materials of the part grouped by section."""
+        materials_group = self.materials.group_by(key=lambda x: x.section)
+        return {key: group.members for key, group in materials_group}
+
+    @property
+    def releases(self) -> Set[_BeamEndRelease]:
+        """The releases of the part."""
+        return self._releases
+
+    @property
+    def gkey_node(self) -> Dict[str, Node]:
+        """A dictionary that associates each node and its geometric key."""
+        return self._gkey_node
+
+    @property
+    def boundary_mesh(self):
+        """The outer boundary mesh of the part."""
+        return self._boundary_mesh
+
+    @property
+    def discretized_boundary_mesh(self):
+        """The discretized outer boundary mesh of the part."""
+        return self._discretized_boundary_mesh
+
+    @property
+    def outer_faces(self):
+        """Extract the outer faces of the part."""
+        # FIXME: extend to shell elements
+        face_count = defaultdict(int)
+        for tet in self.elements_connectivity:
+            faces = [
+                tuple(sorted([tet[0], tet[1], tet[2]])),
+                tuple(sorted([tet[0], tet[1], tet[3]])),
+                tuple(sorted([tet[0], tet[2], tet[3]])),
+                tuple(sorted([tet[1], tet[2], tet[3]])),
+            ]
+            for face in faces:
+                face_count[face] += 1
+        # Extract faces that appear only once (boundary faces)
+        outer_faces = np.array([face for face, count in face_count.items() if count == 1])
+        return outer_faces
+
+    @property
+    def outer_mesh(self):
+        """Extract the outer mesh of the part."""
+        unique_vertices, unique_indices = np.unique(self.outer_faces, return_inverse=True)
+        vertices = np.array(self.points_sorted)[unique_vertices]
+        faces = unique_indices.reshape(self.outer_faces.shape).tolist()
+        return Mesh.from_vertices_and_faces(vertices.tolist(), faces)
+
+    @property
+    def all_interfaces(self):
+        """Extract all interfaces from the part."""
+        from compas_fea2.model.interfaces import _Interface
+
+        planes = self.extract_clustered_planes(tol=1, angle_tol=2)
+        submeshes = self.extract_submeshes(planes, tol=1, normal_tol=2, split=True)
+        return [_Interface(mesh=mesh) for mesh in submeshes]
+
+    @property
+    def bounding_box(self) -> Box:
+        """The bounding box of the part."""
+        # FIXME: add bounding box for linear elements (bb of the section outer boundary)
+        return Box.from_bounding_box(bounding_box([n.xyz for n in self.nodes]))
+
+    @property
+    def bb_center(self) -> Point:
+        """The geometric center of the part."""
+        return Point(*centroid_points(self.bounding_box.points))
+
+    @property
+    def center(self) -> Point:
+        """The geometric center of the part."""
+        return Point(*centroid_points(self.points))
+
+    @property
+    def centroid(self) -> Point:
+        """The geometric center of the part."""
+        self.compute_nodal_masses()
+        points = [node.point for node in self.nodes]
+        weights = [sum(node.mass) / len(node.mass) for node in self.nodes]
+        return Point(*centroid_points_weighted(points, weights))
+
+    @property
+    def bottom_plane(self) -> Plane:
+        """The bottom plane of the part's bounding box."""
+        return Plane.from_three_points(*[self.bounding_box.points[i] for i in self.bounding_box.bottom[:3]])
+
+    @property
+    def top_plane(self) -> Plane:
+        """The top plane of the part's bounding box."""
+        return Plane.from_three_points(*[self.bounding_box.points[i] for i in self.bounding_box.top[:3]])
+
+    @property
+    def volume(self) -> float:
+        """The total volume of the part."""
+        self._volume = 0.0
+        for element in self.elements:
+            if element.volume:
+                self._volume += element.volume
+        return self._volume
+
+    @property
+    def weight(self) -> float:
+        """The total weight of the part."""
+        self._weight = 0.0
+        for element in self.elements:
+            if element.weight:
+                self._weight += element.weight
+        return self._weight
+
+    @property
+    def model(self):
+        """The model to which the part belongs."""
+        return self._registration
+
+    @property
+    def nodes_count(self) -> int:
+        """The number of nodes in the part."""
+        return len(self.nodes) - 1
+
+    @property
+    def elements_count(self) -> int:
+        """The number of elements in the part."""
+        return len(self.elements) - 1
+
+    @property
+    def element_types(self) -> Dict[type, List[_Element]]:
+        """The types of elements in the part grouped by their type."""
+        element_types = {}
+        for element in self.elements:
+            element_types.setdefault(type(element), []).append(element)
+        return element_types
+
+    @property
+    def groups(self) -> Set[_Group]:
+        """The groups of the part."""
+        return self._groups
+
+    # =========================================================================
+    #                       Methods
+    # =========================================================================
+    def extract_clustered_planes(self, tol: float = 1e-3, angle_tol: float = 2.0, verbose: bool = False):
+        """Extract unique planes from the part boundary mesh.
+
+        This revised version correctly handles offset comparisons for planes
+        whose normals might be flipped relative to each other.
+
+        Parameters
+        ----------
+        tol : float, optional
+            Tolerance for comparing plane offsets, by default 1e-3.
+        angle_tol : float, optional
+            Angular tolerance in degrees for comparing normal vectors, by default 2.0.
+        verbose : bool, optional
+            If ``True`` print the extracted planes, by default False.
+
+        Returns
+        -------
+        list[:class:`compas.geometry.Plane`]
+            A list of unique COMPAS Plane objects.
+        """
+        # Ensure self.discretized_boundary_mesh is available and is a COMPAS mesh
+        if not hasattr(self, "discretized_boundary_mesh"):
+            # Or handle this error/condition as appropriate for your class
+            print("Error: discretized_boundary_mesh not found.")
+            return []
+
+        mesh = self.discretized_boundary_mesh
+
+        unique_raw_planes = []  # Stores (normal_array, offset_float) for unique planes
+        all_face_plane_data = []  # Stores (normal_array, offset_float) for all face planes
+
+        # 1. Extract normal and offset for all face planes
+        # COMPAS mesh.face_plane(fkey) returns a Plane object.
+        # The normal of a COMPAS plane is a unit vector.
+        for fkey in mesh.faces():
+            plane = mesh.face_plane(fkey)  # compas.geometry.Plane
+            normal = np.array(plane.normal)  # Unit normal vector as numpy array
+            # Offset is the signed distance from origin to the plane along its normal
+            offset = np.dot(normal, np.array(plane.point))
+            all_face_plane_data.append({"normal": normal, "offset": offset, "original_fkey": fkey})
+
+        # 2. Cluster planes based on angular similarity of normals and proximity of offsets
+        cos_angle_tol = np.cos(np.radians(angle_tol))  # Pre-calculate cosine of angle tolerance
+
+        for new_plane_data in all_face_plane_data:
+            current_normal = new_plane_data["normal"]
+            current_offset = new_plane_data["offset"]
+            is_considered_unique = True
+
+            for existing_unique_plane in unique_raw_planes:
+                existing_normal = existing_unique_plane["normal"]
+                existing_offset = existing_unique_plane["offset"]
+
+                # Compare normals: check for collinearity (same or opposite direction)
+                # np.dot of two unit vectors is cos(angle between them)
+                dot_product = np.dot(current_normal, existing_normal)
+
+                if np.abs(dot_product) > cos_angle_tol:
+                    # Normals are considered collinear (angle is within +/- angle_tol or 180 +/- angle_tol)
+
+                    # Now, compare offsets considering the relative direction of normals
+                    if dot_product > 0:  # Normals are in roughly the same direction
+                        if np.abs(current_offset - existing_offset) < tol:
+                            is_considered_unique = False
+                            break
+                    else:  # Normals are in roughly opposite directions (dot_product < 0)
+                        # For the same plane, current_offset should be approx. -existing_offset
+                        if np.abs(current_offset + existing_offset) < tol:
+                            is_considered_unique = False
+                            break
+
+            if is_considered_unique:
+                unique_raw_planes.append({"normal": current_normal, "offset": current_offset})
+
+        # 3. Convert unique raw plane data back to COMPAS Plane objects
+        extracted_planes = []
+        for unique_plane_data in unique_raw_planes:
+            normal_vec = Vector(*unique_plane_data["normal"])  # Convert numpy array to COMPAS Vector
+            # Point on the plane: normal_vec scaled by offset (since normal_vec is unit length)
+            point_on_plane = normal_vec * unique_plane_data["offset"]
+            extracted_planes.append(Plane(point_on_plane, normal_vec))
+
+        if verbose:
+            num_unique_planes = len(extracted_planes)
+            print(f"Number of unique planes extracted: {num_unique_planes}")
+            for i, plane_obj in enumerate(extracted_planes, 1):
+                # For consistency with original verbose, re-calculate offset for printing if needed
+                # or print directly from plane_obj properties.
+                # The offset here is plane_obj.normal.dot(plane_obj.point)
+                # which should be very close to unique_plane_data['offset'] used for its creation.
+                print(f"Plane {i}: Point = {list(plane_obj.point)}, Normal = {list(plane_obj.normal)}")
+                # To print the offset as calculated before:
+                # norm_arr = unique_raw_planes[i-1]['normal']
+                # offs_val = unique_raw_planes[i-1]['offset']
+                # print(f"Plane {i}: Stored Normal = {list(norm_arr)}, Stored Offset = {offs_val:.6f}")
+
+        return extracted_planes
+
+    def extract_submeshes(self, planes: List[Plane], tol: float = 1e-3, normal_tol: float = 2, split=False):
+        """Extract submeshes from the part based on the planes provided.
+
+        Parameters
+        ----------
+        planes : list[:class:`compas.geometry.Plane`]
+            Planes to slice the part.
+        tol : float, optional
+            Tolerance for geometric operations, by default 1e-3.
+        normal_tol : float, optional
+            Tolerance for normal vector comparison, by default 2.
+        split : bool, optional
+            If ``True`` split each submesh into connected components, by default False.
+
+        Returns
+        -------
+        list[:class:`compas.datastructures.Mesh`]
+        """
+
+        def split_into_subsubmeshes(submeshes):
+            """Split each submesh into connected components."""
+            subsubmeshes = []
+
+            for mesh in submeshes:
+                mesh: Mesh
+                components = connected_components(mesh.adjacency)
+
+                for comp in components:
+                    faces = [fkey for fkey in mesh.faces() if set(mesh.face_vertices(fkey)).issubset(comp)]
+                    submesh = Mesh()
+
+                    vkey_map = {
+                        v: submesh.add_vertex(
+                            x=mesh.vertex_attribute(v, "x"),
+                            y=mesh.vertex_attribute(v, "y"),
+                            z=mesh.vertex_attribute(v, "z"),
+                        )
+                        for v in comp
+                    }
+
+                    for fkey in faces:
+                        submesh.add_face([vkey_map[v] for v in mesh.face_vertices(fkey)])
+
+                    subsubmeshes.append(submesh)
+
+            return subsubmeshes
+
+        mesh: Mesh = self.discretized_boundary_mesh
+        submeshes = [Mesh() for _ in planes]
+
+        # Step 1: Compute normalized plane and face normals
+        planes_normals = np.array([plane.normal for plane in planes])
+        faces_normals = np.array([mesh.face_normal(face) for face in mesh.faces()])
+        dot_products = np.dot(planes_normals, faces_normals.T)  # (num_planes, num_faces)
+        plane_indices, face_indices = np.where(abs(dot_products) >= (1 - normal_tol))
+
+        for face_idx in np.unique(face_indices):  # Loop over unique faces
+            face_vertices = mesh.face_vertices(face_idx)
+            face_coords = [mesh.vertex_coordinates(v) for v in face_vertices]
+
+            # Get all planes matching this face's normal
+            matching_planes = [planes[p_idx] for p_idx in plane_indices[face_indices == face_idx]]
+
+            # Step 5: Check if all vertices of the face lie on any of the matching planes
+            for plane in matching_planes:
+                if all(is_point_on_plane(coord, plane, tol) for coord in face_coords):
+                    face_mesh = Mesh.from_vertices_and_faces(face_coords, [[c for c in range(len(face_coords))]])
+                    submeshes[planes.index(plane)].join(face_mesh)
+                    break  # Assign to first valid plane
+        if split:
+            for submesh in submeshes:
+                submesh.weld(precision=2)
+            submeshes = split_into_subsubmeshes(submeshes)
+        return submeshes
+
+    def transform(self, transformation: Transformation) -> None:
+        """Transform the part.
+
+        Parameters
+        ----------
+        transformation : :class:`compas.geometry.Transformation`
+            The transformation to apply.
+
+        """
+        for node in self.nodes:
+            node.transform(transformation)
+        self._boundary_mesh.transform(transformation) if self._boundary_mesh else None
+        self._discretized_boundary_mesh.transform(transformation) if self._discretized_boundary_mesh else None
+
+    def transformed(self, transformation: Transformation) -> "_Part":
+        """Return a transformed copy of the part.
+
+        Parameters
+        ----------
+        transformation : :class:`compas.geometry.Transformation`
+            The transformation to apply.
+        """
+        part: Part = self.copy()
+        part.transform(transformation)
+        return part
+
+    def elements_by_dimension(self, dimension: int = 1) -> Iterable[_Element]:
+        """Get elements by dimension.
+        Parameters
+        ----------
+        dimension : int
+            The dimension of the elements to get. 1 for 1D, 2 for 2D, and 3 for 3D.
+        Returns
+        -------
+        Iterable[:class:`compas_fea2.model._Element`]
+            The elements of the specified dimension.
+        """
+
+        if dimension == 1:
+            return filter(lambda x: isinstance(x, _Element1D), self.elements)
+        elif dimension == 2:
+            return filter(lambda x: isinstance(x, _Element2D), self.elements)
+        elif dimension == 3:
+            return filter(lambda x: isinstance(x, _Element3D), self.elements)
+        else:
+            raise ValueError("dimension not supported")
 
     # =========================================================================
     #                           Materials methods
@@ -1595,8 +1619,7 @@ class _Part(FEAData):
         for node in nodes:
             self.remove_node(node)
 
-    def create_connector_node(self, external_node, tol = 1e-5):
-
+    def create_connector_node(self, external_node, tol=1e-5):
         """This method returns the two nodes from both parts for connectors definition.
         The method receives a node as an input and returns the matching node of the part.
         If this node does not exist within the part, the method creates the node and elements.
@@ -1605,10 +1628,10 @@ class _Part(FEAData):
         ----------
         external_node : :class:`compas_fea2.model.Node`
             The node to evaluate.
-        
+
         tol : float (optional)
             Tolerance for superposition of two nodes.
-            If not indicated, the tolerance is 1e-5. 
+            If not indicated, the tolerance is 1e-5.
         Returns
         -------
         :class:`compas_fea2.model.NodeGroup`
@@ -1624,7 +1647,7 @@ class _Part(FEAData):
         # 1D elements test
         for key, values in self.element_types.items():
             if not isinstance(values[0], _Element1D):
-                raise ValueError('The part does not contain 1D elements.')
+                raise ValueError("The part does not contain 1D elements.")
 
         # whether external_node belongs to the part
         if external_node.part == self:
@@ -1633,22 +1656,22 @@ class _Part(FEAData):
         # if the node coincides with one of its two closest nodes of the part
         closest_nodes = self.find_closest_nodes_to_node(external_node, number_of_nodes=2)
         for node in closest_nodes:
-            if all(abs(a-b) < tol for a, b in zip(node.xyz, external_node.xyz)):
+            if all(abs(a - b) < tol for a, b in zip(node.xyz, external_node.xyz)):
                 return NodesGroup([external_node, node])
 
-        #determine the common element of closest nodes
+        # determine the common element of closest nodes
         common_element = None
         for element in list(closest_nodes)[0].connected_elements:
             if element in list(closest_nodes)[1].connected_elements:
                 common_element = element
                 break
-        
+
         # the node must intercept the element
         element_line = Line(common_element.points[0], common_element.points[-1])
-        if not(external_node.point.on_segment(element_line)):
-            raise ValueError('The node given as input does not intercept with the part.')
-        
-        #the common_element is replaced by two smaller elements
+        if not (external_node.point.on_segment(element_line)):
+            raise ValueError("The node given as input does not intercept with the part.")
+
+        # the common_element is replaced by two smaller elements
         new_node = self.add_node(Node(xyz=external_node.xyz))
         new_element1 = self.element_types.get(common_element, BeamElement)(nodes=[common_element.nodes[0], new_node], section=common_element.section, frame=common_element.frame)
         new_element2 = self.element_types.get(common_element, BeamElement)(nodes=[new_node, common_element.nodes[-1]], section=common_element.section, frame=common_element.frame)
@@ -2265,7 +2288,7 @@ class Part(_Part):
     #                       Constructor methods
     # =========================================================================
     @classmethod
-    def frame_from_compas_mesh(cls, mesh: "compas.datastructures.Mesh", section: "compas_fea2.model.BeamSection", name: Optional[str] = None, **kwargs) -> "_Part":
+    def frame_from_compas_mesh(cls, mesh: "compas.datastructures.Mesh", section: "compas_fea2.model.Section1D", name: Optional[str] = None, **kwargs) -> "_Part":
         """Creates a Part object from a :class:`compas.datastructures.Mesh`.
 
         To each edge of the mesh is assigned a :class:`compas_fea2.model.BeamElement`.
@@ -2275,7 +2298,7 @@ class Part(_Part):
         ----------
         mesh : :class:`compas.datastructures.Mesh`
             Mesh to convert to a Part.
-        section : :class:`compas_fea2.model.BeamSection`
+        section : :class:`compas_fea2.model.Section1D`
             Section to assign to the frame elements.
         name : str, optional
             Name of the new part.
@@ -2378,7 +2401,8 @@ class Part(_Part):
 class RigidPart(_Part):
     """Rigid part."""
 
-    __doc__ += _Part.__doc__
+    __doc__ = __doc__ or ""
+    __doc__ += _Part.__doc__ or ""
     __doc__ += """
     Additional Attributes
     ---------------------

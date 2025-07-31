@@ -16,7 +16,7 @@ from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import RigidPart
 
 
-class Connector(FEAData):
+class _Connector(FEAData):
     """Base class for connectors.
 
     A Connector links nodes between parts in the model.
@@ -35,7 +35,6 @@ class Connector(FEAData):
 
     def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], **kwargs):
         super().__init__(**kwargs)
-        self._key: Optional[str] = None
         self._nodes: List['Node'] = (
             list(nodes._members) if isinstance(nodes, NodesGroup) else nodes
         )
@@ -80,7 +79,7 @@ class Connector(FEAData):
         self._nodes = nodes
 
 
-class LinearConnector(Connector):
+class LinearConnector(_Connector):
     """Linear connector.
 
     Parameters
@@ -149,7 +148,7 @@ class LinearConnector(Connector):
         return self._dofs
 
 
-class RigidLinkConnector(Connector):
+class RigidLinkConnector(_Connector):
     """Rigid link connector.
 
     Parameters
@@ -182,7 +181,7 @@ class RigidLinkConnector(Connector):
         return self._dofs
 
 
-class SpringConnector(Connector):
+class SpringConnector(_Connector):
     """Spring connector."""
 
     def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs):
@@ -245,7 +244,7 @@ class SpringConnector(Connector):
         self._failure = value
 
 
-class ZeroLengthConnector(Connector):
+class ZeroLengthConnector(_Connector):
     """Zero length connector connecting overlapping nodes."""
 
     def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], direction, **kwargs):

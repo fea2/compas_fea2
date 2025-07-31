@@ -7,9 +7,9 @@ from typing import Any
 from typing import Dict
 from typing import Iterable
 from typing import List
+from typing import TypeVar
 from typing import Optional
 from typing import Type
-from typing import TypeVar
 from typing import Union
 from typing import TYPE_CHECKING
 
@@ -21,8 +21,8 @@ import compas_fea2
 
 from .utilities._utils import to_dimensionless
 
-# Type variable for FEAData subclasses
-T = TypeVar('T', bound='FEAData')
+if TYPE_CHECKING:
+    from compas_fea2.model.model import Model
 
 
 class DimensionlessMeta(type):
@@ -42,6 +42,9 @@ class DimensionlessMeta(type):
                     attribute = to_dimensionless(attribute)
                 class_dict[attributeName] = attribute
         return type.__new__(meta, name, bases, class_dict)
+
+
+T = TypeVar("T", bound="FEAData")
 
 
 class FEAData(Data, metaclass=DimensionlessMeta):
@@ -68,21 +71,22 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         The mother object where this object is registered to.
 
     """
+    _registration: Optional["Model"]
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> 'FEAData':
+    def __new__(cls: Type[T], *args: Any, **kwargs: Any) -> T:
         """Try to get the backend plug-in implementation, otherwise use the base
         one.
         """
         imp = compas_fea2._get_backend_implementation(cls)
         if not imp:
-            return super(FEAData, cls).__new__(cls)
-        return super(FEAData, imp).__new__(imp)
+            return super(FEAData, cls).__new__(cls)  # type: ignore
+        return super(FEAData, imp).__new__(imp)  # type: ignore
 
     def __init__(self, name: Optional[str] = None, **kwargs: Any) -> None:
         self.uid: uuid.UUID = uuid.uuid4()
         super().__init__()
         self._name: str = name or "".join([c for c in type(self).__name__ if c.isupper()]) + "_" + str(id(self))
-        self._registration: Optional[Any] = None
+        self._registration = None
         self._key: Optional[Any] = None
 
     @property
