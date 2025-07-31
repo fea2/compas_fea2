@@ -49,7 +49,7 @@ from compas_fea2.model import Model, Part
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.elements import BeamElement
 from compas_fea2.model.materials import Steel
-from compas_fea2.model.sections import BeamSection
+from compas_fea2.model.sections import GenericBeamSection as BeamSection
 
 def main():
     # Create model
@@ -118,7 +118,7 @@ from compas_fea2.model import Model, Part
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.elements import BeamElement
 from compas_fea2.model.materials import Steel
-from compas_fea2.model.sections import BeamSection
+from compas_fea2.model.sections import GenericBeamSection as BeamSection
 
 def main():
     # Create model
@@ -178,7 +178,7 @@ from compas_fea2.model import Model, Part
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.elements import BeamElement
 from compas_fea2.model.materials import Steel, Concrete
-from compas_fea2.model.sections import BeamSection
+from compas_fea2.model.sections import GenericBeamSection as BeamSection
 
 def main():
     # Create model
