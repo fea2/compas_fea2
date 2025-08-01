@@ -1,8 +1,7 @@
 from math import pi
 from math import sqrt
-
 from typing import TYPE_CHECKING
-from typing import Union, Optional, List, Sequence
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,16 +9,16 @@ from matplotlib.patches import Polygon as mplPolygon
 from matplotlib.path import Path
 
 from compas_fea2.base import FEAData
-from compas_fea2.model.shapes import Shape
 from compas_fea2.model.shapes import Circle
 from compas_fea2.model.shapes import IShape
 from compas_fea2.model.shapes import LShape
 from compas_fea2.model.shapes import Rectangle
+from compas_fea2.model.shapes import Shape
 
 if TYPE_CHECKING:
+    from compas_fea2.model import Model
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.shapes import Shape
-    from compas_fea2.model import Model
 
 _registration: Optional["Model"]
 
@@ -74,12 +73,14 @@ class _Section(FEAData):
     @property
     def __data__(self):
         data = {}
-        data.update({
-            "class": self.__class__.__name__,
-            "material": self.material.__data__ if hasattr(self.material, "__data__") else self.material,
-            "name": self.name,
-            "uid": self.uid,
-        })
+        data.update(
+            {
+                "class": self.__class__.__name__,
+                "material": self.material.__data__ if hasattr(self.material, "__data__") else self.material,
+                "name": self.name,
+                "uid": self.uid,
+            }
+        )
         return data
 
     @classmethod
@@ -159,15 +160,17 @@ class SpringSection(FEAData):
 
     @property
     def __data__(self):
-        data = super().__data__ if hasattr(super(), '__data__') else {}
-        data.update({
-            "class": self.__class__.__name__,
-            "axial": self.axial,
-            "lateral": self.lateral,
-            "rotational": self.rotational,
-            "uid": self.uid,
-            "name": self.name,
-        })
+        data = super().__data__ if hasattr(super(), "__data__") else {}
+        data.update(
+            {
+                "class": self.__class__.__name__,
+                "axial": self.axial,
+                "lateral": self.lateral,
+                "rotational": self.rotational,
+                "uid": self.uid,
+                "name": self.name,
+            }
+        )
         return data
 
     @classmethod
@@ -289,17 +292,19 @@ class _Section1D(_Section):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "A": self.A,
-            "Ixx": self.Ixx,
-            "Iyy": self.Iyy,
-            "Ixy": self.Ixy,
-            "Avx": self.Avx,
-            "Avy": self.Avy,
-            "J": self.J,
-            "g0": self.g0,
-            "gw": self.gw,
-        })
+        data.update(
+            {
+                "A": self.A,
+                "Ixx": self.Ixx,
+                "Iyy": self.Iyy,
+                "Ixy": self.Ixy,
+                "Avx": self.Avx,
+                "Avy": self.Avy,
+                "J": self.J,
+                "g0": self.g0,
+                "gw": self.gw,
+            }
+        )
         if self._shape:
             shape_data = getattr(self._shape, "__data__", None)
             if shape_data:
@@ -635,7 +640,6 @@ gw  : {self.gw}
         """
         if not self.shape:
             raise ValueError("Section shape is not defined. Please set the shape before plotting stress distribution along a direction.")
-        import matplotlib.patches as mpatches
 
         # Normalize the direction vector
         dx, dy = direction
@@ -757,10 +761,12 @@ class GenericBeamSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "g0": self.g0,
-            "gw": self.gw,
-        })
+        data.update(
+            {
+                "g0": self.g0,
+                "gw": self.gw,
+            }
+        )
         return data
 
     @classmethod
@@ -830,15 +836,17 @@ class AngleSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        shape = getattr(self, 'shape', None)
+        shape = getattr(self, "shape", None)
         if shape:
-            data.update({
-                "a": getattr(shape, "a", None),
-                "b": getattr(shape, "b", None),
-                "t1": getattr(shape, "t1", None),
-                "t2": getattr(shape, "t2", None),
-                "direction": getattr(shape, "direction", None),
-            })
+            data.update(
+                {
+                    "a": getattr(shape, "a", None),
+                    "b": getattr(shape, "b", None),
+                    "t1": getattr(shape, "t1", None),
+                    "t2": getattr(shape, "t2", None),
+                    "direction": getattr(shape, "direction", None),
+                }
+            )
         return data
 
     @classmethod
@@ -952,12 +960,14 @@ class BoxSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "w": self.w,
-            "h": self.h,
-            "tw": self.tw,
-            "tf": self.tf,
-        })
+        data.update(
+            {
+                "w": self.w,
+                "h": self.h,
+                "tw": self.tw,
+                "tf": self.tf,
+            }
+        )
         return data
 
     @classmethod
@@ -1020,7 +1030,7 @@ class CircularSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        shape = getattr(self, 'shape', None)
+        shape = getattr(self, "shape", None)
         if shape:
             data["r"] = getattr(shape, "radius", None)
         return data
@@ -1150,10 +1160,10 @@ class ISection(_Section1D):
 
     @property
     def k(self):
-        shape = getattr(self, 'shape', None)
-        abf = getattr(shape, 'abf', None)
-        atf = getattr(shape, 'atf', None)
-        area = getattr(shape, 'area', None)
+        shape = getattr(self, "shape", None)
+        abf = getattr(shape, "abf", None)
+        atf = getattr(shape, "atf", None)
+        area = getattr(shape, "area", None)
         if abf is not None and atf is not None and area:
             return 0.3 + 0.1 * ((abf + atf) / area)
         return None
@@ -1161,15 +1171,17 @@ class ISection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        shape = getattr(self, 'shape', None)
+        shape = getattr(self, "shape", None)
         if shape:
-            data.update({
-                "w": getattr(shape, "w", None),
-                "h": getattr(shape, "h", None),
-                "tw": getattr(shape, "tw", None),
-                "tbf": getattr(shape, "tbf", None),
-                "ttf": getattr(shape, "ttf", None),
-            })
+            data.update(
+                {
+                    "w": getattr(shape, "w", None),
+                    "h": getattr(shape, "h", None),
+                    "tw": getattr(shape, "tw", None),
+                    "tbf": getattr(shape, "tbf", None),
+                    "ttf": getattr(shape, "ttf", None),
+                }
+            )
         return data
 
     @classmethod
@@ -1609,10 +1621,12 @@ class PipeSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "r": self.r,
-            "t": self.t,
-        })
+        data.update(
+            {
+                "r": self.r,
+                "t": self.t,
+            }
+        )
         return data
 
     @classmethod
@@ -1678,7 +1692,7 @@ class RectangularSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        shape = getattr(self, 'shape', None)
+        shape = getattr(self, "shape", None)
         if shape:
             data["w"] = getattr(shape, "w", None)
             data["h"] = getattr(shape, "h", None)
@@ -1781,11 +1795,13 @@ class TrapezoidalSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "w1": self.w1,
-            "w2": self.w2,
-            "h": self.h,
-        })
+        data.update(
+            {
+                "w1": self.w1,
+                "w2": self.w2,
+                "h": self.h,
+            }
+        )
         return data
 
     @classmethod
@@ -1870,9 +1886,11 @@ class TrussSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "A": self.A,
-        })
+        data.update(
+            {
+                "A": self.A,
+            }
+        )
         return data
 
     @classmethod
@@ -1997,9 +2015,11 @@ class _Section2D(_Section):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "t": self.t,
-        })
+        data.update(
+            {
+                "t": self.t,
+            }
+        )
         return data
 
     @classmethod
@@ -2040,9 +2060,11 @@ class ShellSection(_Section2D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "t": self.t,
-        })
+        data.update(
+            {
+                "t": self.t,
+            }
+        )
         return data
 
     @classmethod
@@ -2077,9 +2099,11 @@ class MembraneSection(_Section2D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "t": self.t,
-        })
+        data.update(
+            {
+                "t": self.t,
+            }
+        )
         return data
 
     @classmethod

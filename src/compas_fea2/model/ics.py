@@ -75,8 +75,7 @@ class InitialTemperatureField(_InitialCondition):
 
     @classmethod
     def from_file(cls, path, **kwargs):
-        return NotImplementedError(
-            "InitialTemperatureField is not implemented for the current backend. ")
+        return NotImplementedError("InitialTemperatureField is not implemented for the current backend. ")
 
 
 class InitialStressField(_InitialCondition):

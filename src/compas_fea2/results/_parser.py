@@ -9,6 +9,3 @@ class Parser:
 
     def parse(self):
         raise NotImplementedError("This method should be implemented in the backend.")
-    
-    
-

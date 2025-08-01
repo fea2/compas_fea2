@@ -1,30 +1,24 @@
-from typing import Iterable
 from typing import TYPE_CHECKING
+from typing import Iterable
 
 from compas.geometry import Point
 from compas.geometry import Vector
-from compas.geometry import Polyline
 from compas.geometry import centroid_points_weighted
 from compas.geometry import sum_vectors
 
 from compas_fea2.base import FEAData
-from compas_fea2.model.nodes import Node
-from compas_fea2.model.elements import _Element
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.nodes import Node
 from compas_fea2.problem.displacements import GeneralDisplacement
 from compas_fea2.problem.fields import DisplacementField
 from compas_fea2.problem.fields import NodeLoadField
-from compas_fea2.problem.fields import PointLoadField
 from compas_fea2.problem.fields import _PrescribedField
 from compas_fea2.results import TemperatureFieldResults
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
-    from compas_fea2.problem import Problem
     from compas_fea2.model import NodesGroup
-    from compas_fea2.model import _Element
-    from compas_fea2.problem import _LoadField
+    from compas_fea2.problem import Problem
 
 # ==============================================================================
 #                                Base Steps
@@ -554,7 +548,7 @@ class GeneralStep(_Step):
         components = {"x": x or 0, "y": y or 0, "z": z or 0, "xx": xx or 0, "yy": yy or 0, "zz": zz or 0}
         load = VectorLoad(**components, axes=axes)
         field = UniformSurfaceLoadField(load=load, surface=surface, load_case=load_case, **kwargs)
-    
+
         return self.add_load_field(field)
 
     def add_gravity_fied(self, parts=None, g=9.81, x=0.0, y=0.0, z=-1.0, load_case=None, **kwargs):
@@ -914,7 +908,6 @@ Z : {applied_load[2]}
         viewer.show()
 
     def show_stress(self, viewer, fast=True, show_bcs=1, scale_model=1, show_loads=0.1, component=None, show_vectors=1, show_contour=False, plane="mid", **kwargs):
-
         if not self.stress_field:
             raise ValueError("No reaction field results available for this step")
 
@@ -955,7 +948,6 @@ Z : {applied_load[2]}
 
         """
         import matplotlib.pyplot as plt
-        import numpy as np
         from compas.geometry import Point
         from scipy.spatial import KDTree
 

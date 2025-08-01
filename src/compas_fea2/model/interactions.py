@@ -3,7 +3,7 @@ from compas_fea2.base import FEAData
 
 class _Interaction(FEAData):
     """Base class for all interactions.
-    
+
     Note
     ----
     Interactions are registered to a :class:`compas_fea2.model.Model` and can be
@@ -11,7 +11,7 @@ class _Interaction(FEAData):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
     @property
     def model(self):
         """Get the model to which this interaction belongs."""
@@ -211,6 +211,7 @@ class HardContactRough(Contact):
 # THERMAL INTERACTION
 # ------------------------------------------------------------------------------
 
+
 class ThermalInteraction(_Interaction):
     """General thermal interaction of a part with the exterior.
 
@@ -220,7 +221,7 @@ class ThermalInteraction(_Interaction):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     temperature : float or [float]
-        Constant temperature value or temperature evolution. 
+        Constant temperature value or temperature evolution.
 
 
     Attributes
@@ -229,7 +230,7 @@ class ThermalInteraction(_Interaction):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     temperature : float or [float]
-        Constant temperature value or temperature evolution. 
+        Constant temperature value or temperature evolution.
 
     """
 
@@ -240,6 +241,7 @@ class ThermalInteraction(_Interaction):
     @property
     def temperature(self):
         return self._temperature
+
 
 class SurfaceConvection(ThermalInteraction):
     """Convection.
@@ -254,7 +256,7 @@ class SurfaceConvection(ThermalInteraction):
     surface : FaceGroup
         Convection surface.
     temperature : float or [float]
-        Constant temperature value or temperature evolution. 
+        Constant temperature value or temperature evolution.
 
     Attributes
     ----------
@@ -262,7 +264,7 @@ class SurfaceConvection(ThermalInteraction):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     temperature : float or [float]
-        Constant temperature value or temperature evolution. 
+        Constant temperature value or temperature evolution.
 
     """
 
@@ -274,10 +276,11 @@ class SurfaceConvection(ThermalInteraction):
     @property
     def h(self):
         return self._h
-    
+
     @property
     def surface(self):
         return self._surface
+
 
 class SurfaceRadiation(ThermalInteraction):
     """Radiation.
@@ -292,7 +295,7 @@ class SurfaceRadiation(ThermalInteraction):
     surface : FaceGroup
         Convection surface.
     temperature : float or [float]
-        Constant temperature value or temperature evolution. 
+        Constant temperature value or temperature evolution.
 
     Attributes
     ----------
@@ -300,7 +303,7 @@ class SurfaceRadiation(ThermalInteraction):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     temperature : float or [float]
-        Constant temperature value or temperature evolution. 
+        Constant temperature value or temperature evolution.
 
     """
 
@@ -312,7 +315,7 @@ class SurfaceRadiation(ThermalInteraction):
     @property
     def eps(self):
         return self._eps
-    
+
     @property
     def surface(self):
         return self._surface

@@ -16,13 +16,6 @@ from compas.geometry import Vector
 from compas_fea2.base import FEAData
 
 from .database import SQLiteResultsDatabase
-from .results import AccelerationResult
-from .results import DisplacementResult
-from .results import ReactionResult
-from .results import SectionForcesResult
-from .results import ShellStressResult 
-from .results import SolidStressResult
-from .results import VelocityResult
 
 
 class FieldResults(FEAData):
@@ -67,22 +60,23 @@ class FieldResults(FEAData):
     def __init__(self, step: "_Step", *args, **kwargs):
         super(FieldResults, self).__init__(*args, **kwargs)
         self._registration = step
-    
+
     @property
     def sqltable_schema(self):
         """Return the SQL table schema for the field results.
         The schema includes the table name and the columns with their types.
-        
+
         Returns
         -------
         dict
             A dictionary with the table name and columns.
-        
+
         Example
         -------
         >>> field_results = DisplacementFieldResults(step)
         >>> field_results.sqltable_schema
-        {'table_name': 'u', 'columns': [('id', 'INTEGER PRIMARY KEY AUTOINCREMENT'), ('key', 'INTEGER'), ('step', 'TEXT'), ('part', 'TEXT'), ('x', 'REAL'), ('y', 'REAL'), ('z', 'REAL'), ('rx', 'REAL'), ('ry', 'REAL'), ('rz', 'REAL')]}"""
+        {'table_name': 'u', 'columns': [('id', 'INTEGER PRIMARY KEY AUTOINCREMENT'), ('key', 'INTEGER'), ('step', 'TEXT'), ('part', 'TEXT'), ('x', 'REAL'), ('y', 'REAL'), ('z', 'REAL'), ('rx', 'REAL'), ('ry', 'REAL'), ('rz', 'REAL')]}
+        """
         fields = []
         predefined_fields = [
             ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
@@ -532,6 +526,7 @@ class ContactForcesFieldResults(NodeFieldResults):
         super().__init__(step=step, *args, **kwargs)
         self._field_name = "c"
 
+
 class TemperatureFieldResults(NodeFieldResults):
     """Reaction field results.
 
@@ -561,6 +556,7 @@ class TemperatureFieldResults(NodeFieldResults):
     @property
     def components_names(self):
         return ["temp"]
+
 
 # ------------------------------------------------------------------------------
 # Section Forces Field Results

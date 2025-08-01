@@ -1,11 +1,11 @@
 from operator import itemgetter
 from typing import TYPE_CHECKING
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-from typing import Iterator
 
 from compas.datastructures import Mesh
 from compas.geometry import Frame
@@ -15,24 +15,22 @@ from compas.geometry import Point
 from compas.geometry import Polygon
 from compas.geometry import Polyhedron
 from compas.geometry import Vector
-from compas.geometry import cross_vectors
 from compas.geometry import centroid_points
 from compas.geometry import distance_point_point
 from compas.itertools import pairwise
+
 from compas_fea2.base import FEAData
-from compas_fea2.model.materials.material import ElasticOrthotropic
 
 if TYPE_CHECKING:
+    from compas_fea2.model.sections import SpringSection
+    from compas_fea2.model.sections import _Section
+    from compas_fea2.model.sections import _Section1D
+    from compas_fea2.model.sections import _Section2D
+    from compas_fea2.model.sections import _Section3D
     from compas_fea2.problem import _Step
     from compas_fea2.results import Result
     from compas_fea2.results import ShellStressResult
     from compas_fea2.results import SolidStressResult
-    from compas_fea2.model.sections import SpringSection
-    from compas_fea2.model.sections import _Section1D
-    from compas_fea2.model.sections import _Section
-    from compas_fea2.model.sections import _Section2D
-    from compas_fea2.model.sections import _Section3D
-    
     from compas_fea2.results.results import SectionForcesResult
 
     from .model import Model
@@ -478,16 +476,23 @@ class _Element1D(_Element):
     volume : float
         The volume of the element.
     """
-    
+
     _section: Optional["_Section1D"]
 
     def __init__(
-        self, nodes: List["Node"], section: "_Section1D", orientation: Optional[Point] = None, implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs
+        self,
+        nodes: List["Node"],
+        section: "_Section1D",
+        orientation: Optional[Point] = None,
+        implementation: Optional[str] = None,
+        rigid: bool = False,
+        heat: bool = False,
+        **kwargs,
     ):
         super().__init__(nodes, section, implementation=implementation, rigid=rigid, heat=heat, **kwargs)
         if not orientation:
             raise ValueError("Frame is required for 1D elements")
-        
+
         self._orientation = orientation
         n1 = nodes[0].point
         n2 = nodes[1].point
@@ -505,7 +510,7 @@ class _Element1D(_Element):
         data["orientation"] = self._orientation.__data__
         data["ndim"] = self._ndim
         return data
-    
+
     @property
     def section(self) -> "_Section1D | None":
         """Return the section object assigned to the element."""
@@ -850,7 +855,7 @@ class _Element2D(_Element):
         Dictionary providing for each edge the node indices. For example:
         {'e1': (0,1), ...}
     """
-    
+
     _section: Optional["_Section2D"]
 
     def __init__(
@@ -871,16 +876,16 @@ class _Element2D(_Element):
             heat=heat,
             **kwargs,
         )
-        
+
         self._faces: Optional[List[Face]] = None
         self._face_indices: Optional[Dict[str, Tuple[int, ...]]] = None
-        
+
         self._edges: Optional[List[Edge]] = None
         self._edges_indices: Optional[Dict[str, Tuple[int, ...]]] = None
-        
+
         self._ndim = 2
-        
-        #BUG this is not correct!
+
+        # BUG this is not correct!
         # if frame:
         #     if isinstance(frame, (Vector, List, Tuple)):
         #         compas_polygon = Polygon(points=[node.point for node in nodes])
@@ -1019,8 +1024,8 @@ class ShellElement(_Element2D):
 
         self._face_indices = {"SPOS": tuple(range(len(nodes))), "SNEG": tuple(range(len(nodes)))[::-1]}
         self._faces = self._construct_faces(self._face_indices)
-        
-        self._edges_indices = {f"s{i+1}": (i, i + 1) if i < len(nodes) - 1 else (i, 0) for i in range(len(nodes))}
+
+        self._edges_indices = {f"s{i + 1}": (i, i + 1) if i < len(nodes) - 1 else (i, 0) for i in range(len(nodes))}
         self._edges = self._construct_edges(self._edges_indices)
 
     @property
@@ -1064,12 +1069,12 @@ class _Element3D(_Element):
         )
         self._faces: Optional[List[Face]] = None
         self._face_indices: Optional[Dict[str, Tuple[int, ...]]] = None
-        
+
         self._edges: Optional[List[Edge]] = None
         self._edges_indices: Optional[Dict[str, Tuple[int, ...]]] = None
-        
+
         self._frame = Frame.worldXY()
-        
+
         self._ndim = 3
 
     @property
@@ -1098,12 +1103,11 @@ class _Element3D(_Element):
     @property
     def faces(self) -> Optional[List[Face]]:
         return self._faces
-    
+
     @property
     def edges(self) -> Optional[List[Edge]]:
         """Return the edges of the element."""
         return self._edges
-
 
     @property
     def centroid(self) -> "Point":
@@ -1113,7 +1117,7 @@ class _Element3D(_Element):
     def reference_point(self) -> "Point":
         return self._reference_point or self.centroid
 
-    def _construct_faces(self, face_indices: Dict[str, Tuple[int,...]]) -> List[Face]:
+    def _construct_faces(self, face_indices: Dict[str, Tuple[int, ...]]) -> List[Face]:
         """Construct the face-nodes dictionary.
 
         Parameters
@@ -1205,7 +1209,7 @@ class TetrahedronElement(_Element3D):
 
         self._faces = self._construct_faces(self._face_indices)
 
-    #BUG this is not correct!
+    # BUG this is not correct!
     # @property
     # def edges(self):
     #     """Yields edges as (start_node, end_node), including midside nodes if present."""

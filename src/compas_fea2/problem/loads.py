@@ -2,19 +2,20 @@ from compas_fea2.base import FEAData
 
 # TODO: make units independent using the utilities function
 
+
 class _Load(FEAData):
     """Initialises base _Load object.
 
     Parameters
     ----------
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal.  
+        Amplitude associated to the load, optionnal.
 
     Attributes
     ----------
     amplitude :  :class:`compas_fea2.problem.Amplitude`
         Amplitude associated to the load, optionnal.
-    
+
     field : :class:`compas_fea2.problem.LoadField`
         Field associated with the load.
 
@@ -31,14 +32,14 @@ class _Load(FEAData):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     """
-    def __init__(self, amplitude = None, **kwargs):
+
+    def __init__(self, amplitude=None, **kwargs):
         super().__init__(**kwargs)
         self._amplitude = amplitude
-    
+
     @property
     def amplitude(self):
         return self._amplitude
-
 
     @property
     def field(self):
@@ -58,6 +59,7 @@ class _Load(FEAData):
     def model(self):
         return self.problem._registration
 
+
 class ScalarLoad(_Load):
     """Scalar load object.
 
@@ -65,24 +67,25 @@ class ScalarLoad(_Load):
     ----------
     scalar_load : float
         Scalar value of the load.
-    
+
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal.  
+        Amplitude associated to the load, optionnal.
 
     Attributes
     ----------
     scalar_load : float
         Scalar value of the load
-    
+
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal. 
+        Amplitude associated to the load, optionnal.
     """
-    def __init__(self, scalar_load, amplitude = None, **kwargs):
+
+    def __init__(self, scalar_load, amplitude=None, **kwargs):
         super().__init__(amplitude=amplitude, **kwargs)
-        if not(isinstance(scalar_load, (int,float))) :
+        if not (isinstance(scalar_load, (int, float))):
             raise ValueError("The scalar_load must be a float.")
         self._scalar_load = scalar_load
-    
+
     @property
     def scalar_load(self):
         return self._scalar_load
@@ -104,13 +107,13 @@ class VectorLoad(_Load):
     z : float
         z-axis force value of the load.
     xx : float
-        Moment value of the load about the x-axis. 
+        Moment value of the load about the x-axis.
     yy : float
-        Moment value of the load about the y-axis. 
+        Moment value of the load about the y-axis.
     zz : float
         Moment value of the load about the z-axis.
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal.  
+        Amplitude associated to the load, optionnal.
 
     Attributes
     ----------
@@ -124,13 +127,13 @@ class VectorLoad(_Load):
     z : float
         z-axis force value of the load.
     xx : float
-        Moment value of the load about the x-axis. 
+        Moment value of the load about the x-axis.
     yy : float
-        Moment value of the load about the y-axis. 
+        Moment value of the load about the y-axis.
     zz : float
         Moment value of the load about the z-axis.
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal.  
+        Amplitude associated to the load, optionnal.
     components : {str: float}
         Dictionnary of the components of the load and values
     """
@@ -144,18 +147,18 @@ class VectorLoad(_Load):
         self.xx = xx
         self.yy = yy
         self.zz = zz
-        
+
     def __mul__(self, scalar):
         """Multiply the load by a scalar."""
         for attr in ["x", "y", "z", "xx", "yy", "zz"]:
             if getattr(self, attr) is not None:
                 setattr(self, attr, getattr(self, attr) * scalar)
         return self
-    
+
     def __rmul__(self, scalar):
         """Multiply the load by a scalar."""
         return self.__mul__(scalar)
-    
+
     def __add__(self, other):
         """Add two VectorLoad objects."""
         if not isinstance(other, VectorLoad):
@@ -176,55 +179,56 @@ class VectorLoad(_Load):
 
 
 class HeatFluxLoad(ScalarLoad):
-    """ Heat flux load for heat analysis.
-    
+    """Heat flux load for heat analysis.
+
     Parameters
     ----------
     q : float
         Heat flux value of the load.
-    
+
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal.  
+        Amplitude associated to the load, optionnal.
 
     Attributes
     ----------
     q : float
         Heat flux value of the load.
-    
+
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal. 
+        Amplitude associated to the load, optionnal.
     """
 
-    def __init__(self, q, amplitude = None,  **kwargs):
+    def __init__(self, q, amplitude=None, **kwargs):
         super().__init__(scalar_load=q, amplitude=amplitude, **kwargs)
-    
+
     @property
     def q(self):
         return self._scalar_load
-    
+
+
 class TemperatureLoad(ScalarLoad):
-    """ Temperature load for heat analysis
-    
+    """Temperature load for heat analysis
+
     Parameters
     ----------
     temperature : float
         Value of the temperature load.
-    
+
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal.  
+        Amplitude associated to the load, optionnal.
 
     Attributes
     ----------
     temperature : float
         Value of the temperature load.
-    
+
     amplitude :  :class:`compas_fea2.problem.Amplitude`
-        Amplitude associated to the load, optionnal. 
+        Amplitude associated to the load, optionnal.
     """
 
-    def __init__(self, temperature, amplitude = None, **kwargs):
+    def __init__(self, temperature, amplitude=None, **kwargs):
         super().__init__(scalar_load=temperature, amplitude=amplitude, **kwargs)
-    
+
     @property
     def temperature(self):
         return self._scalar_load

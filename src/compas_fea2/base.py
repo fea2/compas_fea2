@@ -3,18 +3,14 @@ import json
 import uuid
 from abc import abstractmethod
 from copy import deepcopy
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import Iterable
-from typing import List
-from typing import TypeVar
 from typing import Optional
 from typing import Type
-from typing import Union
-from typing import TYPE_CHECKING
+from typing import TypeVar
 
-import h5py
-import numpy as np
 from compas.data import Data
 
 import compas_fea2

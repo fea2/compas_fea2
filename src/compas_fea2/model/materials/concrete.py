@@ -1,17 +1,18 @@
 import math
 
-from .material import _Material
 from matplotlib import pyplot as plt
+
+from .material import _Material
 
 
 class Concrete(_Material):
     """Elastic and plastic-cracking Eurocode-based concrete material.
-    
+
     Warning
     -------
-    EXPERIMENTAL: THIS MATERIAL IS BASED ON THE EUROCODE 2 AND 
+    EXPERIMENTAL: THIS MATERIAL IS BASED ON THE EUROCODE 2 AND
     CAN BE USED ONLY IN A MODEL DEFINED INTHE SI UNIT SYSTEM!
-    
+
 
     Parameters
     ----------
@@ -50,18 +51,18 @@ class Concrete(_Material):
 
     def __init__(self, fck, density=None, **kwargs):
         super().__init__(density=density, **kwargs)
-        self.v=0.17
+        self.v = 0.17
 
         # (Eurocode 2, Table 3.1) --- All calculations are done in MPa!
         fcm = fck + 8.0  # MPa
-        self.fcm = fcm * 1e6 # Pa
+        self.fcm = fcm * 1e6  # Pa
 
         # Secant modulus of elasticity [MPa]
         Ecm_mpa = 22000 * (fcm / 10.0) ** 0.3
-        self.E = Ecm_mpa * 1e6 # Store in Pa
+        self.E = Ecm_mpa * 1e6  # Store in Pa
 
         # Strain at peak compressive stress [-]
-        ec1 = 0.001 * min(0.7 * fcm ** 0.31, 2.8)
+        ec1 = 0.001 * min(0.7 * fcm**0.31, 2.8)
 
         # Ultimate compressive strain [-]
         if fck <= 50:
@@ -71,14 +72,14 @@ class Concrete(_Material):
 
         # Mean tensile strength [MPa]
         if fck <= 50:
-            fctm_mpa = 0.30 * fck ** (2/3)
+            fctm_mpa = 0.30 * fck ** (2 / 3)
         else:
             fctm_mpa = 2.12 * math.log(1 + fcm / 10.0)
-        self.fctm = fctm_mpa * 1e6 # Store in Pa
-        
+        self.fctm = fctm_mpa * 1e6  # Store in Pa
+
         # Check: EN 1992-1-1, 3.1.5
         k = 1.05 * Ecm_mpa * ec1 / fcm
-        
+
         num_points = 100  # Number of points on the curve
         strains_c = [i * ecu1 / num_points for i in range(num_points + 1)]
         stresses_c_mpa = []
@@ -97,12 +98,12 @@ class Concrete(_Material):
 
         e_t_peak = self.fctm / self.E
         e_t_ult = 2 * e_t_peak
-        
+
         self.et = [0.0, e_t_peak, e_t_ult]
         self.ft = [0.0, self.fctm, 0.0]
 
         self.fck = fck * 1e6  # Store in Pa
-        self.fr = [1.16, self.fctm / self.fcm] # Failure ratios
+        self.fr = [1.16, self.fctm / self.fcm]  # Failure ratios
         self.fcd = 0.85 * self.fck / 1.5  # Design compressive strength [Pa]
 
         self.tension = {"f": self.ft, "e": self.et}
@@ -123,36 +124,36 @@ class Concrete(_Material):
     def plot_stress_strain_curve(self):
         """
         Generates and displays a plot of the material's stress-strain curve.
-        
+
         Requires the 'matplotlib' library to be installed.
         """
         # Convert stresses to MPa for plotting
         stresses_c_mpa = [s / 1e6 for s in self.fc]
         stresses_t_mpa = [s / 1e6 for s in self.ft]
-        
+
         # Make compressive strains negative for conventional plotting
         strains_c_negative = [-e for e in self.ec]
-        
+
         # Create the plot
         fig, ax = plt.subplots(figsize=(10, 6))
-        
+
         # Plot compression curve
         ax.plot(strains_c_negative, stresses_c_mpa, label="Compression", color="b")
-        
+
         # Plot tension curve
         ax.plot(self.et, stresses_t_mpa, label="Tension", color="r")
-        
+
         # Formatting
         ax.set_xlabel("Strain [-]")
         ax.set_ylabel("Stress [MPa]")
-        ax.set_title(f"Stress-Strain Curve for {self.name} (fck={self.fck/1e6:.0f} MPa)")
+        ax.set_title(f"Stress-Strain Curve for {self.name} (fck={self.fck / 1e6:.0f} MPa)")
         ax.legend()
-        ax.grid(True, which='both', linestyle='--', linewidth=0.5)
-        ax.axhline(0, color='black', linewidth=0.75)
-        ax.axvline(0, color='black', linewidth=0.75)
-        
+        ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+        ax.axhline(0, color="black", linewidth=0.75)
+        ax.axvline(0, color="black", linewidth=0.75)
+
         plt.show()
-        
+
     def __str__(self):
         return """
 Concrete Material

@@ -1,18 +1,17 @@
+from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
-from typing import TYPE_CHECKING
 
 from compas_fea2.base import FEAData
 from compas_fea2.model.groups import NodesGroup
-from compas_fea2.model.groups import _Group
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import RigidPart
 
 if TYPE_CHECKING:
-    from compas_fea2.model.nodes import Node
     from compas_fea2.model.groups import NodesGroup
+    from compas_fea2.model.nodes import Node
     from compas_fea2.model.parts import RigidPart
 
 
@@ -33,11 +32,9 @@ class _Connector(FEAData):
 
     """
 
-    def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], **kwargs):
+    def __init__(self, nodes: Union[List["Node"], "NodesGroup"], **kwargs):
         super().__init__(**kwargs)
-        self._nodes: List['Node'] = (
-            list(nodes._members) if isinstance(nodes, NodesGroup) else nodes
-        )
+        self._nodes: List["Node"] = list(nodes._members) if isinstance(nodes, NodesGroup) else nodes
 
     @property
     def __data__(self):
@@ -54,7 +51,7 @@ class _Connector(FEAData):
         return cls(nodes=nodes)
 
     @property
-    def nodes(self) -> List['Node']:
+    def nodes(self) -> List["Node"]:
         return self._nodes
 
     @property
@@ -62,7 +59,7 @@ class _Connector(FEAData):
         return self._registration
 
     @nodes.setter
-    def nodes(self, nodes: Union[List['Node'], 'NodesGroup']):
+    def nodes(self, nodes: Union[List["Node"], "NodesGroup"]):
         if isinstance(nodes, NodesGroup):
             nodes = list(nodes._members)
         if isinstance(nodes, Node):
@@ -106,7 +103,7 @@ class LinearConnector(_Connector):
         self._nodes = [self.master, self.slave]
 
     @property
-    def nodes(self) -> List['Node']:
+    def nodes(self) -> List["Node"]:
         return self._nodes
 
     @property
@@ -160,7 +157,7 @@ class RigidLinkConnector(_Connector):
         The degrees of freedom to be connected. Options are 'beam', 'bar', or a list of integers.
     """
 
-    def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], dofs: str = "beam", **kwargs):
+    def __init__(self, nodes: Union[List["Node"], "NodesGroup"], dofs: str = "beam", **kwargs):
         super().__init__(nodes, **kwargs)
         self._dofs: str = dofs
 
@@ -184,7 +181,7 @@ class RigidLinkConnector(_Connector):
 class SpringConnector(_Connector):
     """Spring connector."""
 
-    def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs):
+    def __init__(self, nodes: Union[List["Node"], "NodesGroup"], section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs):
         super().__init__(nodes, **kwargs)
         self._section = section
         self._yielding: Optional[Dict[str, float]] = yielding
@@ -247,7 +244,7 @@ class SpringConnector(_Connector):
 class ZeroLengthConnector(_Connector):
     """Zero length connector connecting overlapping nodes."""
 
-    def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], direction, **kwargs):
+    def __init__(self, nodes: Union[List["Node"], "NodesGroup"], direction, **kwargs):
         super().__init__(nodes, **kwargs)
         self._direction = direction
 
@@ -271,7 +268,9 @@ class ZeroLengthConnector(_Connector):
 class ZeroLengthSpringConnector(ZeroLengthConnector):
     """Spring connector connecting overlapping nodes."""
 
-    def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], direction, section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs):
+    def __init__(
+        self, nodes: Union[List["Node"], "NodesGroup"], direction, section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs
+    ):
         # SpringConnector.__init__(self, nodes=nodes, section=section, yielding=yielding, failure=failure)
         super().__init__(nodes, direction, **kwargs)
         self._section = section
@@ -305,7 +304,7 @@ class ZeroLengthSpringConnector(ZeroLengthConnector):
 class ZeroLengthContactConnector(ZeroLengthConnector):
     """Contact connector connecting overlapping nodes."""
 
-    def __init__(self, nodes: Union[List['Node'], 'NodesGroup'], direction, Kn: float, Kt: float, mu: float, **kwargs):
+    def __init__(self, nodes: Union[List["Node"], "NodesGroup"], direction, Kn: float, Kt: float, mu: float, **kwargs):
         super().__init__(nodes, direction, **kwargs)
         self._Kn: float = Kn
         self._Kt: float = Kt

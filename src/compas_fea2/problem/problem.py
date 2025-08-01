@@ -1,12 +1,10 @@
 # import os
 import shutil
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import List
 from typing import Optional
 from typing import Union
-from typing import TYPE_CHECKING
-
-from compas.geometry import Vector, Point
 
 from compas_fea2.base import FEAData
 from compas_fea2.job.input_file import InputFile
@@ -16,7 +14,7 @@ from compas_fea2.results.database import ResultsDatabase
 from compas_fea2.results.database import SQLiteResultsDatabase
 
 if TYPE_CHECKING:
-    from compas_fea2.model.model import Model  
+    from compas_fea2.model.model import Model
     from compas_fea2.problem.steps import _Step
     from compas_fea2.problem.steps.perturbations import LinearStaticPerturbation
 
@@ -82,7 +80,6 @@ class Problem(FEAData):
         self._steps_order = []  # TODO make steps a list
         self._rdb = None
 
-
     @property
     def __data__(self) -> dict:
         """Returns a dictionary representation of the Problem object."""
@@ -102,7 +99,6 @@ class Problem(FEAData):
         problem._steps = set(_Step.__from_data__(step_data) for step_data in data.get("steps", []))
         problem._steps_order = list(problem._steps)
         return problem
-    
 
     @property
     def model(self) -> "Model | None":

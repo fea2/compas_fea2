@@ -1,11 +1,9 @@
+from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
-from typing import Sequence
 from typing import Optional
+from typing import Sequence
 from typing import Union
-from typing import TYPE_CHECKING
-
-import numbers
 
 from compas.geometry import Point
 from compas.geometry import transform_points
@@ -13,13 +11,12 @@ from compas.tolerance import TOL
 
 import compas_fea2
 from compas_fea2.base import FEAData
-from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.bcs import GeneralBC
+from compas_fea2.model.bcs import _BoundaryCondition
 
 if TYPE_CHECKING:
-    from compas_fea2.model.parts import _Part
     from compas_fea2.model.model import Model
-    from compas_fea2.problem.steps import _Step
+    from compas_fea2.model.parts import _Part
     from compas_fea2.results import DisplacementResult
     from compas_fea2.results import ReactionResult
     from compas_fea2.results import TemperatureResult
@@ -39,7 +36,7 @@ def _parse_mass(mass) -> list[float]:
             return seq + [0.0, 0.0, 0.0]
         if len(seq) == 6:
             return seq
-    raise TypeError("mass must be None, a number, a 3‐element sequence (mx,my,mz), " "or a 6‐element sequence (mx,my,mz,ixx,iyy,izz).")
+    raise TypeError("mass must be None, a number, a 3‐element sequence (mx,my,mz), or a 6‐element sequence (mx,my,mz,ixx,iyy,izz).")
 
 
 class Node(FEAData):
@@ -106,7 +103,7 @@ class Node(FEAData):
     >>> node = Node(xyz=(1.0, 2.0, 3.0))
 
     """
-    
+
     _registration: Optional["_Part"]
 
     def __init__(self, xyz: Sequence[float], mass: Optional[Union[float, List[float]]] = None, temperature: Optional[float] = None, **kwargs):

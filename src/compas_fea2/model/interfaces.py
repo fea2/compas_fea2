@@ -70,12 +70,12 @@ class PartPartInterface(_Interface):
         Group of element faces determining the Slave surface.
     behavior : :class:`compas_fea2.model._Interaction`
         behavior type between master and slave.
-        
+
     """
-    
+
     def __init__(self, master, slave, behavior, **kwargs):
         super().__init__(master=master, slave=slave, behavior=behavior, **kwargs)
-        
+
 
 class BoundaryInterface(_Interface):
     """A boundary interface is defined as a pair of master and slave surfaces
@@ -93,8 +93,8 @@ class BoundaryInterface(_Interface):
         Group of element faces determining the Slave surface.
     behavior : :class:`compas_fea2.model._Interaction`
         behavior type between master and slave.
-        
+
     """
-    
+
     def __init__(self, master, behavior, **kwargs):
         super().__init__(master=master, slave=None, behavior=behavior, **kwargs)

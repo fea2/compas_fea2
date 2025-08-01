@@ -1,39 +1,48 @@
 import logging
 from importlib import import_module
 from itertools import groupby
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Set, TypeVar, Union, Generic, cast
 from typing import TYPE_CHECKING
-
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Generic
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Set
+from typing import TypeVar
+from typing import Union
+from typing import cast
 
 from compas_fea2.base import FEAData
 
 # Type-checking imports to avoid circular dependencies at runtime
 if TYPE_CHECKING:
-    from compas_fea2.model.parts import _Part
-    from compas_fea2.model.sections import _Section
-    from compas_fea2.model.materials.material import _Material
-    from compas_fea2.model.interfaces import _Interface
     from compas_fea2.model.bcs import _BoundaryCondition
     from compas_fea2.model.connectors import _Connector
-    from compas_fea2.model.model import Model
-    from compas_fea2.model.nodes import Node
+    from compas_fea2.model.constraints import _Constraint
+    from compas_fea2.model.elements import Edge
+    from compas_fea2.model.elements import Face
     from compas_fea2.model.elements import _Element
     from compas_fea2.model.elements import _Element1D
     from compas_fea2.model.elements import _Element2D
     from compas_fea2.model.elements import _Element3D
-    from compas_fea2.model.elements import Edge
-    from compas_fea2.model.elements import Face
-    from compas_fea2.model.releases import _BeamEndRelease
-    from compas_fea2.model.constraints import _Constraint
-    from compas_fea2.model.interactions import _Interaction
     from compas_fea2.model.ics import _InitialCondition
+    from compas_fea2.model.interactions import _Interaction
+    from compas_fea2.model.interfaces import _Interface
+    from compas_fea2.model.materials.material import _Material
+    from compas_fea2.model.model import Model
+    from compas_fea2.model.nodes import Node
+    from compas_fea2.model.parts import _Part
+    from compas_fea2.model.releases import _BeamEndRelease
+    from compas_fea2.model.sections import _Section
 
 
 # Define a generic type for members of _Group
 _MemberType = TypeVar("_MemberType")
 
 # Define a generic type for the _Group class itself, used for __add__, __sub__, etc.
-G = TypeVar("G", bound="_Group[Any]") # G must be a subclass of _Group
+G = TypeVar("G", bound="_Group[Any]")  # G must be a subclass of _Group
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -103,12 +112,12 @@ class _Group(FEAData, Generic[_MemberType]):
             raise TypeError("Cannot add base _Group, use a specific group type.")
         if not isinstance(other, type(self)):
             raise TypeError("Can only add same group types together.")
-        return self.__class__(members=self._members | other._members) #type: ignore
+        return self.__class__(members=self._members | other._members)  # type: ignore
 
-    def __sub__(self:G, other: G) -> G:
+    def __sub__(self: G, other: G) -> G:
         if not isinstance(other, type(self)):
             raise TypeError("Can only subtract same group types from each other.")
-        return self.__class__(members=self._members - other._members) #type: ignore
+        return self.__class__(members=self._members - other._members)  # type: ignore
 
     def to_list(self) -> List[_MemberType]:
         """Return the members of the group as a list."""
@@ -185,9 +194,9 @@ class _Group(FEAData, Generic[_MemberType]):
             raise TypeError("Cannot group base _Group, use a specific group type.")
         sorted_members = sorted(self._members, key=key)
         grouped_members = {k: set(v) for k, v in groupby(sorted_members, key=key)}
-        return {k: self.__class__(members=v, name=getattr(self, 'name', None)) for k, v in grouped_members.items()}  #type: ignore
+        return {k: self.__class__(members=v, name=getattr(self, "name", None)) for k, v in grouped_members.items()}  # type: ignore
 
-    def union(self: G, other: G) -> G: # Changed other: "_Group[Any]" to other: G
+    def union(self: G, other: G) -> G:  # Changed other: "_Group[Any]" to other: G
         """
         Create a new group containing all members from this group and another group.
 
@@ -203,11 +212,11 @@ class _Group(FEAData, Generic[_MemberType]):
         """
         if type(self) is _Group:
             raise TypeError("Cannot perform union on base _Group, use a specific group type.")
-        if not isinstance(other, type(self)): # Added type check
+        if not isinstance(other, type(self)):  # Added type check
             raise TypeError("Can only perform union with the same group type.")
-        return self.__class__(members=self._members | other._members)  #type: ignore
+        return self.__class__(members=self._members | other._members)  # type: ignore
 
-    def intersection(self: G, other: G) -> G: # Changed other: "_Group[Any]" to other: G
+    def intersection(self: G, other: G) -> G:  # Changed other: "_Group[Any]" to other: G
         """
         Create a new group containing only members that are present in both groups.
 
@@ -223,11 +232,11 @@ class _Group(FEAData, Generic[_MemberType]):
         """
         if type(self) is _Group:
             raise TypeError("Cannot perform intersection on base _Group, use a specific group type.")
-        if not isinstance(other, type(self)): # Added type check
+        if not isinstance(other, type(self)):  # Added type check
             raise TypeError("Can only perform intersection with the same group type.")
-        return self.__class__(members=self._members & other._members)  #type: ignore
+        return self.__class__(members=self._members & other._members)  # type: ignore
 
-    def difference(self: G, other: G) -> G: # Changed other: "_Group[Any]" to other: G
+    def difference(self: G, other: G) -> G:  # Changed other: "_Group[Any]" to other: G
         """
         Create a new group containing members that are in this group but not in another.
 
@@ -243,9 +252,9 @@ class _Group(FEAData, Generic[_MemberType]):
         """
         if type(self) is _Group:
             raise TypeError("Cannot perform difference on base _Group, use a specific group type.")
-        if not isinstance(other, type(self)): # Added type check
+        if not isinstance(other, type(self)):  # Added type check
             raise TypeError("Can only perform difference with the same group type.")
-        return self.__class__(members=self._members - other._members)  #type: ignore
+        return self.__class__(members=self._members - other._members)  # type: ignore
 
     def unique(self: G, key: Callable[[_MemberType], Any] | None = None) -> G:
         """
@@ -320,7 +329,7 @@ class _Group(FEAData, Generic[_MemberType]):
             else:
                 logger.warning(f"Member {member} not found in the group.")
         return removed
-    
+
     def clear(self) -> None:
         """Clear all members from the group."""
         self._members.clear()
@@ -398,6 +407,7 @@ class NodesGroup(_Group["Node"]):
 
     def __init__(self, members: Iterable["Node"], **kwargs) -> None:
         from compas_fea2.model.nodes import Node
+
         super().__init__(members=members, member_class=Node, **kwargs)
 
     @property
@@ -409,6 +419,7 @@ class NodesGroup(_Group["Node"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "NodesGroup":
         from compas_fea2.model.nodes import Node
+
         nodes = [Node.__from_data__(node_data) for node_data in data["members"]]
         return cls(members=nodes)
 
@@ -451,6 +462,7 @@ class ElementsGroup(_Group[Union["_Element", "_Element1D", "_Element2D", "_Eleme
 
     def __init__(self, members: Iterable["_Element"], **kwargs) -> None:
         from compas_fea2.model.elements import _Element
+
         super().__init__(members=members, member_class=_Element, **kwargs)
 
     @property
@@ -483,6 +495,7 @@ class EdgesGroup(_Group["Edge"]):
 
     def __init__(self, members: Iterable["Edge"], **kwargs) -> None:
         from compas_fea2.model.elements import Edge
+
         super().__init__(members=members, member_class=Edge, **kwargs)
 
     @property
@@ -494,6 +507,7 @@ class EdgesGroup(_Group["Edge"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "EdgesGroup":
         from compas_fea2.model.elements import Edge
+
         edges = [Edge.__from_data__(edge_data) for edge_data in data["members"]]
         obj = cls(members=edges)
         return obj
@@ -520,6 +534,7 @@ class FacesGroup(_Group["Face"]):
 
     def __init__(self, members: Iterable["Face"], **kwargs) -> None:
         from compas_fea2.model.elements import Face
+
         super().__init__(members=members, member_class=Face, **kwargs)
 
     @property
@@ -531,6 +546,7 @@ class FacesGroup(_Group["Face"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "FacesGroup":
         from compas_fea2.model.elements import Face
+
         faces = [Face.__from_data__(face_data) for face_data in data["members"]]
         obj = cls(members=faces)
         return obj
@@ -566,6 +582,7 @@ class FacesGroup(_Group["Face"]):
     def normal(self) -> List[float]:
         """Calculate the average normal vector of the faces in the group."""
         from compas.geometry import normalize_vector
+
         normals = [face.normal for face in self.faces]
         if normals:
             avg_normal = [sum(components) / len(normals) for components in zip(*normals)]
@@ -578,6 +595,7 @@ class PartsGroup(_Group["_Part"]):
 
     def __init__(self, members: Iterable["_Part"], **kwargs) -> None:
         from compas_fea2.model.parts import _Part
+
         super().__init__(members=members, member_class=_Part, **kwargs)
 
     @property
@@ -590,7 +608,7 @@ class PartsGroup(_Group["_Part"]):
     def __from_data__(cls, data: Dict[str, Any]) -> "PartsGroup":
         from compas_fea2.model.parts import _Part
 
-        part_classes = {subcls.__name__: subcls for subcls in _Part.__subclasses__() + [_Part]} # Include _Part itself if it can be instantiated
+        part_classes = {subcls.__name__: subcls for subcls in _Part.__subclasses__() + [_Part]}  # Include _Part itself if it can be instantiated
         parts = [part_classes[part_data["class"]].__from_data__(part_data) for part_data in data["members"]]
         return cls(members=parts)
 
@@ -603,31 +621,31 @@ class PartsGroup(_Group["_Part"]):
         return self._members
 
 
-class SectionsGroup(_Group["_Section"]): 
+class SectionsGroup(_Group["_Section"]):
     """Base class for sections groups."""
 
     def __init__(self, members: Iterable["_Section"], **kwargs) -> None:
         from compas_fea2.model.sections import _Section
+
         super().__init__(members=members, member_class=_Section, **kwargs)
 
     @property
     def sections(self) -> Set["_Section"]:
         return self._members
-    
+
     @property
     def __data__(self) -> Dict[str, Any]:
         data = super().__data__
         data.update({"members": [section.__data__ for section in self.sections]})
         return data
-    
+
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "SectionsGroup":
         from compas_fea2.model.sections import _Section
 
-        section_classes = {subcls.__name__: subcls for subcls in _Section.__subclasses__() + [_Section]} # Include _Section itself if it can be instantiated
+        section_classes = {subcls.__name__: subcls for subcls in _Section.__subclasses__() + [_Section]}  # Include _Section itself if it can be instantiated
         sections = [section_classes[section_data["class"]].__from_data__(section_data) for section_data in data["members"]]
         return cls(members=sections)
-    
 
 
 class MaterialsGroup(_Group["_Material"]):
@@ -635,6 +653,7 @@ class MaterialsGroup(_Group["_Material"]):
 
     def __init__(self, members: Iterable["_Material"], **kwargs) -> None:
         from compas_fea2.model.materials.material import _Material
+
         super().__init__(members=members, member_class=_Material, **kwargs)
 
     @property
@@ -650,6 +669,7 @@ class MaterialsGroup(_Group["_Material"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "MaterialsGroup":
         from compas_fea2.model.materials.material import _Material
+
         mats = [_Material.__from_data__(md) for md in data["members"]]
         return cls(members=mats)
 
@@ -659,6 +679,7 @@ class InterfacesGroup(_Group["_Interface"]):
 
     def __init__(self, members: Iterable["_Interface"], **kwargs) -> None:
         from compas_fea2.model.interfaces import _Interface
+
         super().__init__(members=members, member_class=_Interface, **kwargs)
 
     @property
@@ -674,14 +695,17 @@ class InterfacesGroup(_Group["_Interface"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "InterfacesGroup":
         from compas_fea2.model.interfaces import _Interface
+
         ifaces = [_Interface.__from_data__(dd) for dd in data["members"]]
         return cls(members=ifaces)
+
 
 class InteractionsGroup(_Group["_Interaction"]):
     """Base class for interactions groups."""
 
     def __init__(self, members: Iterable["_Interaction"], **kwargs) -> None:
         from compas_fea2.model.interactions import _Interaction
+
         super().__init__(members=members, member_class=_Interaction, **kwargs)
 
     @property
@@ -697,14 +721,17 @@ class InteractionsGroup(_Group["_Interaction"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "InteractionsGroup":
         from compas_fea2.model.interactions import _Interaction
+
         interactions = [_Interaction.__from_data__(dd) for dd in data["members"]]
         return cls(members=interactions)
+
 
 class BCsGroup(_Group["_BoundaryCondition"]):
     """Base class for boundary conditions groups."""
 
     def __init__(self, members: Iterable["_BoundaryCondition"], **kwargs) -> None:
         from compas_fea2.model.bcs import _BoundaryCondition
+
         super().__init__(members=members, member_class=_BoundaryCondition, **kwargs)
 
     @property
@@ -720,6 +747,7 @@ class BCsGroup(_Group["_BoundaryCondition"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "BCsGroup":
         from compas_fea2.model.bcs import _BoundaryCondition
+
         bcs = [_BoundaryCondition.__from_data__(bd) for bd in data["members"]]
         return cls(members=bcs)
 
@@ -729,6 +757,7 @@ class ConnectorsGroup(_Group["_Connector"]):
 
     def __init__(self, members: Iterable["_Connector"], **kwargs) -> None:
         from compas_fea2.model.connectors import _Connector
+
         super().__init__(members=members, member_class=_Connector, **kwargs)
 
     @property
@@ -744,6 +773,7 @@ class ConnectorsGroup(_Group["_Connector"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "ConnectorsGroup":
         from compas_fea2.model.connectors import _Connector
+
         conns = [_Connector.__from_data__(d) for d in data["members"]]
         return cls(members=conns)
 
@@ -753,6 +783,7 @@ class ConstraintsGroup(_Group["_Constraint"]):
 
     def __init__(self, members: Iterable["_Constraint"], **kwargs) -> None:
         from compas_fea2.model.constraints import _Constraint
+
         super().__init__(members=members, member_class=_Constraint, **kwargs)
 
     @property
@@ -768,6 +799,7 @@ class ConstraintsGroup(_Group["_Constraint"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "ConstraintsGroup":
         from compas_fea2.model.constraints import _Constraint
+
         cons = [_Constraint.__from_data__(dd) for dd in data["members"]]
         return cls(members=cons)
 
@@ -777,6 +809,7 @@ class ICsGroup(_Group["_InitialCondition"]):
 
     def __init__(self, members: Iterable["_InitialCondition"], **kwargs) -> None:
         from compas_fea2.model.ics import _InitialCondition
+
         super().__init__(members=members, member_class=_InitialCondition, **kwargs)
 
     @property
@@ -792,6 +825,7 @@ class ICsGroup(_Group["_InitialCondition"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "ICsGroup":
         from compas_fea2.model.ics import _InitialCondition
+
         ics = [_InitialCondition.__from_data__(dd) for dd in data["members"]]
         return cls(members=ics)
 
@@ -801,6 +835,7 @@ class ReleasesGroup(_Group["_BeamEndRelease"]):
 
     def __init__(self, members: Iterable["_BeamEndRelease"], **kwargs) -> None:
         from compas_fea2.model.releases import _BeamEndRelease
+
         super().__init__(members=members, member_class=_BeamEndRelease, **kwargs)
 
     @property
@@ -816,5 +851,6 @@ class ReleasesGroup(_Group["_BeamEndRelease"]):
     @classmethod
     def __from_data__(cls, data: Dict[str, Any]) -> "ReleasesGroup":
         from compas_fea2.model.releases import _BeamEndRelease
+
         rels = [_BeamEndRelease.__from_data__(dd) for dd in data["members"]]
         return cls(members=rels)

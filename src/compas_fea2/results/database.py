@@ -1,31 +1,27 @@
-import json
 import sqlite3
-
-import h5py
-import numpy as np
 
 from compas_fea2.base import FEAData
 
 
 class ResultsDatabase(FEAData):
     """Base class for results databases.
-    
+
     This class serves as a base for different types of results databases,
     such as SQLite, HDF5, and JSON. It provides a common interface for
     accessing and manipulating results data associated with a problem.
-    
+
     The job of this class is to manage the results database for a given problem,
     allowing for the retrieval and storage of results in various formats. It reads
     the data from a Parser and provides methods to access results sets, extract fields,
     and perform queries on the results.
-    
+
     Parameters
     ----------
     problem : object
         The problem instance containing the model and database path.
     **kwargs : dict
         Additional keyword arguments for initialization.
-        
+
     Attributes
     ----------
     problem : object
@@ -33,6 +29,7 @@ class ResultsDatabase(FEAData):
     model : object
         The model instance associated with the problem.
     """
+
     def __init__(self, problem, **kwargs):
         super().__init__(**kwargs)
         self._registration = problem
@@ -60,7 +57,7 @@ class ResultsDatabase(FEAData):
 
 class JSONResultsDatabase(ResultsDatabase):
     """JSON wrapper class to store and access FEA results."""
-    
+
     def __init__(self, problem, **kwargs):
         super().__init__(problem=problem, **kwargs)
         raise NotImplementedError("JSONResultsDatabase is not implemented yet.")
@@ -78,7 +75,7 @@ class HDF5ResultsDatabase(ResultsDatabase):
     def __init__(self, problem, **kwargs):
         super().__init__(problem, **kwargs)
         raise NotImplementedError("HDF5ResultsDatabase is not implemented yet.")
-    
+
     # def save_to_hdf5(self, key, data):
     #     """Save data to the HDF5 database."""
     #     with h5py.File(self.db_path, "a") as hdf5_file:
@@ -159,22 +156,22 @@ class HDF5ResultsDatabase(ResultsDatabase):
 
 class SQLiteResultsDatabase(ResultsDatabase):
     """sqlite3 wrapper class to access the SQLite database.
-    
+
     This class provides methods to connect to the SQLite database,
     execute queries, and retrieve results from the database.
-    
+
     The tables of the database are created based on the
     `output_cls.sqltable_schema` property, which defines the schema
     for each field output class. The results are stored in the database
     in a structured format, allowing for efficient querying and retrieval.
-    
+
     Parameters
     ----------
     problem : object
         The problem instance containing the model and database path.
     **kwargs : dict
         Additional keyword arguments for initialization.
-        
+
     Attributes
     ----------
     db_uri : str
@@ -187,7 +184,7 @@ class SQLiteResultsDatabase(ResultsDatabase):
         The names of all tables in the database.
     fields : list
         The names of all fields in the database, excluding the 'fields' table.
-        
+
     Methods
     -------
     db_connection()
@@ -213,8 +210,8 @@ class SQLiteResultsDatabase(ResultsDatabase):
         Convert a set of results in the database to the appropriate result object.
     create_table_for_output_class(output_cls, results)
         Reads the table schema from `output_cls.get_table_schema()` and creates the table in the
-        given database. 
-        """
+        given database.
+    """
 
     def __init__(self, problem, **kwargs):
         super().__init__(problem=problem, **kwargs)
@@ -245,7 +242,7 @@ class SQLiteResultsDatabase(ResultsDatabase):
         Execute a previously-defined query.
         This method connects to the database, executes the query with
         the provided parameters, and returns the result set.
-        
+
         Example
         -------
         >>> db = SQLiteResultsDatabase(problem)
@@ -403,7 +400,7 @@ class SQLiteResultsDatabase(ResultsDatabase):
     # =========================================================================
     #                       FEA2 Methods
     # =========================================================================
-    
+
     def to_result(self, result_line, results_func, field_name):
         """
         Convert a result line in the database to the appropriate
@@ -417,8 +414,8 @@ class SQLiteResultsDatabase(ResultsDatabase):
             The function to call on the part to get the member (it can be a node
             or an element).
         field_name : str
-            The name of the field to extract from the results. 
-            
+            The name of the field to extract from the results.
+
         Returns
         -------
         object
@@ -429,7 +426,7 @@ class SQLiteResultsDatabase(ResultsDatabase):
             result_line.pop("step")
         m = getattr(self.model, results_func)(result_line.pop("key"))[0]
         if not m:
-            raise ValueError(f"Member not in {self.model}")        
+            raise ValueError(f"Member not in {self.model}")
         return m.results_cls[field_name](m, **result_line)
 
     def to_results(self, results_set, results_func, field_name):
@@ -458,16 +455,6 @@ class SQLiteResultsDatabase(ResultsDatabase):
             results.setdefault(step, [])
             results[step].append(self.to_result(r, results_func, field_name))
         return results
-
-
-
-
-
-
-
-
-
-
 
     def add_results_to_output_class_table(self, output_cls, results):
         """

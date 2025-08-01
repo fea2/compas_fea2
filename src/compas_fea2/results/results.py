@@ -1,9 +1,8 @@
 import base64
 import os
 from io import BytesIO
-
-from typing import Dict, List, Optional
 from typing import TYPE_CHECKING
+from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,8 +15,7 @@ from compas_fea2.model.materials.material import ElasticIsotropic
 
 if TYPE_CHECKING:
     from compas_fea2.model import Node
-    from compas_fea2.model import _Element
-    from compas_fea2.model import _Section1D, _Section3D
+
 
 class Result(FEAData):
     """Result object defined at the nodes or elements. This ensures that the results from all
@@ -290,6 +288,7 @@ class ReactionResult(NodeResult):
     def __init__(self, node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
         super(ReactionResult, self).__init__(node, x, y, z, xx, yy, zz, **kwargs)
 
+
 class TemperatureResult(NodeResult):
     """DisplacementResult object.
 
@@ -327,7 +326,6 @@ class TemperatureResult(NodeResult):
     def __init__(self, node, temp, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
         super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
         self._temp = temp
-
 
     @property
     def temp(self):

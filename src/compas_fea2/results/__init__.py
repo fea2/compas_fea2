@@ -8,7 +8,7 @@ from .results import (
     MembraneStressResult,
     ShellStressResult,
     SolidStressResult,
-    TemperatureResult
+    TemperatureResult,
 )
 
 from .fields import (
@@ -19,7 +19,7 @@ from .fields import (
     ReactionFieldResults,
     SectionForcesFieldResults,
     ContactForcesFieldResults,
-    TemperatureFieldResults
+    TemperatureFieldResults,
 )
 
 from .modal import (
@@ -29,8 +29,5 @@ from .modal import (
 
 
 __all__ = [  # type: ignore[reportUnsupportedDunderAll]
-    name for name, obj in globals().items()
-    if not name.startswith(" _") and not name.startswith("__")
-    and not callable(name) and not name.startswith("_")
-    and name.isidentifier()
+    name for name, obj in globals().items() if not name.startswith(" _") and not name.startswith("__") and not callable(name) and not name.startswith("_") and name.isidentifier()
 ]

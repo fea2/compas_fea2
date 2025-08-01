@@ -1,43 +1,32 @@
 from collections import defaultdict
 from itertools import groupby
-from math import pi
+from typing import TYPE_CHECKING
 from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Set
-from typing import Tuple
 from typing import Union
-from typing import Sequence
-from typing import TypeVar
-from typing import Any
-from typing import Generic
-from typing import TYPE_CHECKING
 
-
-import compas
-import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from compas.datastructures import Mesh
 from compas.geometry import Box
 from compas.geometry import Frame
+from compas.geometry import Line
 from compas.geometry import Plane
 from compas.geometry import Point
 from compas.geometry import Polyline
-from compas.geometry import Line
-from compas.geometry import Line
 from compas.geometry import Scale
 from compas.geometry import Transformation
 from compas.geometry import Vector
 from compas.geometry import bounding_box
 from compas.geometry import centroid_points
 from compas.geometry import centroid_points_weighted
+from compas.geometry import is_coplanar
 from compas.geometry import is_point_in_polygon_xy
 from compas.geometry import is_point_on_plane
-from compas.geometry import is_coplanar
 from compas.tolerance import TOL
-from compas.topology import connected_components
 from scipy.spatial import KDTree
 
 import compas_fea2
@@ -57,7 +46,6 @@ from .groups import FacesGroup
 from .groups import MaterialsGroup
 from .groups import NodesGroup
 from .groups import SectionsGroup
-from .groups import _Group
 from .materials.material import _Material
 from .nodes import Node
 from .releases import _BeamEndRelease
@@ -69,35 +57,29 @@ from .sections import _Section2D
 from .sections import _Section3D
 
 if TYPE_CHECKING:
-    from compas_fea2.model.interfaces import _Interface
-    from compas_fea2.model.groups import FacesGroup
-    from compas_fea2.problem.loads import VectorLoad
     from compas.geometry import Polygon
-    from compas_fea2.model.model import Model
+
     from compas_fea2.model.bcs import _BoundaryCondition
-    from compas_fea2.model.groups import MaterialsGroup
-    from compas_fea2.model.groups import SectionsGroup
-    from compas_fea2.model.groups import NodesGroup
-    from compas_fea2.model.groups import ElementsGroup
-    from compas_fea2.model.groups import EdgesGroup
-    from compas_fea2.model.groups import InteractionsGroup
-    from compas_fea2.model.groups import InterfacesGroup
-    
-    from compas_fea2.model.groups import _Group
-    from compas_fea2.model.nodes import Node
-    from compas_fea2.model.sections import _Section
-    from compas_fea2.model.sections import _Section2D
-    from compas_fea2.model.sections import _Section3D
+    from compas_fea2.model.elements import Face
     from compas_fea2.model.elements import _Element
     from compas_fea2.model.elements import _Element1D
     from compas_fea2.model.elements import _Element2D
     from compas_fea2.model.elements import _Element3D
-    from compas_fea2.model.elements import Face
+    from compas_fea2.model.groups import EdgesGroup
+    from compas_fea2.model.groups import ElementsGroup
+    from compas_fea2.model.groups import FacesGroup
+    from compas_fea2.model.groups import InteractionsGroup
+    from compas_fea2.model.groups import InterfacesGroup
+    from compas_fea2.model.groups import MaterialsGroup
+    from compas_fea2.model.groups import NodesGroup
+    from compas_fea2.model.groups import SectionsGroup
     from compas_fea2.model.materials.material import _Material
-    
-    from compas_fea2.problem import Problem
-    from compas_fea2.problem.steps.step import _Step
-    
+    from compas_fea2.model.model import Model
+    from compas_fea2.model.nodes import Node
+    from compas_fea2.model.sections import _Section
+    from compas_fea2.model.sections import _Section2D
+    from compas_fea2.model.sections import _Section3D
+
 
 GroupType = Union["NodesGroup", "ElementsGroup", "FacesGroup", "MaterialsGroup", "SectionsGroup", "InterfacesGroup", "InteractionsGroup"]
 
@@ -1324,8 +1306,12 @@ class _Part(FEAData):
         polygon_xy = polygon.transformed(S)
         polygon_xy = polygon.transformed(T)
         return nodes_on_plane.subgroup(condition=lambda x: is_point_in_polygon_xy(Point(*x.xyz).transformed(T), polygon_xy))
-    
-    def find_nodes_around_point(self, point: Point, distance: float = 1.0,) -> "NodesGroup | None | Dict[Node, float]":
+
+    def find_nodes_around_point(
+        self,
+        point: Point,
+        distance: float = 1.0,
+    ) -> "NodesGroup | None | Dict[Node, float]":
         """Find the nodes around a given point within a specified distance.
 
         Parameters
@@ -1505,7 +1491,6 @@ class _Part(FEAData):
                 for node in element.nodes:
                     node.mass = [a + b for a, b in zip(node.mass[:3], elNodalMass[:3])] + [0.0, 0.0, 0.0]
         return [sum(node.mass[i] for node in self.nodes) for i in range(3)]
-
 
     # =========================================================================
     #                           Elements methods
@@ -1742,14 +1727,14 @@ class _Part(FEAData):
             for face in element_faces:
                 faces.append(face)
         faces_group = FacesGroup(faces)
-        
+
         # find faces on the plane of the polygon
         if not is_coplanar(polygon.points):
             raise ValueError("The polygon is not planar.")
-        
+
         plane = getattr(polygon, "plane", None) or Plane.from_points(polygon.points[:3])
         frame = Frame.from_plane(plane)
-        
+
         faces_subgroup = faces_group.subgroup(condition=lambda face: all(is_point_on_plane(node.xyz, plane) for node in face.nodes))
         # find faces within the polygon
         S = Scale.from_factors([tol] * 3, frame)
@@ -1768,8 +1753,6 @@ class _Part(FEAData):
             List with the boundary faces.
         """
         return self.faces.subgroup(condition=lambda x: all(node.on_boundary for node in x.nodes))
-
- 
 
     # =========================================================================
     #                           Groups methods
@@ -1945,8 +1928,10 @@ class _Part(FEAData):
     #         return point, sum(displacements) / len(displacements)
     #     return point, 0.0
 
+
 class Part(_Part):
     """Deformable part."""
+
     __doc__ = __doc__ or ""
     __doc__ += _Part.__doc__ or ""
     __doc__ += """
@@ -2003,9 +1988,7 @@ class Part(_Part):
         part = cls(name=name, **kwargs)
 
         # Add main mesh nodes
-        vertex_node = {
-            vertex: part.add_node(Node(mesh.vertex_coordinates(vertex))) for vertex in mesh.vertices()  # type: ignore
-        }
+        vertex_node = {vertex: part.add_node(Node(mesh.vertex_coordinates(vertex))) for vertex in mesh.vertices()}  # type: ignore
 
         # Process each edge
         for edge in mesh.edges():
@@ -2025,9 +2008,7 @@ class Part(_Part):
             orientation_point = p1 + normal * offset
 
             # Beam element with 3 nodes
-            part.add_element(
-                BeamElement(nodes=[n1, n2], orientation=orientation_point, section=section)
-            )
+            part.add_element(BeamElement(nodes=[n1, n2], orientation=orientation_point, section=section))
         return part
 
     @classmethod
@@ -2051,9 +2032,7 @@ class Part(_Part):
         return super().from_gmsh(gmshModel, section=section, name=name, **kwargs)
 
     @classmethod
-    def from_boundary_mesh(
-        cls, boundary_mesh: "Mesh", section: Union["SolidSection", "ShellSection"], name: Optional[str] = None, **kwargs
-    ) -> "_Part":
+    def from_boundary_mesh(cls, boundary_mesh: "Mesh", section: Union["SolidSection", "ShellSection"], name: Optional[str] = None, **kwargs) -> "_Part":
         """Create a Part object from a 3-dimensional :class:`compas.datastructures.Mesh`
         object representing the boundary envelope of the Part.
 

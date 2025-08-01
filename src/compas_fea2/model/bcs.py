@@ -1,6 +1,6 @@
+from typing import Any
 from typing import Dict
 from typing import Optional
-from typing import Any
 
 from compas_fea2.base import FEAData
 
@@ -48,6 +48,7 @@ axes : str
 
 class _BoundaryCondition(FEAData):
     """Base class for all zero-valued boundary conditions."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -85,7 +86,7 @@ class _BoundaryCondition(FEAData):
     @property
     def zz(self) -> bool:
         return self._zz
-    
+
     @property
     def temp(self) -> bool:
         return self._temp
@@ -105,16 +106,18 @@ class _BoundaryCondition(FEAData):
     @property
     def __data__(self) -> dict:
         data = super().__data__
-        data.update({
-            "axes": self._axes,
-            "x": self._x,
-            "y": self._y,
-            "z": self._z,
-            "xx": self._xx,
-            "yy": self._yy,
-            "zz": self._zz,
-            "temp": self._temp,
-        })
+        data.update(
+            {
+                "axes": self._axes,
+                "x": self._x,
+                "y": self._y,
+                "z": self._z,
+                "xx": self._xx,
+                "yy": self._yy,
+                "zz": self._zz,
+                "temp": self._temp,
+            }
+        )
         return data
 
     @classmethod
@@ -129,7 +132,7 @@ class _BoundaryCondition(FEAData):
         bc._name = data.get("name", "")
         return bc
 
-    def __add__(self, other: '_BoundaryCondition') -> 'GeneralBC':
+    def __add__(self, other: "_BoundaryCondition") -> "GeneralBC":
         """Combine two boundary conditions by OR-ing their component restraints."""
         if not isinstance(other, _BoundaryCondition):
             return NotImplemented
@@ -144,11 +147,11 @@ class _BoundaryCondition(FEAData):
         )
         combined._temp = self.temp or other.temp
         return combined
-        
 
 
 class GeneralBC(_BoundaryCondition):
     """Customized boundary condition."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -181,8 +184,9 @@ zz : bool
 
 class FixedBC(_BoundaryCondition):
     """A fixed nodal displacement boundary condition."""
+
     __doc__ = __doc__ or ""
-    __doc__ += docs 
+    __doc__ += docs
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -196,6 +200,7 @@ class FixedBC(_BoundaryCondition):
 
 class FixedBCX(_BoundaryCondition):
     """A fixed nodal displacement boundary condition along and around X."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -207,6 +212,7 @@ class FixedBCX(_BoundaryCondition):
 
 class FixedBCY(_BoundaryCondition):
     """A fixed nodal displacement boundary condition along and around Y."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -218,6 +224,7 @@ class FixedBCY(_BoundaryCondition):
 
 class FixedBCZ(_BoundaryCondition):
     """A fixed nodal displacement boundary condition along and around Z."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -229,6 +236,7 @@ class FixedBCZ(_BoundaryCondition):
 
 class PinnedBC(_BoundaryCondition):
     """A pinned nodal displacement boundary condition."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -241,6 +249,7 @@ class PinnedBC(_BoundaryCondition):
 
 class ClampBCXX(PinnedBC):
     """A pinned nodal displacement boundary condition clamped in XX."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -251,6 +260,7 @@ class ClampBCXX(PinnedBC):
 
 class ClampBCYY(PinnedBC):
     """A pinned nodal displacement boundary condition clamped in YY."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -261,6 +271,7 @@ class ClampBCYY(PinnedBC):
 
 class ClampBCZZ(PinnedBC):
     """A pinned nodal displacement boundary condition clamped in ZZ."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -271,6 +282,7 @@ class ClampBCZZ(PinnedBC):
 
 class RollerBCX(PinnedBC):
     """A pinned nodal displacement boundary condition released in X."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -281,6 +293,7 @@ class RollerBCX(PinnedBC):
 
 class RollerBCY(PinnedBC):
     """A pinned nodal displacement boundary condition released in Y."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -291,6 +304,7 @@ class RollerBCY(PinnedBC):
 
 class RollerBCZ(PinnedBC):
     """A pinned nodal displacement boundary condition released in Z."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -301,6 +315,7 @@ class RollerBCZ(PinnedBC):
 
 class RollerBCXY(PinnedBC):
     """A pinned nodal displacement boundary condition released in X and Y."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -312,6 +327,7 @@ class RollerBCXY(PinnedBC):
 
 class RollerBCYZ(PinnedBC):
     """A pinned nodal displacement boundary condition released in Y and Z."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -323,6 +339,7 @@ class RollerBCYZ(PinnedBC):
 
 class RollerBCXZ(PinnedBC):
     """A pinned nodal displacement boundary condition released in X and Z."""
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -331,9 +348,11 @@ class RollerBCXZ(PinnedBC):
         self._x = False
         self._z = False
 
-#===================================================================
+
+# ===================================================================
 # HEAT ANALYSIS
-#===================================================================
+# ===================================================================
+
 
 class _ThermalBoundaryCondition(FEAData):
     """Base class for temperature boundary conditions.
@@ -343,6 +362,7 @@ class _ThermalBoundaryCondition(FEAData):
     temp : float, optional
         Imposed temperature for heat analysis. Defaults to None.
     """
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
@@ -355,9 +375,11 @@ class _ThermalBoundaryCondition(FEAData):
         data = super().__data__
         if not isinstance(data, dict):
             data = {}
-        data.update({
-            "temperature": self._temperature,
-        })
+        data.update(
+            {
+                "temperature": self._temperature,
+            }
+        )
         return data
 
     @classmethod
@@ -370,15 +392,15 @@ class _ThermalBoundaryCondition(FEAData):
 
 class ImposedTemperature(_ThermalBoundaryCondition):
     """Imposed temperature conidtion for heat analysis.
-    
-    Additional Parameters
----------------------
-temp : float
-    Value of imposed temperature applied
+
+        Additional Parameters
+    ---------------------
+    temp : float
+        Value of imposed temperature applied
     """
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, temp: float, **kwargs):
         super().__init__(temperature=temp, **kwargs)
-

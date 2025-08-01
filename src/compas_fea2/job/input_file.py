@@ -1,14 +1,17 @@
 import os
-from typing import Optional, Any, Union, cast
-from typing import TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Optional
+from typing import Union
 
 from compas_fea2 import VERBOSE
 from compas_fea2.base import FEAData
 
 if TYPE_CHECKING:
-    from compas_fea2.problem import Problem
     from compas_fea2.model import Model
+    from compas_fea2.problem import Problem
+
 
 class InputFile(FEAData):
     """Input file object for standard FEA.

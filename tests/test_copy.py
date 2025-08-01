@@ -2,16 +2,15 @@ import os
 import json
 import tempfile
 import unittest
-from compas.geometry import Transformation, Translation  # type: ignore
+from compas.geometry import Translation  # type: ignore
 
-from compas_fea2.base import FEAData
 from compas_fea2.model.model import Model  # explicit import
 from compas_fea2.model.parts import Part  # type: ignore
 from compas_fea2.model.materials.steel import Steel  # type: ignore
 from compas_fea2.model.sections import GenericBeamSection  # type: ignore
 
-class TestFEADataCopy(unittest.TestCase):
 
+class TestFEADataCopy(unittest.TestCase):
     def test_copy_guid_and_name(self):
         m1 = Model(name="orig")
         m2 = m1.copy()  # type: ignore
@@ -50,23 +49,22 @@ class TestFEADataCopy(unittest.TestCase):
         self.assertNotEqual(part.name, p2.name)
         self.assertNotEqual(part, p2)
 
-class TestModelPartCopy(unittest.TestCase):
 
+class TestModelPartCopy(unittest.TestCase):
     def setUp(self):
         self.model = Model(name="test")
         self.part = self.model.add_part(Part(name="p1"))
 
     def test_copy_part(self):
         # translation by vector [1,1,1]
-        t = Translation.from_vector([1,1,1])
-        p2 = self.model.copy_part(self.part, t)  
-        self.assertIn(p2, self.model.parts)  
+        t = Translation.from_vector([1, 1, 1])
+        p2 = self.model.copy_part(self.part, t)
+        self.assertIn(p2, self.model.parts)
         # ensure objects differ
         self.assertNotEqual(self.part, p2)
 
 
 class TestModelMaterialsSections(unittest.TestCase):
-
     def setUp(self):
         self.model = Model()
 
@@ -95,7 +93,7 @@ class TestModelMaterialsSections(unittest.TestCase):
             Avy=0.05,
             g0=0.0,
             gw=0.0,
-            name="test_section"
+            name="test_section",
         )
         returned = self.model.add_section(sec)  # type: ignore
         self.assertIn(sec, self.model.sections)  # type: ignore
@@ -103,7 +101,6 @@ class TestModelMaterialsSections(unittest.TestCase):
 
 
 class TestToJson(unittest.TestCase):
-
     def test_to_json_writes_file(self):
         m = Model(description="desc", author="auth")
         tmp = tempfile.mkdtemp()

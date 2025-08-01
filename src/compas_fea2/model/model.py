@@ -2,59 +2,70 @@ from __future__ import annotations
 
 import importlib
 from itertools import chain
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
+from typing import Any
 
 from compas.datastructures import Graph
-from compas.geometry import bounding_box, centroid_points, centroid_points_weighted
-from compas.geometry import Box, Plane, Point, Transformation
+from compas.geometry import Box
+from compas.geometry import Plane
+from compas.geometry import Point
+from compas.geometry import Transformation
+from compas.geometry import bounding_box
+from compas.geometry import centroid_points
+from compas.geometry import centroid_points_weighted
 
 import compas_fea2
 from compas_fea2.base import FEAData
-
-from compas_fea2.model.nodes import Node
-from compas_fea2.model.parts import _Part, Part, RigidPart
-from compas_fea2.model.bcs import _BoundaryCondition, _ThermalBoundaryCondition
+from compas_fea2.model.bcs import _BoundaryCondition
+from compas_fea2.model.bcs import _ThermalBoundaryCondition
 from compas_fea2.model.connectors import _Connector
 from compas_fea2.model.constraints import _Constraint
-from compas_fea2.model.interfaces import _Interface
+from compas_fea2.model.groups import ConnectorsGroup
+from compas_fea2.model.groups import ConstraintsGroup
+from compas_fea2.model.groups import ElementsGroup
+from compas_fea2.model.groups import InteractionsGroup
+from compas_fea2.model.groups import InterfacesGroup
+from compas_fea2.model.groups import MaterialsGroup
+from compas_fea2.model.groups import NodesGroup
+from compas_fea2.model.groups import PartsGroup
+from compas_fea2.model.groups import SectionsGroup
+from compas_fea2.model.groups import _Group
 from compas_fea2.model.ics import _InitialCondition
-from compas_fea2.model.groups import (
-    _Group,
-    InterfacesGroup,
-    NodesGroup,
-    PartsGroup,
-    MaterialsGroup,
-    PartsGroup,
-    SectionsGroup,
-    ConnectorsGroup,
-    InteractionsGroup,
-    ElementsGroup,
-    ConstraintsGroup,
-    InterfacesGroup,
-)
-
+from compas_fea2.model.nodes import Node
+from compas_fea2.model.parts import Part
+from compas_fea2.model.parts import RigidPart
+from compas_fea2.model.parts import _Part
 from compas_fea2.problem import Problem
-from compas_fea2.utilities._utils import get_docstring, part_method
+from compas_fea2.utilities._utils import get_docstring
+from compas_fea2.utilities._utils import part_method
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Dict, List, Optional, Set, Union
+    from typing import Dict
+    from typing import List
+    from typing import Optional
+    from typing import Set
+    from typing import Union
 
     from compas.geometry import Polygon
 
-    from compas_fea2.model.bcs import (
-        _BoundaryCondition,
-        _ThermalBoundaryCondition,
-    )
+    from compas_fea2.model.bcs import _BoundaryCondition
+    from compas_fea2.model.bcs import _ThermalBoundaryCondition
     from compas_fea2.model.connectors import _Connector
     from compas_fea2.model.constraints import _Constraint
     from compas_fea2.model.elements import _Element
-    from compas_fea2.model.groups import MaterialsGroup, SectionsGroup, ConnectorsGroup, InterfacesGroup, InteractionsGroup, ElementsGroup, ConstraintsGroup
+    from compas_fea2.model.groups import ConnectorsGroup
+    from compas_fea2.model.groups import ConstraintsGroup
+    from compas_fea2.model.groups import ElementsGroup
+    from compas_fea2.model.groups import InteractionsGroup
+    from compas_fea2.model.groups import InterfacesGroup
+    from compas_fea2.model.groups import MaterialsGroup
+    from compas_fea2.model.groups import SectionsGroup
     from compas_fea2.model.ics import _InitialCondition
-    from compas_fea2.model.interactions import _Interaction, ThermalInteraction
+    from compas_fea2.model.interactions import ThermalInteraction
+    from compas_fea2.model.interactions import _Interaction
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.sections import _Section
-    from compas_fea2.problem import Amplitude
     from compas_fea2.units import UnitRegistry
 
 
@@ -1321,7 +1332,6 @@ class Model(FEAData):
             The added interactions.
         """
         return [self.add_interaction(interaction) for interaction in interactions]
-
 
     # =========================================================================
     #                           Problems methods

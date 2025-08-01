@@ -1,23 +1,22 @@
+from typing import TYPE_CHECKING
 from typing import Iterable
 from typing import Optional
-from typing import TYPE_CHECKING
 
 from compas_fea2.base import FEAData
-from compas_fea2.problem.loads import VectorLoad
-from compas_fea2.problem.loads import ScalarLoad
 from compas_fea2.problem.loads import HeatFluxLoad
+from compas_fea2.problem.loads import ScalarLoad
+from compas_fea2.problem.loads import VectorLoad
 
 if TYPE_CHECKING:
-    from compas_fea2.problem.loads import _Load
-    from compas_fea2.problem.displacements import GeneralDisplacement
-    from compas_fea2.problem.amplitudes import Amplitude
-    from compas_fea2.model.nodes import Node
-    from compas_fea2.model.elements import _Element
-    from compas_fea2.problem.steps import _Step
-    from compas_fea2.problem import Problem
+    from compas.geometry import Point
+
     from compas_fea2.model import Model
     from compas_fea2.model.groups import FacesGroup
-    from compas.geometry import Point
+    from compas_fea2.model.nodes import Node
+    from compas_fea2.problem import Problem
+    from compas_fea2.problem.displacements import GeneralDisplacement
+    from compas_fea2.problem.loads import _Load
+    from compas_fea2.problem.steps import _Step
 
 # TODO implement __*__ magic method for combination
 

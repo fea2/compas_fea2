@@ -5,7 +5,7 @@ from .step import _Step
 
 
 class HeatTransferStep(_Step):
-    """HeatTransfer for use in a heat transfer analysis. 
+    """HeatTransfer for use in a heat transfer analysis.
     Specific for now to a transient heat transfer analysis as defined in Abaqus.
 
     Parameters
@@ -91,7 +91,7 @@ class HeatTransferStep(_Step):
         super().__init__(
             **kwargs,
         )
-    
+
         self._max_increments = max_increments
         self._initial_inc_size = initial_inc_size
         self._min_inc_size = min_inc_size
@@ -101,7 +101,6 @@ class HeatTransferStep(_Step):
         self.max_emiss_change = max_emiss_change
         self._nlgeom = nlgeom
         self._modify = modify
-    
 
     def __data__(self):
         return {
@@ -129,7 +128,7 @@ class HeatTransferStep(_Step):
             modify=data["modify"],
             # Add other attributes as needed
         )
-    
+
     def add_load_field(self, field):
         """Add a general :class:`compas_fea2.problem.patterns.Pattern` to the Step.
 
@@ -147,14 +146,14 @@ class HeatTransferStep(_Step):
 
         if not isinstance(field, _LoadField):
             raise TypeError("{!r} is not a LoadPattern.".format(field))
-        
-        if not(isinstance(field, (HeatFluxField, TemperatureField))):
+
+        if not (isinstance(field, (HeatFluxField, TemperatureField))):
             raise ValueError("A non-thermal load can not be implemented in a heat analysis step.")
 
         self._load_fields.add(field)
         self._load_cases.add(field.load_case)
         field._registration = self
         self.model.add_group(field.distribution)
-        for amplitude in field.amplitudes :
+        for amplitude in field.amplitudes:
             self.model.amplitudes.add(amplitude)
         return field
