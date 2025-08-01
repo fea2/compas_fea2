@@ -71,8 +71,8 @@ class Shape(Polygon, FEAData):
     def __from_data__(cls, data: dict) -> "Shape":
         """Create a shape instance from a dictionary representation."""
         points = [Point.__from_data__(pt) for pt in data["points"]]
-        frame = Frame.__from_data__(data["frame"])
-        return cls(points, frame)
+        frame = Frame.__from_data__(data["frame"]) # the return type is wrong in compas
+        return cls(points, frame) # type: ignore[return-value]
 
     # --------------------------------------------------------------------------
     # Properties
@@ -515,7 +515,7 @@ class Circle(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Circle":
-        instance = cls(data["radius"], data["segments"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["radius"], data["segments"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -611,7 +611,7 @@ class Ellipse(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Ellipse":
-        instance = cls(data["radius_a"], data["radius_b"], data["segments"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["radius_a"], data["radius_b"], data["segments"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -678,7 +678,7 @@ class Rectangle(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Rectangle":
-        instance = cls(data["w"], data["h"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["w"], data["h"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -720,7 +720,7 @@ class Rhombus(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Rhombus":
-        instance = cls(data["a"], data["b"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["a"], data["b"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -786,7 +786,7 @@ class UShape(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "UShape":
-        instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["t3"], data["direction"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["t3"], data["direction"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -846,7 +846,7 @@ class TShape(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "TShape":
-        instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["direction"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["direction"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -983,7 +983,7 @@ class IShape(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "IShape":
-        instance = cls(data["w"], data["h"], data["tw"], data["tbf"], data["ttf"], data["direction"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["w"], data["h"], data["tw"], data["tbf"], data["ttf"], data["direction"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1041,7 +1041,7 @@ class LShape(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "LShape":
-        instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["direction"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["direction"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1087,7 +1087,7 @@ class CShape(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "CShape":
-        instance = cls(data["height"], data["flange_width"], data["web_thickness"], data["flange_thickness"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["height"], data["flange_width"], data["web_thickness"], data["flange_thickness"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1161,7 +1161,7 @@ class CustomI(Shape):
             data["web_thickness"],
             data["top_flange_thickness"],
             data["bottom_flange_thickness"],
-            Frame.__from_data__(data["frame"]),
+            Frame.__from_data__(data["frame"]), # type: ignore[return-value] the return type is wrong in compas
         )
         return instance
 
@@ -1231,7 +1231,7 @@ class Star(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Star":
-        instance = cls(data["a"], data["b"], data["c"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["a"], data["b"], data["c"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1276,7 +1276,7 @@ class Hexagon(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Hexagon":
-        instance = cls(data["side_length"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["side_length"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1313,7 +1313,7 @@ class Pentagon(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Pentagon":
-        instance = cls(data["circumradius"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["circumradius"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1350,7 +1350,7 @@ class Octagon(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Octagon":
-        instance = cls(data["circumradius"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["circumradius"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1387,7 +1387,7 @@ class Triangle(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Triangle":
-        instance = cls(data["circumradius"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["circumradius"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1427,7 +1427,7 @@ class Parallelogram(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Parallelogram":
-        instance = cls(data["width"], data["height"], data["angle"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["width"], data["height"], data["angle"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
 
 
@@ -1466,5 +1466,5 @@ class Trapezoid(Shape):
 
     @classmethod
     def __from_data__(cls, data: dict) -> "Trapezoid":
-        instance = cls(data["top_width"], data["bottom_width"], data["height"], Frame.__from_data__(data["frame"]))
+        instance = cls(data["top_width"], data["bottom_width"], data["height"], Frame.__from_data__(data["frame"])) # type: ignore[return-value] the return type is wrong in compas
         return instance
