@@ -1,4 +1,4 @@
-import os
+# import os
 import shutil
 from pathlib import Path
 from typing import List
@@ -18,6 +18,7 @@ from compas_fea2.results.database import SQLiteResultsDatabase
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model  
     from compas_fea2.problem.steps import _Step
+    from compas_fea2.problem.steps.perturbations import LinearStaticPerturbation
 
 
 class Problem(FEAData):
@@ -80,6 +81,28 @@ class Problem(FEAData):
         self._steps = set()
         self._steps_order = []  # TODO make steps a list
         self._rdb = None
+
+
+    @property
+    def __data__(self) -> dict:
+        """Returns a dictionary representation of the Problem object."""
+        return {
+            "description": self.description,
+            "steps": [step.__data__() for step in self.steps],
+            "path": str(self.path),
+            "path_db": str(self.path_db),
+        }
+
+    @classmethod
+    def __from_data__(cls, data: dict) -> "Problem":
+        """Creates a Problem object from a dictionary representation."""
+        problem = cls(description=data.get("description"))
+        problem.path = data.get("path")
+        problem._path_db = data.get("path_db")
+        problem._steps = set(_Step.__from_data__(step_data) for step_data in data.get("steps", []))
+        problem._steps_order = list(problem._steps)
+        return problem
+    
 
     @property
     def model(self) -> "Model | None":
@@ -267,7 +290,7 @@ class Problem(FEAData):
                 raise TypeError("{} is not a step".format(step))
         self._steps_order = order
 
-    def add_linear_perturbation_step(self, lp_step: "LinearPerturbation", base_step: str):  # noqa: F821
+    def add_linear_static_perturbation_step(self, lp_step: "LinearStaticPerturbation", base_step: str):
         """Add a linear perturbation step to a previously defined step.
 
         Parameters
@@ -427,6 +450,8 @@ Analysis folder path : {self.path or "N/A"}
 
         """
         # generate keys
+        if not self.model:
+            raise ValueError("You must register a model to the Problem before analysing it.")
         self.model.assign_keys()
         raise NotImplementedError("this function is not available for the selected backend")
 
@@ -500,57 +525,3 @@ Analysis folder path : {self.path or "N/A"}
     # =========================================================================
     #                         Results methods - displacements
     # =========================================================================
-
-    # =========================================================================
-    #                         Viewer methods
-    # =========================================================================
-    def show(
-        self, steps: Optional[List[_Step]] = None, fast: bool = True, scale_model: float = 1.0, show_parts: bool = True, show_bcs: float = 1.0, show_loads: float = 1.0, **kwargs
-    ):
-        """Visualise the model in the viewer.
-
-        Parameters
-        ----------
-        scale_model : float, optional
-            Scale factor for the model, by default 1.0
-        show_bcs : float, optional
-            Scale factor for the boundary conditions, by default 1.0
-        show_loads : float, optional
-            Scale factor for the loads, by default 1.0
-
-        """
-        from compas_fea2.UI.viewer import FEA2Viewer
-
-        if not steps:
-            steps = self.steps_order
-
-        viewer = FEA2Viewer(center=self.model.center, scale_model=scale_model)
-        viewer.config.vectorsize = 0.2
-        viewer.add_model(self.model, show_parts=show_parts, opacity=0.5, show_bcs=show_bcs, **kwargs)
-
-        for step in steps:
-            viewer.add_step(step, show_loads=show_loads)
-
-        viewer.show()
-        viewer.scene.clear()
-
-    @property
-    def __data__(self) -> dict:
-        """Returns a dictionary representation of the Problem object."""
-        return {
-            "description": self.description,
-            "steps": [step.__data__() for step in self.steps],
-            "path": str(self.path),
-            "path_db": str(self.path_db),
-        }
-
-    @classmethod
-    def __from_data__(cls, data: dict) -> "Problem":
-        """Creates a Problem object from a dictionary representation."""
-        problem = cls(description=data.get("description"))
-        problem.path = data.get("path")
-        problem._path_db = data.get("path_db")
-        problem._steps = set(_Step.__from_data__(step_data) for step_data in data.get("steps", []))
-        problem._steps_order = list(problem._steps)
-        return problem
-    

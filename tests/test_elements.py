@@ -9,7 +9,7 @@ class TestBeamElement(unittest.TestCase):
         node2 = Node([1, 0, 0])
         mat = Steel.S355()
         section = RectangularSection(w=1, h=2, material=mat)
-        element = BeamElement(nodes=[node1, node2], section=section, frame=[0, 0, 1])
+        element = BeamElement(nodes=[node1, node2], section=section, orientation=[0, 0, 1])
         self.assertEqual(element.nodes, [node1, node2])
 
 

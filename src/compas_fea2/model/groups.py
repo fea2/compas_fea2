@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from compas_fea2.model.model import Model
     from compas_fea2.model.nodes import Node
     from compas_fea2.model.elements import _Element
+    from compas_fea2.model.elements import _Element1D
+    from compas_fea2.model.elements import _Element2D
+    from compas_fea2.model.elements import _Element3D
     from compas_fea2.model.elements import Edge
     from compas_fea2.model.elements import Face
     from compas_fea2.model.releases import _BeamEndRelease
@@ -422,7 +425,7 @@ class NodesGroup(_Group["Node"]):
         return self._members
 
 
-class ElementsGroup(_Group["_Element"]):
+class ElementsGroup(_Group[Union["_Element", "_Element1D", "_Element2D", "_Element3D"]]):
     """Base class for elements groups.
 
     Parameters
@@ -471,7 +474,7 @@ class ElementsGroup(_Group["_Element"]):
         return self.part._registration
 
     @property
-    def elements(self) -> Set["_Element"]:
+    def elements(self) -> Set[Union["_Element", "_Element1D", "_Element2D", "_Element3D"]]:
         return self._members
 
 

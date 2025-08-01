@@ -19,7 +19,7 @@ class TestPart(unittest.TestCase):
         part.add_node(node1)
         part.add_node(node2)
         section = RectangularSection(w=1, h=1, material=Steel.S355())
-        element = BeamElement(nodes=[node1, node2], section=section, frame=[0, 0, 1])
+        element = BeamElement(nodes=[node1, node2], section=section, orientation=[0, 0, 1])
         part.add_element(element)
         self.assertIn(element, part.elements)
 

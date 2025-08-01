@@ -104,7 +104,7 @@ class TestElementsGroup(unittest.TestCase):
         node2 = Node([1, 0, 0])
         mat = Steel.S355()
         section = ShellSection(0.1, material=mat)
-        element = BeamElement(nodes=[node1, node2], section=section, frame=[0, 0, 1])
+        element = BeamElement(nodes=[node1, node2], section=section, orientation=[0, 0, 1])
         group = ElementsGroup(members=[element])
         self.assertIn(element, group.elements)
 
@@ -198,7 +198,7 @@ class TestSpecificGroupTypes(unittest.TestCase):
         self.beam_element = BeamElement(
             nodes=[self.nodes[0], self.nodes[1]], 
             section=self.section, 
-            frame=[0, 0, 1]
+            orientation=[0, 0, 1]
         )
         
         self.shell_element = ShellElement(
@@ -374,7 +374,7 @@ class TestGroupDataOperations(unittest.TestCase):
         nodes = [Node([0, 0, 0]), Node([1, 0, 0])]
         material = Steel.S355()
         section = RectangularSection(w=100, h=50, material=material)
-        element = BeamElement(nodes=nodes, section=section, frame=[0, 0, 1])
+        element = BeamElement(nodes=nodes, section=section, orientation=[0, 0, 1])
         
         group = ElementsGroup(members=[element])
         data = group.__data__

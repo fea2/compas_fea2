@@ -110,7 +110,7 @@ class _Element(FEAData):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self._part_key = None
+        self._part_key: Union[int, None] = None
         self._nodes = self._check_nodes(nodes)
         self._registration = nodes[0]._registration
         self._section = section
@@ -482,12 +482,20 @@ class _Element1D(_Element):
     _section: Optional["_Section1D"]
 
     def __init__(
-        self, nodes: List["Node"], section: "_Section1D", frame: Optional[Frame] = None, implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs
+        self, nodes: List["Node"], section: "_Section1D", orientation: Optional[Point] = None, implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs
     ):
         super().__init__(nodes, section, implementation=implementation, rigid=rigid, heat=heat, **kwargs)
-        if not frame:
+        if not orientation:
             raise ValueError("Frame is required for 1D elements")
-        self._frame = frame if isinstance(frame, Frame) else Frame(nodes[0].point, Vector(*frame), Vector.from_start_end(nodes[0].point, nodes[-1].point))
+        
+        self._orientation = orientation
+        n1 = nodes[0].point
+        n2 = nodes[1].point
+        n3 = orientation or Point(x=0, y=0, z=1)  # Default orientation if not provided
+        x = Vector.from_start_end(n1, n2)
+        v = Vector.from_start_end(n1, n3)
+        y = (v - x * v.dot(x)).unitized()
+        self._frame = Frame(n1, x, y)
         self._ndim = 1
 
     @property
@@ -635,7 +643,7 @@ class TrussElement(_Element1D):
     """A 1D element that resists axial loads."""
 
     def __init__(self, nodes: List["Node"], section: "_Section1D", implementation: Optional[str] = None, rigid: bool = False, heat: bool = False, **kwargs):
-        super().__init__(nodes, section, frame=None, implementation=implementation, rigid=rigid, heat=heat, **kwargs)
+        super().__init__(nodes, section, orientation=None, implementation=implementation, rigid=rigid, heat=heat, **kwargs)
 
 
 class StrutElement(TrussElement):
