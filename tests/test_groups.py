@@ -5,7 +5,7 @@ from compas_fea2.model.groups import (_Group, NodesGroup, ElementsGroup, FacesGr
                                       EdgesGroup, SectionsGroup, MaterialsGroup, InterfacesGroup,
                                       BCsGroup, ConnectorsGroup, ConstraintsGroup, ICsGroup, ReleasesGroup)
 from compas_fea2.model import Node, BeamElement, Part, ShellElement, ShellSection, Steel, RectangularSection
-
+from compas.geometry import Point
 
 class Dummy:
     key: int
@@ -103,8 +103,8 @@ class TestElementsGroup(unittest.TestCase):
         node1 = Node([0, 0, 0])
         node2 = Node([1, 0, 0])
         mat = Steel.S355()
-        section = ShellSection(0.1, material=mat)
-        element = BeamElement(nodes=[node1, node2], section=section, orientation=[0, 0, 1])
+        section = RectangularSection(w=100, h=50, material=mat)
+        element = BeamElement(nodes=[node1, node2], section=section, orientation=Point(0,0,1))
         group = ElementsGroup(members=[element])
         self.assertIn(element, group.elements)
 
@@ -192,18 +192,19 @@ class TestSpecificGroupTypes(unittest.TestCase):
         
         # Create test material and section
         self.material = Steel.S355()
-        self.section = ShellSection(0.1, material=self.material)
+        self.shell_section = ShellSection(0.1, material=self.material)
+        self.beam_section = RectangularSection(w=100, h=50, material=self.material)
         
         # Create test elements
         self.beam_element = BeamElement(
             nodes=[self.nodes[0], self.nodes[1]], 
-            section=self.section, 
-            orientation=[0, 0, 1]
+            section=self.beam_section, 
+            orientation=Point(0,0,1)
         )
         
         self.shell_element = ShellElement(
             nodes=self.nodes, 
-            section=self.section
+            section=self.shell_section
         )
         
         # Create test part
@@ -374,7 +375,7 @@ class TestGroupDataOperations(unittest.TestCase):
         nodes = [Node([0, 0, 0]), Node([1, 0, 0])]
         material = Steel.S355()
         section = RectangularSection(w=100, h=50, material=material)
-        element = BeamElement(nodes=nodes, section=section, orientation=[0, 0, 1])
+        element = BeamElement(nodes=nodes, section=section, orientation=Point(0, 0, 1))
         
         group = ElementsGroup(members=[element])
         data = group.__data__

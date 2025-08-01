@@ -73,7 +73,7 @@ class _Section(FEAData):
 
     @property
     def __data__(self):
-        data = super().__data__ if hasattr(super(), '__data__') else {}
+        data = {}
         data.update({
             "class": self.__class__.__name__,
             "material": self.material.__data__ if hasattr(self.material, "__data__") else self.material,

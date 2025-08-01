@@ -502,6 +502,8 @@ class _Element1D(_Element):
     def __data__(self):
         data = super().__data__
         data["frame"] = self.frame.__data__
+        data["orientation"] = self._orientation.__data__
+        data["ndim"] = self._ndim
         return data
     
     @property
