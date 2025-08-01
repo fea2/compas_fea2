@@ -10,6 +10,7 @@ from matplotlib.patches import Polygon as mplPolygon
 from matplotlib.path import Path
 
 from compas_fea2.base import FEAData
+from compas_fea2.model.shapes import Shape
 from compas_fea2.model.shapes import Circle
 from compas_fea2.model.shapes import IShape
 from compas_fea2.model.shapes import LShape
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
     from compas_fea2.model import Model
 
 _registration: Optional["Model"]
+
 
 def from_shape(shape: "Shape", material: "_Material", g0=None, gw=None, **kwargs) -> dict:  # noqa: F821
     return {
@@ -71,17 +73,23 @@ class _Section(FEAData):
 
     @property
     def __data__(self):
-        return {
-            "class": self.__class__.__base__,
-            "material": self.material.__data__,
+        data = super().__data__ if hasattr(super(), '__data__') else {}
+        data.update({
+            "class": self.__class__.__name__,
+            "material": self.material.__data__ if hasattr(self.material, "__data__") else self.material,
             "name": self.name,
             "uid": self.uid,
-        }
+        })
+        return data
 
     @classmethod
     def __from_data__(cls, data):
-        material = data["material"].pop("class").__from_data__(data["material"])
-        return cls(material=material)
+        material = data.get("material")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid")}
+        obj = cls(material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
     def __str__(self) -> str:
         return f"""
@@ -151,20 +159,22 @@ class SpringSection(FEAData):
 
     @property
     def __data__(self):
-        return {
+        data = super().__data__ if hasattr(super(), '__data__') else {}
+        data.update({
             "class": self.__class__.__name__,
             "axial": self.axial,
             "lateral": self.lateral,
             "rotational": self.rotational,
             "uid": self.uid,
             "name": self.name,
-        }
+        })
+        return data
 
     @classmethod
     def __from_data__(cls, data):
         sec = cls(axial=data["axial"], lateral=data["lateral"], rotational=data["rotational"])
-        sec.uid = data["uid"]
-        sec.name = data["name"]
+        sec.uid = data.get("uid", None)
+        sec.name = data.get("name", None)
         return sec
 
     def __str__(self) -> str:
@@ -222,6 +232,7 @@ class ConnectorSection(SpringSection):
 # # 1D - beam cross-sections
 # # ============================================================================
 
+
 class _Section1D(_Section):
     """Base class for 1D sections.
 
@@ -246,7 +257,10 @@ class _Section1D(_Section):
     gw : float
         Warping constant.
     """
-    def __init__(self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", shape:"Shape | None"=None, **kwargs):
+
+    def __init__(
+        self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", shape: "Shape | None" = None, **kwargs
+    ):
         super().__init__(material=material, **kwargs)
         self.A = A
         self.Ixx = Ixx
@@ -260,11 +274,11 @@ class _Section1D(_Section):
         self._shape = shape
 
     @property
-    def shape(self):
+    def shape(self) -> Shape | None:
         return self._shape
 
     @shape.setter
-    def shape(self, value):
+    def shape(self, value: Shape):
         self._shape = value
 
     @classmethod
@@ -275,32 +289,32 @@ class _Section1D(_Section):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "A": self.A,
-                "Ixx": self.Ixx,
-                "Iyy": self.Iyy,
-                "Ixy": self.Ixy,
-                "Avx": self.Avx,
-                "Avy": self.Avy,
-                "J": self.J,
-                "g0": self.g0,
-                "gw": self.gw,
-            }
-        )
+        data.update({
+            "A": self.A,
+            "Ixx": self.Ixx,
+            "Iyy": self.Iyy,
+            "Ixy": self.Ixy,
+            "Avx": self.Avx,
+            "Avy": self.Avy,
+            "J": self.J,
+            "g0": self.g0,
+            "gw": self.gw,
+        })
         if self._shape:
             shape_data = getattr(self._shape, "__data__", None)
             if shape_data:
-                data.update({"shape": shape_data})
-            else:
-                # Add fallback for missing attributes
-                data.update({
-                    "w": getattr(self._shape, "w", "Attribute 'w' not defined"),
-                    "h": getattr(self._shape, "h", "Attribute 'h' not defined"),
-                    "r": getattr(self._shape, "r", "Attribute 'r' not defined"),
-                    "t": getattr(self._shape, "t", "Attribute 't' not defined"),
-                })
+                data["shape"] = shape_data
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        shape = data.get("shape", None)
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "shape")}
+        obj = cls(material=material, shape=shape, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
     def __str__(self) -> str:
         return f"""
@@ -394,7 +408,15 @@ gw  : {self.gw}
             grid_tau_x = np.full(grid_x.shape, np.nan)
             grid_tau_y = np.full(grid_x.shape, np.nan)
 
-            for i, (x_, y_) in enumerate(points):
+            # Ensure points is a 2D array of shape (N, 2)
+            if points.ndim == 1:
+                points = points.reshape(-1, 2)
+            for i, pt in enumerate(points):
+                # Ensure pt is a tuple of two values
+                if isinstance(pt, (float, np.floating)):
+                    x_, y_ = pt, 0.0
+                else:
+                    x_, y_ = pt
                 if inside[i]:
                     x_fiber = x_ - cx
                     y_fiber = y_ - cy
@@ -483,7 +505,7 @@ gw  : {self.gw}
         """
         if not self.shape:
             raise ValueError("Section shape is not defined. Please set the shape before plotting stress distribution.")
-        
+
         grid_x, grid_y, grid_sigma, grid_tau_x, grid_tau_y = self.compute_stress_distribution(N=N, Mx=Mx, My=My, Vx=Vx, Vy=Vy, nx=nx, ny=ny)
 
         # Plot normal stress (\u03c3)
@@ -614,6 +636,7 @@ gw  : {self.gw}
         if not self.shape:
             raise ValueError("Section shape is not defined. Please set the shape before plotting stress distribution along a direction.")
         import matplotlib.patches as mpatches
+
         # Normalize the direction vector
         dx, dy = direction
         norm = np.sqrt(dx**2 + dy**2)
@@ -689,7 +712,7 @@ gw  : {self.gw}
         ax.legend(loc="upper left", fontsize=9)
         plt.grid(True)
         plt.show()
-    
+
     def plot(self):
         if self.shape:
             return self.shape.plot()
@@ -729,18 +752,20 @@ class GenericBeamSection(_Section1D):
 
     def __init__(self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", **kwargs):  # noqa: F821
         super().__init__(A=A, Ixx=Ixx, Iyy=Iyy, Ixy=Ixy, Avx=Avx, Avy=Avy, J=J, g0=g0, gw=gw, material=material, **kwargs)
-        self._shape = Circle(radius=sqrt(A / pi)) # only used for plotting
+        self._shape = Circle(radius=sqrt(A / pi))  # only used for plotting
 
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "g0": self.g0,
-                "gw": self.gw,
-            }
-        )
+        data.update({
+            "g0": self.g0,
+            "gw": self.gw,
+        })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return super().__from_data__(data)
 
 
 class AngleSection(_Section1D):
@@ -798,22 +823,37 @@ class AngleSection(_Section1D):
     Ixy not yet calculated.
     """
 
-    def __init__(self, w, h, t1, t2, material, **kwargs):
-        shape= LShape(w, h, t1, t2)
+    def __init__(self, a, b, t1, t2, direction, material, **kwargs):
+        shape = LShape(a=a, b=b, t1=t1, t2=t2, direction=direction)
         super().__init__(**from_shape(shape, material, **kwargs))
 
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "w": self.shape.w,
-                "h": self.shape.h,
-                "t1": self.shape.t1,
-                "t2": self.shape.t2,
-            }
-        )
+        shape = getattr(self, 'shape', None)
+        if shape:
+            data.update({
+                "a": getattr(shape, "a", None),
+                "b": getattr(shape, "b", None),
+                "t1": getattr(shape, "t1", None),
+                "t2": getattr(shape, "t2", None),
+                "direction": getattr(shape, "direction", None),
+            })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        a = data.get("a")
+        b = data.get("b")
+        t1 = data.get("t1")
+        t2 = data.get("t2")
+        direction = data.get("direction")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "a", "b", "t1", "t2", "direction")}
+        obj = cls(a=a, b=b, t1=t1, t2=t2, direction=direction, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
 
 # FIXME: implement 'from_shape' method
@@ -912,15 +952,26 @@ class BoxSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "w": self.w,
-                "h": self.h,
-                "tw": self.tw,
-                "tf": self.tf,
-            }
-        )
+        data.update({
+            "w": self.w,
+            "h": self.h,
+            "tw": self.tw,
+            "tf": self.tf,
+        })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        w = data.get("w")
+        h = data.get("h")
+        tw = data.get("tw")
+        tf = data.get("tf")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h", "tw", "tf")}
+        obj = cls(w=w, h=h, tw=tw, tf=tf, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
 
 class CircularSection(_Section1D):
@@ -969,12 +1020,20 @@ class CircularSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "r": self.shape.radius,
-            }
-        )
+        shape = getattr(self, 'shape', None)
+        if shape:
+            data["r"] = getattr(shape, "radius", None)
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        r = data.get("r")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "r")}
+        obj = cls(r=r, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
 
 # FIXME: implement 'from_shape' method
@@ -1028,6 +1087,7 @@ class HexSection(_Section1D):
 
     def __init__(self, r, t, material, **kwargs):
         raise NotImplementedError("This section is not available for the selected backend")
+
 
 class ISection(_Section1D):
     """
@@ -1090,21 +1150,41 @@ class ISection(_Section1D):
 
     @property
     def k(self):
-        return 0.3 + 0.1 * ((self.shape.abf + self.shape.atf) / self.shape.area)
+        shape = getattr(self, 'shape', None)
+        abf = getattr(shape, 'abf', None)
+        atf = getattr(shape, 'atf', None)
+        area = getattr(shape, 'area', None)
+        if abf is not None and atf is not None and area:
+            return 0.3 + 0.1 * ((abf + atf) / area)
+        return None
 
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "w": self.shape.w,
-                "h": self.shape.h,
-                "tw": self.shape.tw,
-                "tbf": self.shape.tbf,
-                "ttf": self.shape.ttf,
-            }
-        )
+        shape = getattr(self, 'shape', None)
+        if shape:
+            data.update({
+                "w": getattr(shape, "w", None),
+                "h": getattr(shape, "h", None),
+                "tw": getattr(shape, "tw", None),
+                "tbf": getattr(shape, "tbf", None),
+                "ttf": getattr(shape, "ttf", None),
+            })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        w = data.get("w")
+        h = data.get("h")
+        tw = data.get("tw")
+        tbf = data.get("tbf")
+        ttf = data.get("ttf")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h", "tw", "tbf", "ttf")}
+        obj = cls(w=w, h=h, tw=tw, tbf=tbf, ttf=ttf, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
     @classmethod
     def IPE80(cls, material, **kwargs):
@@ -1529,13 +1609,22 @@ class PipeSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "r": self.r,
-                "t": self.t,
-            }
-        )
+        data.update({
+            "r": self.r,
+            "t": self.t,
+        })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        r = data.get("r")
+        t = data.get("t")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "r", "t")}
+        obj = cls(r=r, t=t, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
 
 class RectangularSection(_Section1D):
@@ -1589,13 +1678,22 @@ class RectangularSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "w": self.shape.w,
-                "h": self.shape.h,
-            }
-        )
+        shape = getattr(self, 'shape', None)
+        if shape:
+            data["w"] = getattr(shape, "w", None)
+            data["h"] = getattr(shape, "h", None)
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        w = data.get("w")
+        h = data.get("h")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h")}
+        obj = cls(w=w, h=h, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
 
 class TrapezoidalSection(_Section1D):
@@ -1683,14 +1781,24 @@ class TrapezoidalSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "w1": self.w1,
-                "w2": self.w2,
-                "h": self.h,
-            }
-        )
+        data.update({
+            "w1": self.w1,
+            "w2": self.w2,
+            "h": self.h,
+        })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        w1 = data.get("w1")
+        w2 = data.get("w2")
+        h = data.get("h")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w1", "w2", "h")}
+        obj = cls(w1=w1, w2=w2, h=h, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
 
 # ==============================================================================
@@ -1762,12 +1870,20 @@ class TrussSection(_Section1D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "A": self.A,
-            }
-        )
+        data.update({
+            "A": self.A,
+        })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        A = data.get("A")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "A")}
+        obj = cls(A=A, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
 
 
 class StrutSection(TrussSection):
@@ -1810,6 +1926,10 @@ class StrutSection(TrussSection):
     def __init__(self, A, material, **kwargs):
         super(StrutSection, self).__init__(A=A, material=material, **kwargs)
 
+    @classmethod
+    def __from_data__(cls, data):
+        return super().__from_data__(data)
+
 
 class TieSection(TrussSection):
     """
@@ -1851,10 +1971,15 @@ class TieSection(TrussSection):
     def __init__(self, A, material, **kwargs):
         super(TieSection, self).__init__(A=A, material=material, **kwargs)
 
+    @classmethod
+    def __from_data__(cls, data):
+        return super().__from_data__(data)
+
 
 # ==============================================================================
 # 2D
 # ==============================================================================
+
 
 class _Section2D(_Section):
     """Base class for 2D sections.
@@ -1864,9 +1989,29 @@ class _Section2D(_Section):
     t : float
         Thickness.
     """
+
     def __init__(self, t: float, material: "_Material", **kwargs):
         super().__init__(material=material, **kwargs)
         self.t = t
+
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update({
+            "t": self.t,
+        })
+        return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        material = data.get("material")
+        t = data.get("t")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "t")}
+        obj = cls(t=t, material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj.uid = data.get("uid", None)
+        return obj
+
 
 class ShellSection(_Section2D):
     """
@@ -1895,12 +2040,14 @@ class ShellSection(_Section2D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "t": self.t,
-            }
-        )
+        data.update({
+            "t": self.t,
+        })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return super().__from_data__(data)
 
 
 class MembraneSection(_Section2D):
@@ -1930,17 +2077,20 @@ class MembraneSection(_Section2D):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "t": self.t,
-            }
-        )
+        data.update({
+            "t": self.t,
+        })
         return data
+
+    @classmethod
+    def __from_data__(cls, data):
+        return super().__from_data__(data)
 
 
 # ==============================================================================
 # 3D
 # ==============================================================================
+
 
 class _Section3D(_Section):
     """Base class for 3D sections.
@@ -1949,8 +2099,18 @@ class _Section3D(_Section):
     ----------
     None specific to 3D sections.
     """
+
     def __init__(self, material: "_Material", **kwargs):
         super().__init__(material=material, **kwargs)
+
+    @property
+    def __data__(self):
+        return super().__data__
+
+    @classmethod
+    def __from_data__(cls, data):
+        return super().__from_data__(data)
+
 
 class SolidSection(_Section3D):
     """
@@ -1971,3 +2131,11 @@ class SolidSection(_Section3D):
 
     def __init__(self, material, **kwargs):
         super(SolidSection, self).__init__(material=material, **kwargs)
+
+    @property
+    def __data__(self):
+        return super().__data__
+
+    @classmethod
+    def __from_data__(cls, data):
+        return super().__from_data__(data)

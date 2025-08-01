@@ -112,7 +112,7 @@ class _Element(FEAData):
         super().__init__(**kwargs)
         self._part_key = None
         self._nodes = self._check_nodes(nodes)
-        self._registration = nodes[0]._registration if nodes else None
+        self._registration = nodes[0]._registration
         self._section = section
         self._implementation = implementation
         self._frame = None

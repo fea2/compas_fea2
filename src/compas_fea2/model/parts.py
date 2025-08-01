@@ -11,6 +11,7 @@ from typing import Union
 from typing import Sequence
 from typing import TYPE_CHECKING
 
+
 import compas
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -59,6 +60,8 @@ from .releases import _BeamEndRelease
 from .sections import ShellSection
 from .sections import SolidSection
 from .sections import _Section
+from .sections import _Section2D
+from .sections import _Section3D
 
 if TYPE_CHECKING:
     from compas_fea2.model.interfaces import _Interface
@@ -74,6 +77,11 @@ if TYPE_CHECKING:
     from compas_fea2.model.groups import EdgesGroup
     from compas_fea2.model.groups import _Group
     from compas_fea2.model.nodes import Node
+    from compas_fea2.model.sections import _Section
+    from compas_fea2.model.sections import _Section2D
+    from compas_fea2.model.sections import _Section3D
+    from compas_fea2.model.elements import _Element
+    from compas_fea2.model.materials.material import _Material
 
 
 class _Part(FEAData):
@@ -234,7 +242,9 @@ class _Part(FEAData):
         return part
 
     @classmethod
-    def from_compas_lines_discretized(cls, lines, targetlength, element_model, section, frame, name=None, **kwargs):
+    def from_compas_lines_discretized(
+        cls, lines: List["Line"], targetlength: float, element_cls: type, section: "_Section2D", frame: "Union[Frame, List[float], Vector]", **kwargs
+    ):
         """Generate a discretized model from a list of :class:`compas.geometry.Line`.
 
         Parameters
@@ -248,7 +258,7 @@ class _Part(FEAData):
             The section to be assigned to the elements, by default None.
         element_model : str, optional
             Implementation model for the element, by default 'BeamElement'.
-        frame : :class:`compas.geometry.Line` or list[float], optional
+        frame : :class:`compas.geometry.Vector` or list[float], optional
             Local frame of the element or x-axis of the frame by default [0,1,0].
         name : str, optional
             The name of the part, by default None (one is automatically generated).
@@ -264,9 +274,9 @@ class _Part(FEAData):
         prt = Part.from_compas_lines(
             lines=[Line(start=dividedline_points[i], end=dividedline_points[i + 1]) for i in range(len(dividedline_points) - 1)],
             section=section,
-            element_model=element_model,
+            element_cls=element_cls,
             frame=frame,
-            name=name,
+            **kwargs,
         )
 
         return prt
@@ -274,9 +284,9 @@ class _Part(FEAData):
     @classmethod
     def from_compas_lines(
         cls,
-        lines: List["compas.geometry.Line"],
-        element_model: str = "BeamElement",
-        frame: Frame or List[float] = [0, 1, 0],
+        lines: List["Line"],
+        element_cls: type = BeamElement,
+        frame: "Union[Frame, List[float], Vector]" = [0, 1, 0],
         section: Optional["_Section"] = None,
         name: Optional[str] = None,
         **kwargs,
@@ -287,8 +297,8 @@ class _Part(FEAData):
         ----------
         lines : list[:class:`compas.geometry.Line`]
             The lines to be converted.
-        element_model : str, optional
-            Implementation model for the element, by default 'BeamElement'.
+        element_cls : type, optional
+            Implementation model for the element, by default BeamElement.
         frame : :class:`compas.geometry.Line` or list[float], optional
             The x-axis direction, by default [0,1,0].
         section : :class:`compas_fea2.model.Section1D`, optional
@@ -302,14 +312,11 @@ class _Part(FEAData):
             The part.
 
         """
-        import compas_fea2
-
         prt = cls(name=name)
         mass = kwargs.get("mass", None)
         for line in lines:
             if not (isinstance(frame, Frame)):
                 frame = Frame(line.start, frame, line.vector)
-
             nodes = []
             for p in [line.start, line.end]:
                 if g := prt.nodes.subgroup(condition=lambda node: node.point == p):
@@ -318,7 +325,7 @@ class _Part(FEAData):
                     nodes.append(Node(list(p), mass=mass))
 
             prt.add_nodes(nodes)
-            element = getattr(compas_fea2.model, element_model)(nodes=nodes, section=section, frame=frame)
+            element = element_cls(nodes=nodes, section=section, frame=frame)
             if not isinstance(element, _Element1D):
                 raise ValueError("Provide a 1D element")
             prt.add_element(element)
@@ -364,7 +371,7 @@ class _Part(FEAData):
         return part
 
     @classmethod
-    def from_gmsh(cls, gmshModel, section: Optional[Union[SolidSection, ShellSection]] = None, name: Optional[str] = None, **kwargs) -> "_Part":
+    def from_gmsh(cls, gmshModel, element_cls: Optional[type | None] = None, section: "Optional[Union[_Section2D, _Section3D]]" = None, **kwargs) -> "_Part":
         """Create a Part object from a gmshModel object with support for C3D4 and C3D10 elements.
 
         Parameters
@@ -373,16 +380,6 @@ class _Part(FEAData):
             Gmsh Model to convert.
         section : Union[SolidSection, ShellSection], optional
             The section type (`SolidSection` or `ShellSection`).
-        name : str, optional
-            Name of the new part.
-        split : bool, optional
-            Feature under development.
-        verbose : bool, optional
-            If `True`, print logs.
-        rigid : bool, optional
-            If `True`, applies rigid constraints.
-        check : bool, optional
-            If `True`, performs sanity checks (resource-intensive).
 
         Returns
         -------
@@ -395,59 +392,56 @@ class _Part(FEAData):
         - The `gmshModel` should have the correct dimensions for the given section.
 
         """
-        part = cls(name=name)
+        # Get parameters
+        name = kwargs.get("name", None)
+        verbose = kwargs.get("verbose", False)
+        rigid = kwargs.get("rigid", False)
+        implementation = kwargs.get("implementation", None)
+        heat = kwargs.get("heat", False)
 
+        dimension = 2 if isinstance(section, _Section3D) else 1
         # gmshModel.set_option("Mesh.ElementOrder", 2)
         # gmshModel.set_option("Mesh.Optimize", 1)
         # gmshModel.set_option("Mesh.OptimizeNetgen", 1)
         # gmshModel.set_option("Mesh.SecondOrderLinear", 0)
         # gmshModel.set_option("Mesh.OptimizeNetgen", 1)
 
+        # Get nodes and elements from the gmsh model
         gmshModel.heal()
         gmshModel.generate_mesh(3)
         model = gmshModel.model
-
-        # Add nodes
         node_coords = model.mesh.get_nodes()[1].reshape((-1, 3), order="C")
-        fea2_nodes = np.array([part.add_node(Node(coords)) for coords in node_coords])
-
-        # Get elements
         gmsh_elements = model.mesh.get_elements()
-        dimension = 2 if isinstance(section, SolidSection) else 1
-        # gmsh keys start from 1
-        ntags_per_element = np.split(gmsh_elements[2][dimension] - 1, len(gmsh_elements[1][dimension]))
+        ntags_per_element = np.split(gmsh_elements[2][dimension] - 1, len(gmsh_elements[1][dimension]))  # gmsh keys start from 1
 
-        verbose = kwargs.get("verbose", False)
-        rigid = kwargs.get("rigid", False)
-        implementation = kwargs.get("implementation", None)
-        heat = kwargs.get("heat", False)
+        # Create a new part instance
+        part = cls(name=name)
+        fea2_nodes = np.array([part.add_node(Node(coords)) for coords in node_coords])
+        # Select element classes mapping (nodes - cls)
+        # Base mapping for element classes by node count
+        mapping = {
+            3: ShellElement,
+            4: ShellElement if isinstance(section, ShellSection) else TetrahedronElement,
+            8: HexahedronElement,
+            10: TetrahedronElement,
+        }
+        # Extend mapping if a dict is provided
+        if isinstance(element_cls, dict):
+            mapping.update(element_cls)
 
         for ntags in ntags_per_element:
-            if kwargs.get("split", False):
-                raise NotImplementedError("This feature is under development")
-
-            element_nodes = fea2_nodes[ntags]
-
-            if ntags.size == 3:
-                part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=rigid, implementation=implementation, heat=heat**kwargs))
-
-            elif ntags.size == 4:
-                if isinstance(section, ShellSection):
-                    part.add_element(ShellElement(nodes=element_nodes, section=section, rigid=rigid, implementation=implementation, heat=heat**kwargs))
-                else:
-                    part.add_element(TetrahedronElement(nodes=element_nodes, section=section, rigid=rigid, heat=heat))
-                    part.ndf = 3  # FIXME: move outside the loop
-
-            elif ntags.size == 10:  # C3D10 tetrahedral element
-                part.add_element(TetrahedronElement(nodes=element_nodes, section=section, rigid=rigid, heat=heat))
-                part.ndf = 3
-
-            elif ntags.size == 8:
-                part.add_element(HexahedronElement(nodes=element_nodes, section=section, rigid=rigid, heat=heat))
-
+            count = ntags.size
+            # Use element_cls directly if it's a single class
+            if element_cls and not isinstance(element_cls, dict):
+                elem_to_use = element_cls
             else:
-                raise NotImplementedError(f"Element with {ntags.size} nodes not supported")
-
+                elem_to_use = mapping.get(count)
+            if not elem_to_use:
+                raise NotImplementedError(f"Element with {count} nodes not supported")
+            element = elem_to_use(nodes=fea2_nodes[ntags], section=section, rigid=rigid, implementation=implementation, heat=heat)
+            part.add_element(element)
+            if isinstance(element, _Element3D):
+                part._ndf = 3
             if verbose:
                 print(f"Element {ntags} added")
 
@@ -502,7 +496,7 @@ class _Part(FEAData):
         meshsize_max = kwargs.get("meshsize_max", None)
         meshsize_min = kwargs.get("meshsize_min", None)
 
-        gmshModel = MeshModel.from_mesh(boundary_mesh, targetlength=target_mesh_size)
+        gmshModel = MeshModel.from_mesh(boundary_mesh, targetlength=target_mesh_size) # type: ignore[call-arg]
 
         if mesh_size_at_vertices:
             for vertex, target in mesh_size_at_vertices.items():
@@ -589,7 +583,7 @@ class _Part(FEAData):
     @classmethod
     def from_brep(cls, brep, name: Optional[str] = None, **kwargs) -> "_Part":
         """Create a Part object from a BREP file.
-        
+
         Parameters
         ----------
         brep : str
@@ -604,7 +598,7 @@ class _Part(FEAData):
             Maximum mesh size, by default None.
         meshsize_min : float, optional
             Minimum mesh size, by default None.
-            
+
         Returns
         -------
         _Part
@@ -829,7 +823,6 @@ class _Part(FEAData):
     def all_interfaces(self):
         """Extract all interfaces from the part."""
         from compas_fea2.model.interfaces import _Interface
-
         planes = self.extract_clustered_planes(tol=1, angle_tol=2)
         submeshes = self.extract_submeshes(planes, tol=1, normal_tol=2, split=True)
         return [_Interface(mesh=mesh) for mesh in submeshes]
@@ -1068,7 +1061,9 @@ class _Part(FEAData):
         # Step 1: Compute normalized plane and face normals
         planes_normals = np.array([plane.normal for plane in planes])
         faces_normals = np.array([mesh.face_normal(face) for face in mesh.faces()])
-        dot_products = np.dot(planes_normals, faces_normals.T)  # (num_planes, num_faces)
+        # Compute dot products safely, suppress invalid/overflow warnings
+        with np.errstate(invalid="ignore", divide="ignore", over="ignore"):
+            dot_products = np.nan_to_num(np.dot(planes_normals, faces_normals.T))  # (num_planes, num_faces)
         plane_indices, face_indices = np.where(abs(dot_products) >= (1 - normal_tol))
 
         for face_idx in np.unique(face_indices):  # Loop over unique faces
@@ -1136,7 +1131,7 @@ class _Part(FEAData):
             return filter(lambda x: isinstance(x, _Element3D), self.elements)
         else:
             raise ValueError("dimension not supported")
-        
+
     # =========================================================================
     #                           BCs methods
     # =========================================================================
@@ -1160,7 +1155,7 @@ class _Part(FEAData):
         """
         if not self.model:
             raise ValueError("Part must be registered to a model before adding boundary conditions.")
-        
+
         if not isinstance(bc, _BoundaryCondition):
             raise TypeError(f"{bc!r} is not a boundary condition.")
         self.model.add_bcs(bc, nodes=nodes)
@@ -1443,7 +1438,9 @@ class _Part(FEAData):
         """
         return self.nodes.subgroup(condition=lambda x: is_point_on_plane(x.point, plane, tol))
 
-    def find_closest_nodes_to_point(self, point: List[float], number_of_nodes: int = 1, report: Optional[bool] = False, single: bool = False) -> "NodesGroup | None | Dict[Node, float]":
+    def find_closest_nodes_to_point(
+        self, point: List[float], number_of_nodes: int = 1, report: Optional[bool] = False, single: bool = False
+    ) -> "NodesGroup | None | Dict[Node, float]":
         """
         Find the closest number_of_nodes nodes to a given point.
 
@@ -2324,7 +2321,7 @@ class Part(_Part):
     #                       Constructor methods
     # =========================================================================
     @classmethod
-    def frame_from_compas_mesh(cls, mesh: "compas.datastructures.Mesh", section: "compas_fea2.model.Section1D", name: Optional[str] = None, **kwargs) -> "_Part":
+    def frame_from_compas_mesh(cls, mesh: "Mesh", section: "_Section1D", name: Optional[str] = None, **kwargs) -> "_Part":
         """Creates a Part object from a :class:`compas.datastructures.Mesh`.
 
         To each edge of the mesh is assigned a :class:`compas_fea2.model.BeamElement`.

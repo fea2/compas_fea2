@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from compas_fea2.model.groups import (_Group, NodesGroup, ElementsGroup, FacesGroup, PartsGroup, 
                                       EdgesGroup, SectionsGroup, MaterialsGroup, InterfacesGroup,
                                       BCsGroup, ConnectorsGroup, ConstraintsGroup, ICsGroup, ReleasesGroup)
-from compas_fea2.model import Node, BeamElement, Part, ShellElement, ShellSection, Steel
+from compas_fea2.model import Node, BeamElement, Part, ShellElement, ShellSection, Steel, RectangularSection
 
 
 class Dummy:
@@ -373,7 +373,7 @@ class TestGroupDataOperations(unittest.TestCase):
         """Test ElementsGroup serialization"""
         nodes = [Node([0, 0, 0]), Node([1, 0, 0])]
         material = Steel.S355()
-        section = ShellSection(0.1, material=material)
+        section = RectangularSection(w=100, h=50, material=material)
         element = BeamElement(nodes=nodes, section=section, frame=[0, 0, 1])
         
         group = ElementsGroup(members=[element])
