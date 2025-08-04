@@ -1,6 +1,9 @@
 from .problem import Problem
 from .displacements import GeneralDisplacement
-from .loads import VectorLoad, HeatFluxLoad, TemperatureLoad
+from .loads import (
+    VectorLoad,
+    ScalarLoad
+)
 
 from .fields import (
     _LoadField,
@@ -9,9 +12,6 @@ from .fields import (
     PointLoadField,
     _PrescribedField,
     PrescribedTemperatureField,
-    HeatFluxField,
-    ConvectionField,
-    RadiationField,
     TemperatureField,
     UniformSurfaceLoadField,
 )

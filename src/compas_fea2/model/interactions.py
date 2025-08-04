@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from compas_fea2.base import FEAData
+from compas_fea2.problem.loads import ScalarLoad
 from compas_fea2.base import Registry
 
 
@@ -403,23 +404,24 @@ class ThermalInteraction(_Interaction):
     name : str, optional
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
-    temperature : float or [float]
-        Constant temperature value or temperature evolution.
-
+    temperature_value : float
+        Temperature value.
+    temperature_amplitude : Amplitude, optionnal
+        Associated amplitude to the temperature.
 
     Attributes
     ----------
     name : str, optional
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
-    temperature : float or [float]
-        Constant temperature value or temperature evolution.
+    temperature : ScalarLoad
+        Constant temperature load or transient temperature load. 
 
     """
 
-    def __init__(self, temperature, **kwargs):
+    def __init__(self, temperature_value, temperature_amplitude=None, **kwargs):
         super(_Interaction, self).__init__(**kwargs)
-        self._temperature = temperature
+        self._temperature = ScalarLoad(scalar_load=temperature_value, amplitude=temperature_amplitude)
 
     @property
     def temperature(self):
@@ -457,7 +459,7 @@ class ThermalInteraction(_Interaction):
         return interaction
 
 
-class SurfaceConvection(ThermalInteraction):
+class Convection(ThermalInteraction):
     """Convection.
 
     Parameters
@@ -467,40 +469,37 @@ class SurfaceConvection(ThermalInteraction):
         name if you want a more human-readable input file.
     h : float
         Convection coefficient.
-    surface : FaceGroup
-        Convection surface.
-    temperature : float or [float]
-        Constant temperature value or temperature evolution.
+    temperature_value : float
+        Temperature value.
+    temperature_amplitude : Amplitude, optionnal
+        Associated amplitude to the temperature.
 
     Attributes
     ----------
     name : str, optional
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
-    temperature : float or [float]
-        Constant temperature value or temperature evolution.
+    h : float
+        Convection coefficient.
+    temperature : ScalarLoad
+        Constant temperature load or transient temperature load. 
 
     """
 
-    def __init__(self, surface, h, temperature, **kwargs):
-        super().__init__(temperature=temperature, **kwargs)
+    def __init__(self, h, temperature_value, temperature_amplitude, **kwargs):
+        super().__init__(temperature_value=temperature_value, temperature_amplitude=temperature_amplitude, **kwargs)
         self._h = h
-        self._surface = surface
 
     @property
     def h(self):
         return self._h
-
-    @property
-    def surface(self):
-        return self._surface
+    
 
     @property
     def __data__(self):
         """Return the data representation of the interaction."""
         data = super().__data__
         data.update({
-            "surface": self._surface.__data__,
             "h": self._h,
             "temperature": self._temperature,
         })
@@ -531,7 +530,7 @@ class SurfaceConvection(ThermalInteraction):
 
 
 
-class SurfaceRadiation(ThermalInteraction):
+class Radiation(ThermalInteraction):
     """Radiation.
 
     Parameters
@@ -541,25 +540,26 @@ class SurfaceRadiation(ThermalInteraction):
         name if you want a more human-readable input file.
     eps : float
         Radiation coefficient.
-    surface : FaceGroup
-        Convection surface.
-    temperature : float or [float]
-        Constant temperature value or temperature evolution.
+    temperature_value : float
+        Temperature value.
+    temperature_amplitude : Amplitude, optionnal
+        Associated amplitude to the temperature.
 
     Attributes
     ----------
     name : str, optional
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
-    temperature : float or [float]
-        Constant temperature value or temperature evolution.
+    eps : float
+        Radiation coefficient.
+    temperature : ScalarLoad
+        Constant temperature load or transient temperature load. 
 
     """
 
-    def __init__(self, surface, eps, temperature, **kwargs):
-        super().__init__(temperature=temperature, **kwargs)
+    def __init__(self, eps, temperature_value, temperature_amplitude, **kwargs):
+        super().__init__(temperature_value=temperature_value, temperature_amplitude=temperature_amplitude, **kwargs)
         self._eps = eps
-        self._surface = surface
 
     @property
     def eps(self):
@@ -574,7 +574,6 @@ class SurfaceRadiation(ThermalInteraction):
         """Return the data representation of the interaction."""
         data = super().__data__
         data.update({
-            "surface": self._surface.__data__,
             "eps": self._eps,
             "temperature": self._temperature,
         })

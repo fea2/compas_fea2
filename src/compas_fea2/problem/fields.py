@@ -278,75 +278,21 @@ class PrescribedTemperatureField(_PrescribedField):
 
 
 class TemperatureField(NodeLoadField):
+    """ A distribution of a set of temperature over a set of nodes.
+
+    Parameters
+    ----------
+    temperature : float
+        Value of temperature.
+    nodes : list[Node] | compas_fea2.model.groups.NodeGroup
+        List of parts where the load is applied.
+    load_case : object, optional
+        The load case to which this pattern belongs.
+
+
+    """
     def __init__(self, temperature: float, nodes: Iterable["Node"], **kwargs):
         nodes = list(nodes) if not isinstance(nodes, list) else nodes
         loads = temperature if isinstance(temperature, Iterable) else [temperature] * len(nodes)
         super().__init__(loads=loads, nodes=nodes, **kwargs)
 
-
-class HeatFluxField(UniformSurfaceLoadField):
-    """A distribution of a uniform convection flux on a set of face elements.
-    A non-uniform distribution is not yet implemented.
-
-    Parameters
-    ----------
-    heatflux : object
-        The heatflux to be applied.
-    face_elements : list
-        List of elements face where the surface heat flux is applied.
-    load_case : object, optional
-        The load case to which this pattern belongs.
-    """
-
-    def __init__(self, heatflux: HeatFluxLoad, surface, **kwargs):
-        surface = surface if isinstance(surface, Iterable) else [surface]
-        heatflux = heatflux if isinstance(heatflux, Iterable) else [heatflux] * len(surface)
-        super().__init__(load=heatflux, surface=surface, **kwargs)
-
-    @property
-    def heatflux(self):
-        return self.loads
-
-
-class ConvectionField(UniformSurfaceLoadField):
-    """ """
-
-    def __init__(self, h, temperature, surface, **kwargs):
-        surface = surface if isinstance(surface, Iterable) else [surface]
-        temperature = temperature if isinstance(temperature, Iterable) else [temperature] * len(surface)
-        super().__init__(load=temperature, surface=surface, **kwargs)
-        self._h = h
-
-    @property
-    def surface(self):
-        return self._distribution
-
-    @property
-    def temperature(self):
-        return self._loads
-
-    @property
-    def h(self):
-        return self._h
-
-
-class RadiationField(UniformSurfaceLoadField):
-    """ """
-
-    def __init__(self, eps, temperature, surface, **kwargs):
-        surface = surface if isinstance(surface, Iterable) else [surface]
-        temperature = temperature if isinstance(temperature, Iterable) else [temperature] * len(surface)
-        super().__init__(load=temperature, surface=surface, **kwargs)
-        self._eps = eps
-
-    @property
-    def surface(self):
-        return self._distribution
-
-    @property
-    def temperature(self):
-        return self._loads
-
-    @property
-    def eps(self):
-        return self._eps

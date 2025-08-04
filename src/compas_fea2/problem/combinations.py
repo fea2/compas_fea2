@@ -78,7 +78,7 @@ class LoadCombination(FEAData):
         """
         nodes_loads = {}
         for load_field in self.step.load_fields:
-            if isinstance(load_field, compas_fea2.problem.LoadField):
+            if isinstance(load_field, compas_fea2.problem._LoadField):
                 if load_field.load_case in self.factors:
                     for node, load in load_field.node_load:
                         if node in nodes_loads:
