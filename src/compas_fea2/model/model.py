@@ -282,9 +282,15 @@ class Model(FEAData):
         return self._bcs
 
     @property
-    def tbcs(self) -> "Dict[_ThermalBoundaryCondition, Set[Node]]":
-        """Return the thermal boundary conditions of the model."""
-        return {bc: nodes for bc, nodes in self._bcs.items() if isinstance(bc, _ThermalBoundaryCondition)}
+    def bcs_nodes(self)  -> dict[_BoundaryCondition, "NodesGroup"]:
+        bcs_nodes = {}
+        for bc in self.bcs:
+            nodes = NodesGroup(self.nodes).subgroup(lambda p: (isinstance(xbc, type(bc)) for xbc in p.bcs))
+            if len(nodes) == 0:
+                self.bcs.remove(bc)
+            else :
+                bcs_nodes[bc] = nodes
+        return bcs_nodes
 
     @property
     def ics(self) -> "Dict[_InitialCondition, Set[Union[Node, _Element]]]":
@@ -351,11 +357,13 @@ class Model(FEAData):
         """Return a dictionary of all interactions in the model."""
         return self._interactions
 
-    # FIXME create the proper group for thermal interactions
     @property
-    def thermalinteraction(self) -> "InteractionsGroup":
-        """Return a group of all thermal interactions in the model."""
-        return self._interactions.subgroup(lambda i: isinstance(i, ThermalInteraction))
+    def amplitudes(self):
+        amplitudes = set()
+        #Amplitude is for now only set for the thermal interfaces.
+        for interface in filter(lambda x: hasattr(x.behavior, "temperature"), filter(lambda y : hasattr(y.behavior, "temperature"), self.interfaces)):
+            amplitudes.add(interface.behavior.temperature.amplitude)
+        return amplitudes
 
     @property
     def problems(self) -> "Set[Problem]":
@@ -1014,7 +1022,7 @@ class Model(FEAData):
             node._bcs.add(bc)
 
         bc._key = len(self._bcs)
-        self._bcs[bc] = set(nodes)
+        self._bcs.add(bc)
         bc._registration = self
 
         return bc
@@ -1166,6 +1174,51 @@ class Model(FEAData):
         """
         return self._add_bc_type("rollerZ", nodes, axes)
 
+    def add_rollerXY_bc(self, nodes, axes="global"):
+        """Add a :class:`compas_fea2.model.bcs.RollerBCXY` to the given nodes.
+
+        This boundary condition allows translation along the local XY-plane.
+
+        Parameters
+        ----------
+        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
+            List or Group with the nodes where the boundary condition is assigned.
+        axes : str, optional
+            Axes of the boundary condition, by default 'global'.
+
+        """
+        return self._add_bc_type("rollerXY", nodes, axes)
+
+    def add_rollerXZ_bc(self, nodes, axes="global"):
+        """Add a :class:`compas_fea2.model.bcs.RollerBCXZ` to the given nodes.
+
+        This boundary condition allows translation along the local XZ-plane.
+
+        Parameters
+        ----------
+        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
+            List or Group with the nodes where the boundary condition is assigned.
+        axes : str, optional
+            Axes of the boundary condition, by default 'global'.
+
+        """
+        return self._add_bc_type("rollerXZ", nodes, axes)
+
+    def add_rollerYZ_bc(self, nodes, axes="global"):
+        """Add a :class:`compas_fea2.model.bcs.RollerBCYZ` to the given nodes.
+
+        This boundary condition allows translation along the local YZ-plane.
+
+        Parameters
+        ----------
+        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
+            List or Group with the nodes where the boundary condition is assigned.
+        axes : str, optional
+            Axes_ of the boundary condition, by default 'global'.
+
+        """
+        return self._add_bc_type("rollerYZ", nodes, axes)
+    
     def add_thermal_bc(
         self,
         nodes: "Union[list[Node], NodesGroup]",
@@ -1192,9 +1245,59 @@ class Model(FEAData):
             nodeset = nodes.members
         else:
             nodeset = set(nodes)
-        self._bcs[it] = nodeset
-        return it
+        return self.add_bcs(it, nodeset)
 
+    def add_imposedHeatFlux_bc(self, q, surface, axes="global"):
+        """Add a :class:`compas_fea2.model.bcs.RollerBCYZ` to the given nodes.
+
+        This boundary condition allows translation along the local YZ-plane.
+
+        Parameters
+        ----------
+        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
+            List or Group with the nodes where the boundary condition is assigned.
+        axes : str, optional
+            Axes_ of the boundary condition, by default 'global'.
+
+        """
+        from compas_fea2.model.groups import FacesGroup
+        m = importlib.import_module("compas_fea2.model.bcs")
+        bc = getattr(m, "ImposedHeatFlux")
+        dic = {}
+        for face in surface :
+            if face.part in dic :
+                dic[face.part].add_face(face)
+            else :
+                dic[face.part] = FacesGroup(faces=[face])
+        for part, faces in dic.items():
+            part.add_group(faces)
+            self.add_bcs(bc(q, faces), faces.nodes)
+
+    def remove_bcs(self, nodes):
+        """Release nodes that were previously restrained.
+
+        Parameters
+        ----------
+        nodes : list[:class:`compas_fea2.model.Node`]
+            List of nodes to release.
+
+        None
+
+        """
+        for _, nodes in self.bcs.items():
+            self.remove_bcs(nodes)
+
+        if isinstance(nodes, Node):
+            nodes = [nodes]
+
+        for node in nodes:
+            node.bcs=set()
+            if node.dof:
+                self.bcs[node.dof].remove(node)
+                node.dof = None
+            else:
+                print("WARNING: {!r} was not restrained. skipped!".format(node))
+        
     def add_ics(self, ic: "_InitialCondition", members: "Union[list[Union[Node, _Element]], NodesGroup]") -> "_InitialCondition":
         """Add a :class=`compas_fea2.model._InitialCondition` to the model.
 
@@ -1336,6 +1439,21 @@ class Model(FEAData):
         """
         return [self.add_interaction(interaction) for interaction in interactions]
 
+    def add_interface(self, interface):
+        """
+            :class:`compas_fea2.model.Interface`
+
+        """
+        if not isinstance(interface, _Interface):
+            raise TypeError("{!r} is not an Interface.".format(interface))
+        self._interfaces.add(interface)
+        interface._registration = self
+        return interface
+
+    def add_interfaces(self, interfaces):
+        """Add multiple :class:`compas_fea2.model.Interface` objects to the model.
+        """
+        return [self.add_interface(interface) for interface in interfaces]
     # =========================================================================
     #                           Problems methods
     # =========================================================================

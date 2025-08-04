@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from compas_fea2.base import FEAData
+from compas_fea2.model.groups import FacesGroup
 from compas_fea2.base import Registry
 
 if TYPE_CHECKING:
@@ -71,7 +72,8 @@ class _BoundaryCondition(FEAData):
         self._xx = False
         self._yy = False
         self._zz = False
-        self._temp = False
+        self._temperature = None
+        self._q = None
 
     @property
     def registration(self) -> Optional["Model"]:
@@ -108,8 +110,12 @@ class _BoundaryCondition(FEAData):
         return self._zz
 
     @property
-    def temp(self) -> bool:
-        return self._temp
+    def temperature(self) -> float | None:
+        return self._temperature
+    
+    @property
+    def q(self) -> float | None :
+        return self._q
 
     @property
     def axes(self) -> str:
@@ -121,7 +127,7 @@ class _BoundaryCondition(FEAData):
 
     @property
     def components(self) -> Dict[str, bool]:
-        return {c: getattr(self, c) for c in ["x", "y", "z", "xx", "yy", "zz"]}
+        return {c: getattr(self, c) for c in ["x", "y", "z", "xx", "yy", "zz", "temp"]}
 
     @property
     def __data__(self) -> dict:
@@ -135,7 +141,7 @@ class _BoundaryCondition(FEAData):
                 "xx": self._xx,
                 "yy": self._yy,
                 "zz": self._zz,
-                "temp": self._temp,
+                "temperature": self._temperature,
             }
         )
         return data
@@ -162,6 +168,8 @@ class _BoundaryCondition(FEAData):
         bc._xx = data.get("xx", False)
         bc._yy = data.get("yy", False)
         bc._zz = data.get("zz", False)
+        bc._temperature = data.get("temperature", None)
+        bc._q = data.get("q", None)
         # Add the object to the registry
         if uid:
             registry.add(uid, bc)
@@ -389,20 +397,24 @@ class RollerBCXZ(PinnedBC):
 # ===================================================================
 
 
-class _ThermalBoundaryCondition(FEAData):
-    """Base class for temperature boundary conditions.
+class _ThermalBoundaryCondition(_BoundaryCondition):
+    def __init__(self, axes = "global", **kwargs):
+        super().__init__(axes, **kwargs)
 
-    Parameters
-    ----------
-    temp : float, optional
-        Imposed temperature for heat analysis. Defaults to None.
+class ImposedTemperature(_ThermalBoundaryCondition):
+    """Imposed temperature condition for analysis involving temperature.
+    
+    Additional Parameters
+---------------------
+temperature : float
+    Value of imposed temperature applied
     """
 
     __doc__ = __doc__ or ""
     __doc__ += docs
 
-    def __init__(self, temperature: Optional[float] = None, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, temperature: float, **kwargs):
+        super().__init__(temperature=temperature, **kwargs)
         self._temperature = temperature
 
     @property
@@ -430,12 +442,13 @@ class ImposedTemperature(_ThermalBoundaryCondition):
 
         Additional Parameters
     ---------------------
-    temp : float
+    temperature : float
         Value of imposed temperature applied
     """
 
     __doc__ = __doc__ or ""
     __doc__ += docs
 
-    def __init__(self, temp: float, **kwargs):
-        super().__init__(temperature=temp, **kwargs)
+    def __init__(self, temperature: float, **kwargs):
+        super().__init__(temperature=temperature, **kwargs)
+

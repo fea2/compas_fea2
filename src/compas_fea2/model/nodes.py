@@ -120,7 +120,7 @@ class Node(FEAData):
         self._y = xyz[1]
         self._z = xyz[2]
 
-        self._dof = {"x": True, "y": True, "z": True, "xx": True, "yy": True, "zz": True}
+        self._dof = {"x": True, "y": True, "z": True, "xx": True, "yy": True, "zz": True, "temperature":True, "q":True}
 
         self._bcs = set()
         self._mass = _parse_mass(mass)
