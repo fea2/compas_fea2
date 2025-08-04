@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from compas_fea2.base import FEAData
+from compas_fea2.model.groups import FacesGroup
 from compas_fea2.base import Registry
 
 if TYPE_CHECKING:
@@ -71,7 +72,7 @@ class _BoundaryCondition(FEAData):
         self._xx = False
         self._yy = False
         self._zz = False
-        self._temp = False
+        self._temperature = None
 
     @property
     def registration(self) -> Optional["Model"]:
@@ -108,8 +109,8 @@ class _BoundaryCondition(FEAData):
         return self._zz
 
     @property
-    def temp(self) -> bool:
-        return self._temp
+    def temperature(self) -> float | None:
+        return self._temperature
 
     @property
     def axes(self) -> str:
@@ -121,7 +122,7 @@ class _BoundaryCondition(FEAData):
 
     @property
     def components(self) -> Dict[str, bool]:
-        return {c: getattr(self, c) for c in ["x", "y", "z", "xx", "yy", "zz"]}
+        return {c: getattr(self, c) for c in ["x", "y", "z", "xx", "yy", "zz", "temperature", "q"]}
 
     @property
     def __data__(self) -> dict:
@@ -135,7 +136,7 @@ class _BoundaryCondition(FEAData):
                 "xx": self._xx,
                 "yy": self._yy,
                 "zz": self._zz,
-                "temp": self._temp,
+                "temperature": self._temperature,
             }
         )
         return data
@@ -162,29 +163,35 @@ class _BoundaryCondition(FEAData):
         bc._xx = data.get("xx", False)
         bc._yy = data.get("yy", False)
         bc._zz = data.get("zz", False)
+        bc._temperature = data.get("temperature", None)
         # Add the object to the registry
         if uid:
             registry.add(uid, bc)
         return bc
 
-    def __add__(self, other: "_BoundaryCondition") -> "GeneralBC":
+    def __add__(self, other: "_BoundaryCondition") -> "_BoundaryCondition":
         """Combine two boundary conditions by OR-ing their component restraints."""
         if not isinstance(other, _BoundaryCondition):
             return NotImplemented
-        combined = GeneralBC(
-            x=self.x or other.x,
-            y=self.y or other.y,
-            z=self.z or other.z,
-            xx=self.xx or other.xx,
-            yy=self.yy or other.yy,
-            zz=self.zz or other.zz,
-            axes=self.axes,
-        )
-        combined._temp = self.temp or other.temp
+        combined = _BoundaryCondition()
+        combined._x=self.x or other.x
+        combined._y=self.y or other.y
+        combined._z=self.z or other.z
+        combined._xx=self.xx or other.xx
+        combined._yy=self.yy or other.yy
+        combined._zz=self.zz or other.zz
+        combined._axes=self.axes
+        if self.temperature and other.temperature:
+            print(f"Two thermal boundary conditions are applied to the same node. The boundary condition of the {other.name} boundary condition has been applied.")
+        combined._temperature = other.temperature if other.temperature else self.temperature
+        
         return combined
 
+class _MechanicalBoundaryCondition(_BoundaryCondition):
+    def __init__(self, axes = "global", **kwargs):
+        super().__init__(axes, **kwargs)
 
-class GeneralBC(_BoundaryCondition):
+class GeneralBC(_MechanicalBoundaryCondition):
     """Customized boundary condition."""
 
     __doc__ = __doc__ or ""
@@ -217,7 +224,7 @@ zz : bool
         self._zz = zz
 
 
-class FixedBC(_BoundaryCondition):
+class FixedBC(_MechanicalBoundaryCondition):
     """A fixed nodal displacement boundary condition."""
 
     __doc__ = __doc__ or ""
@@ -233,7 +240,7 @@ class FixedBC(_BoundaryCondition):
         self._zz = True
 
 
-class FixedBCX(_BoundaryCondition):
+class FixedBCX(_MechanicalBoundaryCondition):
     """A fixed nodal displacement boundary condition along and around X."""
 
     __doc__ = __doc__ or ""
@@ -245,7 +252,7 @@ class FixedBCX(_BoundaryCondition):
         self._xx = True
 
 
-class FixedBCY(_BoundaryCondition):
+class FixedBCY(_MechanicalBoundaryCondition):
     """A fixed nodal displacement boundary condition along and around Y."""
 
     __doc__ = __doc__ or ""
@@ -257,7 +264,7 @@ class FixedBCY(_BoundaryCondition):
         self._yy = True
 
 
-class FixedBCZ(_BoundaryCondition):
+class FixedBCZ(_MechanicalBoundaryCondition):
     """A fixed nodal displacement boundary condition along and around Z."""
 
     __doc__ = __doc__ or ""
@@ -269,7 +276,7 @@ class FixedBCZ(_BoundaryCondition):
         self._zz = True
 
 
-class PinnedBC(_BoundaryCondition):
+class PinnedBC(_MechanicalBoundaryCondition):
     """A pinned nodal displacement boundary condition."""
 
     __doc__ = __doc__ or ""
@@ -388,21 +395,20 @@ class RollerBCXZ(PinnedBC):
 # HEAT ANALYSIS
 # ===================================================================
 
-
-class _ThermalBoundaryCondition(FEAData):
-    """Base class for temperature boundary conditions.
-
-    Parameters
-    ----------
-    temp : float, optional
-        Imposed temperature for heat analysis. Defaults to None.
+class ImposedTemperature(_BoundaryCondition):
+    """Imposed temperature condition for analysis involving temperature.
+    
+    Additional Parameters
+---------------------
+temperature : float
+    Value of imposed temperature applied
     """
 
     __doc__ = __doc__ or ""
     __doc__ += docs
 
-    def __init__(self, temperature: Optional[float] = None, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, temperature: float, **kwargs):
+        super().__init__(temperature=temperature, **kwargs)
         self._temperature = temperature
 
     @property
@@ -423,19 +429,3 @@ class _ThermalBoundaryCondition(FEAData):
         if temperature is not None and not isinstance(temperature, float):
             raise TypeError(f"'temp' must be a float or None, got {type(temperature).__name__}")
         return cls(temp=temperature)
-
-
-class ImposedTemperature(_ThermalBoundaryCondition):
-    """Imposed temperature conidtion for heat analysis.
-
-        Additional Parameters
-    ---------------------
-    temp : float
-        Value of imposed temperature applied
-    """
-
-    __doc__ = __doc__ or ""
-    __doc__ += docs
-
-    def __init__(self, temp: float, **kwargs):
-        super().__init__(temperature=temp, **kwargs)

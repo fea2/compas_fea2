@@ -3,7 +3,6 @@ from typing import Iterable
 from typing import Optional
 
 from compas_fea2.base import FEAData
-from compas_fea2.problem.loads import HeatFluxLoad
 from compas_fea2.problem.loads import ScalarLoad
 from compas_fea2.problem.loads import VectorLoad
 

@@ -16,7 +16,9 @@ import compas_fea2
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.model.bcs import GeneralBC
+from compas_fea2.model.bcs import ImposedTemperature
 from compas_fea2.model.bcs import _BoundaryCondition
+from compas_fea2.model.groups import BCsGroup
 
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model
@@ -120,9 +122,9 @@ class Node(FEAData):
         self._y = xyz[1]
         self._z = xyz[2]
 
-        self._dof = {"x": True, "y": True, "z": True, "xx": True, "yy": True, "zz": True}
+        self._dof = {"x": True, "y": True, "z": True, "xx": True, "yy": True, "zz": True, "temperature":None}
 
-        self._bcs = set()
+        self._bcs = BCsGroup(members=[])
         self._mass = _parse_mass(mass)
         self._temperature = temperature
         self._on_boundary = None
@@ -298,13 +300,15 @@ class Node(FEAData):
     def dof(self) -> Dict[str, bool]:
         """Dictionary with the active degrees of freedom."""
         gen_bc = GeneralBC()
-        for bc in self._bcs:
+        for bc in self.bcs:
             gen_bc += bc
-        return {attr: not bool(getattr(gen_bc, attr)) for attr in ["x", "y", "z", "xx", "yy", "zz"]}
+        dof_dic = {attr:not bool(getattr(gen_bc, attr)) for attr in ["x", "y", "z", "xx", "yy", "zz"]}
+        dof_dic["temperature"] = gen_bc.temperature
+        return dof_dic
 
     @property
     def bcs(self):
-        """List of boundary conditions applied to the node."""
+        """Group of boundary conditions applied to the node."""
         return self._bcs
 
     @property

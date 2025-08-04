@@ -111,8 +111,32 @@ from .bcs import (
 
 from .ics import (
     _InitialCondition,
+    InitialTemperature,
+    InitialStress,
+)
+
+from .fields import (
     InitialTemperatureField,
     InitialStressField,
+    _BoundaryConditionsField,
+    _MechanicalBoundaryCondition,
+    GeneralBCField,
+    FixedBCField,
+    FixedBCXField,
+    FixedBCYField,
+    FixedBCZField,
+    PinnedBCField,
+    ClampedBCXXField,
+    ClampedBCYYField,
+    ClampedBCZZField,
+    RollerBCXField,
+    RollerBCYField,
+    RollerBCZField,
+    RollerBCXYField,
+    RollerBCYZField,
+    RollerBCXZField,
+    ThermalBCField
+    
 )
 
 from .interfaces import (
@@ -126,8 +150,8 @@ from .interactions import (
     HardContactNoFriction,
     LinearContactFrictionPenalty,
     HardContactRough,
-    SurfaceConvection,
-    SurfaceRadiation,
+    Convection,
+    Radiation,
 )
 
 __all__ = [  # type: ignore[reportUnsupportedDunderAll]
