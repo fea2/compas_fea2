@@ -1,4 +1,10 @@
+from typing import Optional
+
+from uuid import UUID
+
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
+
 
 
 class _Interaction(FEAData):
@@ -11,7 +17,33 @@ class _Interaction(FEAData):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+    
+    @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
 
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        interaction = cls()
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction
+        
+   
     @property
     def model(self):
         """Get the model to which this interaction belongs."""
@@ -64,6 +96,38 @@ class Contact(_Interaction):
         self._normal = normal
 
     @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        data.update({
+            "normal": self._normal,
+            "tangent": self._tangent,
+        })
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        
+        normal = data.get("normal")
+        tangent = data.get("tangent")
+        interaction = cls(normal, tangent)
+        
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction
+
+    @property
     def tangent(self):
         return self._tangent
 
@@ -98,6 +162,35 @@ class HardContactNoFriction(Contact):
         super().__init__(normal="HARD", tangent=None, **kwargs)
         self._tol = tol
 
+    @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        data.update({
+            "tol": self._tol,
+        })
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        
+        tol = data.get("tol")
+        interaction = cls(tol)
+        
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction
 
 class HardContactFrictionPenalty(Contact):
     """Hard contact interaction property with friction using a penalty
@@ -136,6 +229,37 @@ class HardContactFrictionPenalty(Contact):
     @tol.setter
     def tol(self, value):
         self._tol = value
+
+    @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        data.update({
+            "mu": self._tangent,
+        })
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        
+        tol = data.get("tol")
+        mu = data.get("tangent")
+        interaction = cls(mu, tol)
+        
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction
 
 
 class LinearContactFrictionPenalty(Contact):
@@ -183,6 +307,39 @@ class LinearContactFrictionPenalty(Contact):
     def tolerance(self, value):
         self._tolerance = value
 
+    @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        data.update({
+            "stiffness": self._stiffness,
+            "mu": self._tangent,
+        })
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        
+        tol = data.get("tolerance")
+        mu = data.get("mu")
+        stiffness = data.get("stiffness")
+        interaction = cls(stiffness, mu, tol)
+        
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction
+
 
 class HardContactRough(Contact):
     """Hard contact interaction property with indefinite friction (rough surfaces).
@@ -206,6 +363,32 @@ class HardContactRough(Contact):
     def __init__(self, **kwargs) -> None:
         super().__init__(normal="HARD", tangent="ROUGH", **kwargs)
 
+
+    @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        
+        interaction = cls()
+        
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction
 
 # ------------------------------------------------------------------------------
 # THERMAL INTERACTION
@@ -241,6 +424,37 @@ class ThermalInteraction(_Interaction):
     @property
     def temperature(self):
         return self._temperature
+
+
+    @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        data.update({
+            "temperature": self._temperature,
+        })
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        
+        temperature = data.get("temperature")
+        interaction = cls(temperature)
+        
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction
 
 
 class SurfaceConvection(ThermalInteraction):
@@ -281,6 +495,41 @@ class SurfaceConvection(ThermalInteraction):
     def surface(self):
         return self._surface
 
+    @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        data.update({
+            "surface": self._surface.__data__,
+            "h": self._h,
+            "temperature": self._temperature,
+        })
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        
+        temperature = data.get("temperature")
+        h = data.get("h")
+        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups")
+        interaction = cls(surface, h, temperature)
+        
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction
+
+
 
 class SurfaceRadiation(ThermalInteraction):
     """Radiation.
@@ -319,3 +568,37 @@ class SurfaceRadiation(ThermalInteraction):
     @property
     def surface(self):
         return self._surface
+
+    @property
+    def __data__(self):
+        """Return the data representation of the interaction."""
+        data = super().__data__
+        data.update({
+            "surface": self._surface.__data__,
+            "eps": self._eps,
+            "temperature": self._temperature,
+        })
+        return data
+    
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        
+        temperature = data.get("temperature")
+        eps = data.get("eps")
+        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups")
+        interaction = cls(surface, eps, temperature)
+        
+        # Add base properties
+        interaction._uid = UUID(uid) if uid else None
+        # interaction._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        interaction._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, interaction)
+        return interaction

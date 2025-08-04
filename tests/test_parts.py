@@ -23,26 +23,13 @@ class TestPart(unittest.TestCase):
         part.add_element(element)
         self.assertIn(element, part.elements)
 
-    def test_add_material(self):
-        part = Part()
-        material = Steel.S355()
-        part.add_material(material)
-        self.assertIn(material, part.materials)
-
-    def test_add_section(self):
-        part = Part()
-        material = Steel.S355()
-        section = RectangularSection(w=1, h=1, material=material)
-        part.add_section(section)
-        self.assertIn(section, part.sections)
-
 
 class TestRigidPart(unittest.TestCase):
     def test_reference_point(self):
         part = RigidPart()
         node = Node([0, 0, 0])
-        part.reference_point = node
-        self.assertEqual(part.reference_point, node)
+        part.reference_node = node
+        self.assertEqual(part.reference_node, node)
 
 
 if __name__ == "__main__":

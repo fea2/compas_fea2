@@ -4,6 +4,9 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+from typing import Any
+
+from importlib import import_module
 
 from compas.geometry import Point
 from compas.geometry import transform_points
@@ -11,12 +14,15 @@ from compas.tolerance import TOL
 
 import compas_fea2
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
 from compas_fea2.model.bcs import GeneralBC
 from compas_fea2.model.bcs import _BoundaryCondition
 
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model
     from compas_fea2.model.parts import _Part
+    from compas_fea2.model.parts import Part
+    from compas_fea2.model.parts import RigidPart
     from compas_fea2.results import DisplacementResult
     from compas_fea2.results import ReactionResult
     from compas_fea2.results import TemperatureResult
@@ -104,12 +110,9 @@ class Node(FEAData):
 
     """
 
-    _registration: Optional["_Part"]
 
     def __init__(self, xyz: Sequence[float], mass: Optional[Union[float, List[float]]] = None, temperature: Optional[float] = None, **kwargs):
         super().__init__(**kwargs)
-        self._registration: Optional["_Part"] = None
-        self._key: Optional[int] = None
         self._part_key: Optional[int] = None
 
         self._xyz = xyz
@@ -122,39 +125,69 @@ class Node(FEAData):
         self._bcs = set()
         self._mass = _parse_mass(mass)
         self._temperature = temperature
-
         self._on_boundary = None
         self._is_reference = False
-
-        self._loads = {}
-        self._total_load = None
-
         self._connected_elements = set()
 
     @property
     def __data__(self):
-        return {
-            "class": self.__class__.__base__,
+        data = super().__data__
+        data.update({
             "part_key": self._part_key,
-            "uid": self.uid,
             "xyz": self.xyz,
+            "x": self._x,
+            "y": self._y,
+            "z": self._z,
+            "dof": self._dof,
+            "bcs": [bc.__data__ for bc in self._bcs],
             "mass": self._mass,
             "temperature": self._temperature,
             "on_boundary": self._on_boundary,
-            "is_reference": self._is_reference,
-        }
+            "connected_elements": [elem.__data__ for elem in self._connected_elements]
+        })
+        return data
 
     @classmethod
-    def __from_data__(cls, data):
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        from uuid import UUID
+
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         node = cls(
             xyz=data["xyz"],
             mass=data.get("mass"),
             temperature=data.get("temperature"),
         )
-        node.uid = data.get("uid")
+        node._uid = UUID(uid) if uid else None
+        node._name = data.get("name")  # type: ignore
+        # node._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.parts") if data.get("registration") else None
         node._on_boundary = data.get("on_boundary")
         node._is_reference = data.get("is_reference")
+        node._connected_elements = set(
+            registry.add_from_data(elem_data, "compas_fea2.model.elements")
+            for elem_data in data.get("connected_elements", [])
+        )
+
+        if uid:
+            registry.add(uid, node)
+
         return node
+
+    @property
+    def registration(self) -> Optional[Union["_Part", "Part", "RigidPart"]]:
+        """Get the object where this object is registered to."""
+        return self._registration
+
+    @registration.setter
+    def registration(self, value: Union["_Part", "Part", "RigidPart"]) -> None:
+        """Set the object where this object is registered to."""
+        self._registration = value
+        
 
     @classmethod
     def from_compas_point(cls, point: Point, mass: Optional[float] = None, temperature: Optional[float] = None) -> "Node":
@@ -366,17 +399,17 @@ class Node(FEAData):
         for bc in bcs:
             self.remove_bc(bc)
 
-    # ==============================================================================
-    # Results
-    # ==============================================================================
-    @property
-    def results_cls(self):
-        """Return a dictionary of result classes associated with the node."""
-        from compas_fea2.results import DisplacementResult
-        from compas_fea2.results import ReactionResult
-        from compas_fea2.results import TemperatureResult
+    # # ==============================================================================
+    # # Results
+    # # ==============================================================================
+    # @property
+    # def results_cls(self):
+    #     """Return a dictionary of result classes associated with the node."""
+    #     from compas_fea2.results import DisplacementResult
+    #     from compas_fea2.results import ReactionResult
+    #     from compas_fea2.results import TemperatureResult
 
-        return {"u": DisplacementResult, "rf": ReactionResult, "t": TemperatureResult}
+    #     return {"u": DisplacementResult, "rf": ReactionResult, "t": TemperatureResult}
 
     def displacement(self, step):
         """Get the displacement of the node at a given step.

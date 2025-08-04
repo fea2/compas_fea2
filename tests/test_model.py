@@ -24,6 +24,33 @@ class TestModel(unittest.TestCase):
         model.add_problem(problem)
         self.assertIn(problem, model.problems)
 
+    def test_model_serialization(self):
+        model = Model(description="Test Model", author="Author")
+        data = model.__data__
+        self.assertEqual(data["description"], "Test Model")
+        self.assertEqual(data["author"], "Author")
+
+    def test_model_deserialization(self):
+        data = {
+            "class": "Model",
+            "description": "Test Model",
+            "author": "Author",
+            "parts": [],
+            "materials": [],
+            "sections": [],
+            "interfaces": [],
+            "interactions": [],
+            "constraints": [],
+            "connectors": [],
+            "problems": [],
+            "path": None,
+            "constants": {"g": 9.81},
+            "name": "TestModel",
+        }
+        model = Model.__from_data__(data)
+        self.assertEqual(model.description, "Test Model")
+        self.assertEqual(model.author, "Author")
+
 
 if __name__ == "__main__":
     unittest.main()

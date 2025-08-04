@@ -16,6 +16,7 @@ from compas.geometry import centroid_points_weighted
 
 import compas_fea2
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
 from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.bcs import _ThermalBoundaryCondition
 from compas_fea2.model.connectors import _Connector
@@ -143,59 +144,61 @@ class Model(FEAData):
     @property
     def __data__(self):
         return {
+            "class": self.__class__.__name__,
             "description": self.description,
             "author": self.author,
             "parts": [part.__data__ for part in self.parts],
-            "bcs": {bc.__data__: [node.__data__ for node in nodes] for bc, nodes in self.bcs.items()},
-            "tbcs": {tbc.__data__: [node.__data__ for node in nodes] for tbc, nodes in self.tbcs.items()},
-            "ics": {ic.__data__: [node.__data__ for node in nodes] for ic, nodes in self.ics.items()},
-            "constraints": [constraint.__data__ for constraint in self.constraints],
-            "partgroups": [group.__data__ for group in self.partgroups],
             "materials": [material.__data__ for material in self.materials],
             "sections": [section.__data__ for section in self.sections],
+            "interfaces": [interface.__data__ for interface in self.interfaces],
+            "interactions": [interaction.__data__ for interaction in self.interactions],
+            "constraints": [constraint.__data__ for constraint in self.constraints],
+            "connectors": [connector.__data__ for connector in self.connectors],
             "problems": [problem.__data__ for problem in self.problems],
             "path": str(self.path) if self.path else None,
-            "constants": self._constants,
+            "constants": self.constants,
+            "name": self.name,
         }
+
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        model = cls(description=data.get("description"), author=data.get("author"))
+        model._path = data.get("path")
+        model._constants = data.get("constants", {})
+        model._name = data.get("name", model._name)
+
+        for part_data in data.get("parts", []):
+            model.add_part(registry.add_from_data(part_data, "compas_fea2.model.parts"))
+
+        for material_data in data.get("materials", []):
+            model.add_material(registry.add_from_data(material_data, "compas_fea2.model.materials.material"))
+
+        for section_data in data.get("sections", []):
+            model.add_section(registry.add_from_data(section_data, "compas_fea2.model.sections"))
+
+        for interface_data in data.get("interfaces", []):
+            model.interfaces.add_member(registry.add_from_data(interface_data, "compas_fea2.model.interfaces"))
+
+        for interaction_data in data.get("interactions", []):
+            model.interactions.add_member(registry.add_from_data(interaction_data, "compas_fea2.model.interactions"))
+
+        for constraint_data in data.get("constraints", []):
+            model.constraints.add_member(registry.add_from_data(constraint_data, "compas_fea2.model.constraints"))
+
+        for connector_data in data.get("connectors", []):
+            model.connectors.add_member(registry.add_from_data(connector_data, "compas_fea2.model.connectors"))
+
+        for problem_data in data.get("problems", []):
+            model.add_problem(registry.add_from_data(problem_data, "compas_fea2.problem"))
+
+        return model
 
     # =========================================================================
     #                       Constructors
     # =========================================================================
-    @classmethod
-    def __from_data__(cls, data):
-        """Create a Model instance from a data dictionary.
-
-        Parameters
-        ----------
-        data : dict
-            The data dictionary.
-
-        Returns
-        -------
-        Model
-            The created Model instance.
-        """
-        model = cls(description=data.get("description"), author=data.get("author"))
-        part_classes = {cls.__name__: cls for cls in _Part.__subclasses__()}
-        for part_data in data.get("parts", []):
-            model.add_part(part_classes[part_data["class"]].__from_data__(part_data))
-
-        bc_classes = {cls.__name__: cls for cls in _BoundaryCondition.__subclasses__()}
-        for bc_data, nodes_data in data.get("bcs", {}).items():
-            model._bcs[bc_classes[bc_data["class"]].__from_data__(bc_data)] = {Node.__from_data__(node_data) for node_data in nodes_data}
-
-        ic_classes = {cls.__name__: cls for cls in _InitialCondition.__subclasses__()}
-        for ic_data, nodes_data in data.get("ics", {}).items():
-            model._ics[ic_classes[ic_data["class"]].__from_data__(ic_data)] = {Node.__from_data__(node_data) for node_data in nodes_data}
-
-        problem_classes = {cls.__name__: cls for cls in Problem.__subclasses__()}
-        model._problems = {problem_classes[problem_data["class"]].__from_data__(problem_data) for problem_data in data.get("problems", [])}
-        from pathlib import Path
-
-        model._path = Path(data.get("path")) if data.get("path") else None
-        model._constants = data.get("constants")
-        return model
-
     @classmethod
     def from_template(cls, template):
         """Create a Model instance from a template.
@@ -578,7 +581,7 @@ class Model(FEAData):
 
         Returns
         -------
-        list[:class:`compas_fea2.model.Part`]
+        list[:class=`compas_fea2.model.Part`]
 
         """
         return [self.add_part(part) for part in parts]
@@ -588,14 +591,14 @@ class Model(FEAData):
 
         Parameters
         ----------
-        part : :class:`compas_fea2.model._Part`
+        part : :class=`compas_fea2.model._Part`
             The part to copy.
-        transformation : :class:`compas.geometry.Transformation`
+        transformation : :class=`compas.geometry.Transformation`
             The transformation to apply to the copied part.
 
         Returns
         -------
-        :class:`compas_fea2.model._Part`
+        :class=`compas_fea2.model._Part`
             The new, copied part.
 
         """
@@ -608,11 +611,11 @@ class Model(FEAData):
 
         Parameters
         ----------
-        parts : list[:class:`compas_fea2.model.Part`]
+        parts : list[:class=`compas_fea2.model.Part`]
             The list of parts to array.
         n : int
             The number of copies to create.
-        transformation : :class:`compas.geometry.Transformation`
+        transformation : :class=`compas.geometry.Transformation`
             The transformation to apply for each copy.
 
         Returns

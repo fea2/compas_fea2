@@ -1,5 +1,13 @@
-from compas_fea2.base import FEAData
+from typing import Optional
+from typing import TYPE_CHECKING
 
+from uuid import UUID
+
+from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
+
+if TYPE_CHECKING:
+    from compas_fea2.model.model import Model
 
 class _Constraint(FEAData):
     """Base class for constraints.
@@ -13,12 +21,19 @@ class _Constraint(FEAData):
     @property
     def __data__(self):
         return {
-            "class": self.__class__.__name__,
+            # Add other attributes as needed
         }
 
-    @classmethod
-    def __from_data__(cls, data):
-        return cls(**data)
+    @property
+    def registration(self) -> Optional["Model"]:
+        """Get the object where this object is registered to."""
+        return self._registration
+
+    @registration.setter
+    def registration(self, value: "Model") -> None:
+        """Set the object where this object is registered to."""
+        self._registration = value
+
 
 
 # ------------------------------------------------------------------------------
@@ -64,17 +79,18 @@ class _MultiPointConstraint(_Constraint):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "constraint_type": self.constraint_type,
-                # ...other attributes...
-            }
-        )
+        data.update({
+            "constraint_type": self.constraint_type,
+            # Add other attributes as needed
+        })
         return data
 
     @classmethod
     def __from_data__(cls, data):
-        return cls(constraint_type=data["constraint_type"], **data)
+        obj = cls(constraint_type=data.get("constraint_type"))
+        obj.name = data.get("name")
+        obj._uid = data.get("uid")
+        return obj
 
 
 class TieMPC(_MultiPointConstraint):
@@ -112,12 +128,15 @@ class _SurfaceConstraint(_Constraint):
     @property
     def __data__(self):
         data = super().__data__
-        # ...update data with specific attributes...
+        # Add specific attributes for surface constraints
         return data
 
     @classmethod
     def __from_data__(cls, data):
-        return cls(**data)
+        obj = cls()
+        obj.name = data.get("name")
+        obj._uid = data.get("uid")
+        return obj
 
 
 class TieConstraint(_SurfaceConstraint):

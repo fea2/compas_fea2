@@ -1,8 +1,18 @@
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import TypeVar
+from typing import TYPE_CHECKING
+
+from uuid import UUID
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
+
+if TYPE_CHECKING:
+    from compas_fea2.model.model import Model
+
+T = TypeVar("T", bound="_BoundaryCondition")
 
 docs = """
 Note
@@ -64,6 +74,16 @@ class _BoundaryCondition(FEAData):
         self._temp = False
 
     @property
+    def registration(self) -> Optional["Model"]:
+        """Get the object where this object is registered to."""
+        return self._registration
+
+    @registration.setter
+    def registration(self, value: "Model") -> None:
+        """Set the object where this object is registered to."""
+        self._registration = value
+
+    @property
     def x(self) -> bool:
         return self._x
 
@@ -121,15 +141,30 @@ class _BoundaryCondition(FEAData):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict):
+    def __from_data__(cls, data: dict, registry: Optional[Registry]=None): 
+        # Create a registry if not provided
+        if registry is None:
+            registry = Registry()
+        # check if the object already exists in the registry
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        # Create a new instance
         bc = cls(axes=data.get("axes", "global"))
+        # Add base properties
+        bc._uid = UUID(uid) if uid else None
+        # bc._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        bc._name = data.get("name", "")
+        # Add specific properties
         bc._x = data.get("x", False)
         bc._y = data.get("y", False)
         bc._z = data.get("z", False)
         bc._xx = data.get("xx", False)
         bc._yy = data.get("yy", False)
         bc._zz = data.get("zz", False)
-        bc._name = data.get("name", "")
+        # Add the object to the registry
+        if uid:
+            registry.add(uid, bc)
         return bc
 
     def __add__(self, other: "_BoundaryCondition") -> "GeneralBC":

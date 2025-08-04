@@ -83,7 +83,7 @@ class TestEmptyGroup(unittest.TestCase):
         self.assertEqual(g.to_list(), [])
         self.assertEqual(g.sorted, [])
         self.assertEqual(g.sorted_by(lambda x: x), [])
-        self.assertEqual(g.serialize(), {"members": []})
+        self.assertEqual(g.__data__['members'], [])
 
 
 class TestGroupDuplicates(unittest.TestCase):
@@ -177,8 +177,10 @@ class TestGroupSerialization(unittest.TestCase):
     def test_serialize_empty_group(self):
         """Test serializing empty group"""
         group = _Group(member_class=Dummy)
-        data = group.serialize()
-        self.assertEqual(data, {"members": []})
+        data = group.__data__
+        self.assertEqual(type(data['uid']), str)
+        self.assertEqual(data['members'], [])
+        self.assertEqual(data['member_class'], Dummy.__name__)
 
 
 class TestSpecificGroupTypes(unittest.TestCase):
@@ -306,17 +308,17 @@ class TestGroupTypeValidation(unittest.TestCase):
     def test_nodes_group_wrong_type(self):
         """Test NodesGroup with wrong member type"""
         with self.assertRaises(TypeError):
-            NodesGroup(members=["not_a_node"])
+            NodesGroup(members=["not_a_node"]) # type: ignore
 
     def test_elements_group_wrong_type(self):
         """Test ElementsGroup with wrong member type"""
         with self.assertRaises(TypeError):
-            ElementsGroup(members=["not_an_element"])
+            ElementsGroup(members=["not_an_element"]) # type: ignore
 
     def test_parts_group_wrong_type(self):
         """Test PartsGroup with wrong member type"""
         with self.assertRaises(TypeError):
-            PartsGroup(members=["not_a_part"])
+            PartsGroup(members=["not_a_part"]) # type: ignore
 
 
 class TestGroupInheritance(unittest.TestCase):

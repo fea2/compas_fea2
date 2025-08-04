@@ -1,5 +1,7 @@
 from compas_fea2.units import UnitRegistry
 from compas_fea2.units import units as u
+from typing import Optional
+from compas_fea2.base import Registry
 
 from .material import ElasticIsotropic
 
@@ -113,15 +115,30 @@ ep : {:.2f}
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        return cls(
-            E=data["E"],
-            v=data["v"],
-            density=data["density"],
-            fy=data["fy"],
-            fu=data["fu"],
-            eu=data["eu"],
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        from uuid import UUID
+
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = cls(
+            E=data.get("E"),
+            v=data.get("v"),
+            density=data.get("density"),
+            fy=data.get("fy"),
+            fu=data.get("fu"),
+            eu=data.get("eu"),
         )
+        material._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, material)
+
+        return material
 
     # TODO check values and make unit independent
     @classmethod

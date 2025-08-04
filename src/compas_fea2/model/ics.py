@@ -1,4 +1,9 @@
+from typing import Optional, List
+
+from uuid import UUID
+
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
 
 
 class _InitialCondition(FEAData):
@@ -16,13 +21,28 @@ class _InitialCondition(FEAData):
 
     @property
     def __data__(self) -> dict:
-        return {
-            "type": self.__class__.__name__,
-        }
+        data = super().__data__
+        return data
 
     @classmethod
-    def __from_data__(cls, data):
-        return cls(**data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        ic = cls()
+        # Add base properties
+        ic._uid = UUID(uid) if uid else None
+        # ic._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        ic._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, ic)
+        return ic
 
 
 # FIXME this is not really a field in the sense that it is only applied to 1 node/element
@@ -69,9 +89,25 @@ class InitialTemperatureField(_InitialCondition):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        temperature = data.pop("temperature")
-        return cls(temperature, **data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        temperature = data.get("temperature")
+        ic = cls(temperature)
+        # Add base properties
+        ic._uid = UUID(uid) if uid else None
+        # ic._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        ic._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, ic)
+        return ic
+        
 
     @classmethod
     def from_file(cls, path, **kwargs):
@@ -119,6 +155,21 @@ class InitialStressField(_InitialCondition):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        stress = data.pop("stress")
-        return cls(stress, **data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        stress = data.get("stress")
+        ic = cls(stress)
+        # Add base properties
+        ic._uid = UUID(uid) if uid else None
+        # ic._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        ic._name = data.get("name", "")
+
+        if uid:
+            registry.add(uid, ic)
+        return ic

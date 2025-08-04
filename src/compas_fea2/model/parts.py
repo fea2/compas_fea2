@@ -31,6 +31,7 @@ from scipy.spatial import KDTree
 
 import compas_fea2
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
 
 from .elements import BeamElement
 from .elements import HexahedronElement
@@ -40,12 +41,16 @@ from .elements import _Element
 from .elements import _Element1D
 from .elements import _Element2D
 from .elements import _Element3D
+from .groups import NodesGroup
 from .groups import EdgesGroup
 from .groups import ElementsGroup
+from .groups import EdgesGroup
 from .groups import FacesGroup
 from .groups import MaterialsGroup
-from .groups import NodesGroup
 from .groups import SectionsGroup
+from .groups import InteractionsGroup
+from .groups import InterfacesGroup
+from .groups import ReleasesGroup
 from .materials.material import _Material
 from .nodes import Node
 from .releases import _BeamEndRelease
@@ -65,20 +70,22 @@ if TYPE_CHECKING:
     from compas_fea2.model.elements import _Element1D
     from compas_fea2.model.elements import _Element2D
     from compas_fea2.model.elements import _Element3D
-    from compas_fea2.model.groups import EdgesGroup
+    from compas_fea2.model.groups import NodesGroup
     from compas_fea2.model.groups import ElementsGroup
+    from compas_fea2.model.groups import EdgesGroup
     from compas_fea2.model.groups import FacesGroup
     from compas_fea2.model.groups import InteractionsGroup
     from compas_fea2.model.groups import InterfacesGroup
     from compas_fea2.model.groups import MaterialsGroup
-    from compas_fea2.model.groups import NodesGroup
     from compas_fea2.model.groups import SectionsGroup
+    from compas_fea2.model.groups import ReleasesGroup
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.model import Model
     from compas_fea2.model.nodes import Node
     from compas_fea2.model.sections import _Section
     from compas_fea2.model.sections import _Section2D
     from compas_fea2.model.sections import _Section3D
+    from compas_fea2.model.parts import _Part, Parts, RigidPart
 
 
 GroupType = Union["NodesGroup", "ElementsGroup", "FacesGroup", "MaterialsGroup", "SectionsGroup", "InterfacesGroup", "InteractionsGroup"]
@@ -131,116 +138,70 @@ class _Part(FEAData):
         self._ndm = None
         self._ndf = None
         self._graph = nx.DiGraph()
-        self._nodes: Set[Node] = set()
-        self._gkey_node: Dict[str, Node] = {}
-        self._sections: Set[_Section] = set()
-        self._materials: Set[_Material] = set()
-        self._elements: Set[_Element] = set()
-        self._releases: Set[_BeamEndRelease] = set()
+        self._nodes: "NodesGroup" = NodesGroup(members=[], name=f"{self.name}_nodes_all")
+        self._elements: "ElementsGroup" = ElementsGroup(members=[], name=f"{self.name}_elements_all")
 
         self._groups: Set[GroupType] = set()
 
-        self._boundary_mesh = None
-        self._discretized_boundary_mesh = None
+        self._boundary_mesh: Optional[Mesh] = None
+        self._discretized_boundary_mesh: Optional[Mesh] = None
 
-        self._reference_point = None
+        self._reference_node: Optional[Node] = None
 
     @property
     def __data__(self):
-        return {
-            "class": self.__class__.__base__,
-            "ndm": self._ndm or None,
-            "ndf": self._ndf or None,
-            "nodes": [node.__data__ for node in self.nodes],
-            "gkey_node": {key: node.__data__ for key, node in self.gkey_node.items()},
-            "materials": [material.__data__ for material in self.materials],
-            "sections": [section.__data__ for section in self.sections],
-            "elements": [element.__data__ for element in self.elements],
-            "releases": [release.__data__ for release in self.releases],
-            "reference_point": self.reference_point.__data__ if self.reference_point else None,
+        data = super().__data__
+        data.update({
+            "ndm": self._ndm,
+            "ndf": self._ndf,
+            "nodes": self._nodes.__data__,
+            "elements": self._elements.__data__,
+            "groups": [group.__data__ for group in self._groups],
             "boundary_mesh": self._boundary_mesh.__data__ if self._boundary_mesh else None,
             "discretized_boundary_mesh": self._discretized_boundary_mesh.__data__ if self._discretized_boundary_mesh else None,
-        }
+            "reference_node": self._reference_node.__data__ if self._reference_node else None,
+        })
+        return data
+
+    @classmethod
+    def __from_data__(cls, data, registry: Optional["Registry"] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        part = cls()
+        part._uid = uid
+        
+        part._name = data.get("name", "")
+        part._ndm = data.get("ndm")
+        part._ndf = data.get("ndf")
+        
+        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry)
+        part.add_nodes(nodes) # type: ignore
+        part._nodes._uid = data.get("nodes", {}).get("uid", None) # change the uid of the nodes group
+        
+        elements = ElementsGroup.__from_data__(data["elements"], registry=registry)  # type: ignore
+        part.add_elements(elements)  # type: ignore
+        part._elements._uid = data.get("elements", {}).get("uid", None) # change the uid of the nodes group
+
+        part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups") for group in data.get("groups", [])])
+        
+        part._boundary_mesh = Mesh.__from_data__(data["boundary_mesh"]) if data.get("boundary_mesh") else None
+        part._discretized_boundary_mesh = Mesh.__from_data__(data["discretized_boundary_mesh"]) if data.get("discretized_boundary_mesh") else None
+        
+        part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes") if data.get("reference_node") else None
+        
+        if uid:
+            registry.add(uid, part)
+
+        return part
 
     # =========================================================================
     #                       Constructors
     # =========================================================================
-    @classmethod
-    def __from_data__(cls, data):
-        """Create a part instance from a data dictionary.
-
-        Parameters
-        ----------
-        data : dict
-            The data dictionary.
-
-        Returns
-        -------
-        _Part
-            The part instance.
-        """
-        part = cls()
-        part._ndm = data.get("ndm")
-        part._ndf = data.get("ndf")
-
-        # Deserialize nodes
-        uid_node = {node_data["uid"]: Node.__from_data__(node_data) for node_data in data.get("nodes", [])}
-
-        # Deserialize materials
-        for material_data in data.get("materials", []):
-            material_cls = material_data.pop("class", None)
-            if not material_cls:
-                raise ValueError("Missing class information for material.")
-
-            mat = part.add_material(material_cls.__from_data__(material_data))
-            mat.uid = material_data["uid"]
-
-        # Deserialize sections
-        for section_data in data.get("sections", []):
-            material_data = section_data.pop("material", None)
-            if not material_data or "uid" not in material_data:
-                raise ValueError("Material UID is missing in section data.")
-
-            material = part.find_material_by_uid(material_data["uid"])
-            if not material:
-                raise ValueError(f"Material with UID {material_data['uid']} not found.")
-
-            section_cls = section_data.pop("class", None)
-            if not section_cls:
-                raise ValueError("Missing class information for section.")
-
-            section = part.add_section(section_cls(material=material, **section_data))
-            section.uid = section_data["uid"]
-
-        # Deserialize elements
-        for element_data in data.get("elements", []):
-            section_data = element_data.pop("section", None)
-            if not section_data or "uid" not in section_data:
-                raise ValueError("Section UID is missing in element data.")
-
-            section = part.find_section_by_uid(section_data["uid"])
-            if not section:
-                raise ValueError(f"Section with UID {section_data['uid']} not found.")
-
-            element_cls = element_data.pop("class", None)
-            if not element_cls:
-                raise ValueError("Missing class information for element.")
-
-            nodes = [uid_node[node_data["uid"]] for node_data in element_data.pop("nodes", [])]
-            for node in nodes:
-                node._registration = part
-            element = element_cls(nodes=nodes, section=section, **element_data)
-            part.add_element(element)
-
-        part._boundary_mesh = Mesh.__from_data__(data.get("boundary_mesh")) if data.get("boundary_mesh") else None
-        if data.get("discretized_boundary_mesh"):
-            part._discretized_boundary_mesh = Mesh.__from_data__(data.get("discretized_boundary_mesh"))
-        else:
-            part._discretized_boundary_mesh = None
-        if rp := data.get("reference_point"):
-            part.reference_point = Node.__from_data__(rp)
-        return part
-
     @classmethod
     def from_compas_lines_discretized(
         cls, lines: List["Line"], targetlength: float, element_cls: type, section: "_Section2D", frame: "Union[Frame, List[float], Vector]", **kwargs
@@ -453,8 +414,10 @@ class _Part(FEAData):
             part._discretized_boundary_mesh = part._boundary_mesh
 
         if rigid:
+            if not part._discretized_boundary_mesh:
+                raise ValueError("Discretized boundary mesh is required for rigid parts.")
             point = part._discretized_boundary_mesh.centroid()
-            part.reference_point = Node(xyz=point)
+            part.reference_node = Node(xyz=point)
 
         return part
 
@@ -589,31 +552,40 @@ class _Part(FEAData):
     # =========================================================================
     #                       Properties
     # =========================================================================
+    @property
+    def registration(self) -> Optional["Model"]:
+        """Get the object where this object is registered to."""
+        return self._registration
+
+    @registration.setter
+    def registration(self, value: "Model") -> None:
+        """Set the object where this object is registered to."""
+        self._registration = value
 
     @property
-    def reference_point(self) -> Optional[Node]:
+    def reference_node(self) -> Optional[Node]:
         """The reference point of the part."""
-        return self._reference_point
+        return self._reference_node
 
-    @reference_point.setter
-    def reference_point(self, value: Node):
-        self._reference_point = self.add_node(value)
+    @reference_node.setter
+    def reference_node(self, value: Node):
+        self._reference_node = self.add_node(value)
         value._is_reference = True
 
     @property
     def graph(self):
         """The directed graph of the part."""
         return self._graph
-
+    
     @property
     def nodes(self) -> NodesGroup:
         """The nodes of the part."""
-        return NodesGroup(self._nodes)
+        return self._nodes
 
     @property
     def nodes_sorted(self) -> List[Node]:
         """The nodes of the part sorted by their part key."""
-        return self.nodes.sorted_by(key=lambda x: x.part_key)
+        return self.nodes.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1)
 
     @property
     def points(self) -> List[Point]:
@@ -623,12 +595,12 @@ class _Part(FEAData):
     @property
     def points_sorted(self) -> List[Point]:
         """The points of the part's nodes sorted by their part key."""
-        return [node.point for node in self.nodes.sorted_by(key=lambda x: x.part_key)]
+        return [node.point for node in self.nodes.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1)]
 
     @property
     def elements(self) -> ElementsGroup:
         """The elements of the part."""
-        return ElementsGroup(self._elements)
+        return self._elements
 
     @property
     def edges(self) -> EdgesGroup:
@@ -649,7 +621,7 @@ class _Part(FEAData):
     @property
     def elements_sorted(self) -> List[_Element]:
         """The elements of the part sorted by their part key."""
-        return self.elements.sorted_by(key=lambda x: x.part_key)
+        return self.elements.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1)
 
     @property
     def elements_grouped(self) -> Dict[type, List[_Element]]:
@@ -702,13 +674,18 @@ class _Part(FEAData):
 
     @property
     def sections(self) -> SectionsGroup:
-        """The sections of the part."""
-        return SectionsGroup(self._sections)
+        """All the materials associated with the part. If the part is registered to a model,
+        it is faster to use the model's sections property."""
+        sections = set()
+        for element in self.elements:
+            if hasattr(element, "section") and element.section is not None:
+                sections.add(element.section)
+        return SectionsGroup(members=list(sections), name=f"{self.name}_sections_all")
 
     @property
     def sections_sorted(self) -> List[_Section]:
         """The sections of the part sorted by their part key."""
-        return self.sections.sorted_by(key=lambda x: x.key)
+        return self.sections.sorted_by(key=lambda x: x.key if x.key is not None else "")
 
     @property
     def sections_grouped_by_element(self) -> Dict[type, List[_Section]]:
@@ -718,8 +695,13 @@ class _Part(FEAData):
 
     @property
     def materials(self) -> MaterialsGroup:
-        """The materials of the part."""
-        return MaterialsGroup(self._materials)
+        """All the materials associated with the part. If the part is registered to a model,
+        it is faster to use the model's meaterials property."""
+        materials = set()
+        for section in self.sections:
+            if hasattr(section, "material") and section.material is not None:
+                materials.add(section.material)
+        return MaterialsGroup(members=list(materials), name=f"{self.name}_materials_all")
 
     @property
     def materials_sorted(self) -> List[_Material]:
@@ -732,15 +714,17 @@ class _Part(FEAData):
         materials_group = self.materials.group_by(key=lambda x: x.name)
         return {key: group.members for key, group in materials_group}
 
-    @property
-    def releases(self) -> Set[_BeamEndRelease]:
-        """The releases of the part."""
-        return self._releases
+    # @property
+    # def releases(self) -> "ReleasesGroup | None":
+    #     """The releases of the part."""
+    #     for element in self.elements:
+    #         if hasattr(element, "releases") and element.releases is not None:
+    #             return ReleasesGroup(members=element.releases, name=f"{self.name}_releases_all")
 
     @property
     def gkey_node(self) -> Dict[str, Node]:
         """A dictionary that associates each node and its geometric key."""
-        return self._gkey_node
+        return self.nodes.gkey_node
 
     @property
     def boundary_mesh(self):
@@ -884,30 +868,16 @@ class _Part(FEAData):
         transformation : :class:`compas.geometry.Transformation`
             The transformation to apply.
         """
-        part: Part = self.copy()
+        part = self.copy()
         part.transform(transformation)
         return part
 
-    def elements_by_dimension(self, dimension: int = 1) -> Iterable[_Element]:
-        """Get elements by dimension.
-        Parameters
-        ----------
-        dimension : int
-            The dimension of the elements to get. 1 for 1D, 2 for 2D, and 3 for 3D.
-        Returns
-        -------
-        Iterable[:class:`compas_fea2.model._Element`]
-            The elements of the specified dimension.
-        """
-
-        if dimension == 1:
-            return filter(lambda x: isinstance(x, _Element1D), self.elements)
-        elif dimension == 2:
-            return filter(lambda x: isinstance(x, _Element2D), self.elements)
-        elif dimension == 3:
-            return filter(lambda x: isinstance(x, _Element3D), self.elements)
-        else:
-            raise ValueError("dimension not supported")
+    def elements_by_dimension(self, dimension: int = 1) -> Iterable["_Element"]:
+        dimenstion_map = {1: _Element1D, 2: _Element2D, 3: _Element3D}
+        if dimension not in dimenstion_map:
+            raise ValueError(f"Invalid dimension {dimension}. Valid dimensions are {list(dimenstion_map.keys())}.")
+        return self.elements.subgroup(condition=lambda x: isinstance(x, dimenstion_map[dimension])).elements
+        
 
     # =========================================================================
     #                           BCs methods
@@ -968,7 +938,7 @@ class _Part(FEAData):
         Optional[_Material]
         """
         for material in self.materials:
-            if material.uid == uid:
+            if material._uid == uid:
                 return material
         return None
 
@@ -984,42 +954,6 @@ class _Part(FEAData):
         bool
         """
         return material in self.materials
-
-    def add_material(self, material: _Material) -> _Material:
-        """Add a material to the part so that it can be referenced in section and element definitions.
-
-        Parameters
-        ----------
-        material : _Material
-
-        Returns
-        -------
-        _Material
-
-        Raises
-        ------
-        TypeError
-            If the material is not a material.
-        """
-        if not isinstance(material, _Material):
-            raise TypeError(f"{material!r} is not a material.")
-
-        self._materials.add(material)
-        material._registration = self
-        return material
-
-    def add_materials(self, materials: List[_Material]) -> List[_Material]:
-        """Add multiple materials to the part.
-
-        Parameters
-        ----------
-        materials : List[_Material]
-
-        Returns
-        -------
-        List[_Material]
-        """
-        return [self.add_material(material) for material in materials]
 
     def find_material_by_name(self, name: str) -> Optional[_Material]:
         """Find a material with a given name.
@@ -1066,7 +1000,7 @@ class _Part(FEAData):
         Optional[_Section]
         """
         for section in self.sections:
-            if section.uid == uid:
+            if section._uid == uid:
                 return section
         return None
 
@@ -1082,44 +1016,6 @@ class _Part(FEAData):
         bool
         """
         return section in self.sections
-
-    def add_section(self, section: Union["_Section", "_Section1D", "_Section2D", "_Section3D"]) -> Union["_Section", "_Section1D", "_Section2D", "_Section3D"]:
-        """Add a section to the part so that it can be referenced in element definitions.
-
-        Parameters
-        ----------
-        section : :class:`compas_fea2.model.Section`
-
-        Returns
-        -------
-        _Section
-
-        Raises
-        ------
-        TypeError
-            If the section is not a section.
-
-        """
-        if not isinstance(section, _Section):
-            raise TypeError("{!r} is not a section.".format(section))
-
-        self.add_material(section.material)
-        self._sections.add(section)
-        section._registration = self
-        return section
-
-    def add_sections(self, sections: List[_Section]) -> List[_Section]:
-        """Add multiple sections to the part.
-
-        Parameters
-        ----------
-        sections : list[:class:`compas_fea2.model.Section`]
-
-        Returns
-        -------
-        list[:class:`compas_fea2.model.Section`]
-        """
-        return [self.add_section(section) for section in sections]
 
     def find_section_by_name(self, name: str) -> Optional[_Section]:
         """Find a section with a given name.
@@ -1155,7 +1051,7 @@ class _Part(FEAData):
 
         """
         for node in self._nodes:
-            if node.uid == uid:
+            if node._uid == uid:
                 return node
         return None
 
@@ -1400,15 +1296,13 @@ class _Part(FEAData):
 
         if node not in self._nodes:
             node._part_key = len(self.nodes)
-            self._nodes.add(node)
-            if node.gkey is not None:
-                self._gkey_node[node.gkey] = node
+            self._nodes.add_member(node)
             node._registration = self
             if compas_fea2.VERBOSE:
                 print("Node {!r} registered to {!r}.".format(node, self))
         return node
 
-    def add_nodes(self, nodes: List[Node]) -> List[Node]:
+    def add_nodes(self, nodes: Union[List[Node], NodesGroup]) -> List[Node]:
         """Add multiple nodes to the part.
 
         Parameters
@@ -1447,7 +1341,7 @@ class _Part(FEAData):
         if self.contains_node(node):
             self.nodes.remove_member(node)
             if node.gkey is not None:
-                self._gkey_node.pop(node.gkey)
+                self.gkey_node.pop(node.gkey)
             node._registration = None
             if compas_fea2.VERBOSE:
                 print(f"Node {node!r} removed from {self!r}.")
@@ -1566,10 +1460,9 @@ class _Part(FEAData):
             node.connected_elements.add(element)
         if not element.section:
             raise ValueError("Element must have a section defined before adding it to the part.")
-        self.add_section(element.section)
 
         element._part_key = len(self.elements)
-        self._elements.add(element)
+        self._elements.add_member(element)
         element._registration = self
 
         self.graph.add_node(element, type="element")
@@ -1795,7 +1688,8 @@ class _Part(FEAData):
             If the group is not a node or element group.
 
         """
-        group._registration = self
+        group.registration = self
+        
         self._groups.add(group)
         return group
 
@@ -1949,19 +1843,6 @@ class Part(_Part):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @property
-    def materials(self) -> Set[_Material]:
-        return self._materials
-        return set(section.material for section in self.sections if section.material)
-
-    @property
-    def sections(self) -> Set[_Section]:
-        return self._sections
-        return set(element.section for element in self.elements if element.section)
-
-    @property
-    def releases(self) -> Set[_BeamEndRelease]:
-        return self._releases
 
     # =========================================================================
     #                       Constructor methods
@@ -2073,11 +1954,12 @@ class Part(_Part):
         :class:`compas_fea2.model._BeamEndRelease`
             The release applied to the element.
         """
+        raise NotImplemented
         if not isinstance(release, _BeamEndRelease):
             raise TypeError(f"{release!r} is not a beam release element.")
         release.element = element
         release.location = location
-        self._releases.add(release)
+        self._releases.add_member(release)
         return release
 
 
@@ -2089,47 +1971,16 @@ class RigidPart(_Part):
     __doc__ += """
     Additional Attributes
     ---------------------
-    reference_point : :class:`compas_fea2.model.Node`
+    reference_node : :class:`compas_fea2.model.Node`
         A node acting as a reference point for the part, by default `None`. This
         is required if the part is rigid as it controls its movement in space.
 
     """
 
-    def __init__(self, reference_point: Optional[Node] = None, **kwargs):
+    def __init__(self, reference_node: Optional[Node] = None, **kwargs):
         super().__init__(**kwargs)
-        self._reference_point = reference_point
+        self._reference_node = reference_node
 
-    @property
-    def __data__(self):
-        data = super().__data__
-        data.update(
-            {
-                "class": self.__class__.__name__,
-                "reference_point": self.reference_point.__data__ if self.reference_point else None,
-            }
-        )
-        return data
-
-    @classmethod
-    def __from_data__(cls, data):
-        """Create a part instance from a data dictionary.
-
-        Parameters
-        ----------
-        data : dict
-            The data dictionary.
-
-        Returns
-        -------
-        _Part
-            The part instance.
-        """
-        from compas_fea2.model import Node
-
-        part = cls(reference_point=Node.__from_data__(data["reference_point"]))
-        for element_data in data.get("elements", []):
-            part.add_element(_Element.__from_data__(element_data))
-        return part
 
     @classmethod
     def from_gmsh(cls, gmshModel: object, name: Optional[str] = None, **kwargs) -> "_Part":

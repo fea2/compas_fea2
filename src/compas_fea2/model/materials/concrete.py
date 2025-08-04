@@ -1,6 +1,9 @@
 import math
+from typing import Optional
+from uuid import UUID
 
 from matplotlib import pyplot as plt
+from compas_fea2.base import Registry
 
 from .material import _Material
 
@@ -186,16 +189,26 @@ fr  : {}
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        return cls(
-            fck=data["fck"],
-            E=data["E"],
-            v=data["v"],
-            density=data["density"],
-            fr=data["fr"],
-        )
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
 
-    # FIXME: this is only working for the basic material properties.
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = cls(
+            fck=data.get("fck"),
+            density=data.get("density"),
+            name=data.get("name"),
+        )
+        material._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, material)
+
+        return material
+
     @classmethod
     def C20_25(cls, **kwargs):
         return cls(fck=20, E=30_000, v=0.17, density=2400, name="C20/25", **kwargs)

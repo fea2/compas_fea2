@@ -11,17 +11,18 @@ from compas_fea2.model.sections import GenericBeamSection  # type: ignore
 
 
 class TestFEADataCopy(unittest.TestCase):
+    
     def test_copy_guid_and_name(self):
         m1 = Model(name="orig")
-        m2 = m1.copy()  # type: ignore
-        self.assertNotEqual(m1.uid, m2.uid)
+        m2 = m1.copy()
+        self.assertNotEqual(m1._uid, m2.uid)
         self.assertNotEqual(m1.name, m2.name)
-        m3 = m1.copy(copy_guid=True, copy_name=True)  # type: ignore
+        m3 = m1.copy(duplicate=True)  # type: ignore
         # Some implementations may not allow copying the same UID, so check only name
         self.assertEqual(m1.name, m3.name)
         # If UID is not copied, ensure it's different
         if hasattr(m1, "uid") and hasattr(m3, "uid"):
-            self.assertNotEqual(m1.uid, m3.uid)
+            self.assertNotEqual(m1._uid, m3.uid)
 
     def test_copy_preserves_type(self):
         m1 = Model(name="orig")
@@ -34,18 +35,18 @@ class TestFEADataCopy(unittest.TestCase):
         self.assertIsInstance(m2, Model)
         self.assertNotEqual(m1, m2)
 
-    def test_copy_part_with_guid_and_name(self):
+    def test_duplicate_part(self):
         m = Model(name="test")
         part = m.add_part(Part(name="p1"))
-        p2 = part.copy(copy_guid=True, copy_name=True)  # type: ignore
+        p2 = part.copy(duplicate=True)
         self.assertEqual(part.name, p2.name)
         if hasattr(part, "uid") and hasattr(p2, "uid"):
-            self.assertNotEqual(part.uid, p2.uid)
+            self.assertNotEqual(part._uid, p2.uid)
 
-    def test_copy_part_default(self):
+    def test_copy_part(self):
         m = Model(name="test")
         part = m.add_part(Part(name="p1"))
-        p2 = part.copy()  # type: ignore
+        p2 = part.copy() 
         self.assertNotEqual(part.name, p2.name)
         self.assertNotEqual(part, p2)
 

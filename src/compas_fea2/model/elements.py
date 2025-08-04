@@ -1,4 +1,6 @@
 from operator import itemgetter
+from uuid import UUID
+
 from typing import TYPE_CHECKING
 from typing import Dict
 from typing import Iterator
@@ -20,6 +22,7 @@ from compas.geometry import distance_point_point
 from compas.itertools import pairwise
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
 
 if TYPE_CHECKING:
     from compas_fea2.model.sections import SpringSection
@@ -36,6 +39,8 @@ if TYPE_CHECKING:
     from .model import Model
     from .nodes import Node
     from .parts import _Part
+    from .parts import Part
+    from .parts import RigidPart
     from .shapes import Shape
 
 
@@ -120,44 +125,94 @@ class _Element(FEAData):
         self._results_format = {}
         self._rigid = rigid
         self._heat = heat
-        self._reference_point = None
+        self._reference_point = None # TODO: should be Node or Point?
         self._shape = None
         self._ndim = 0
         self._faces = []
+        self._edges = []
         self._face_indices = {}
         self._length = 0.0
 
     @property
     def __data__(self):
         """Return a dictionary representation of the element's data."""
-        return {
-            "class": self.__class__.__name__,
+        data = super().__data__
+        data.update({
             "nodes": [node.__data__ for node in self.nodes],
             "section": self.section.__data__ if self.section else None,
             "implementation": self.implementation,
-            "rigid": self.rigid,
-        }
+            "frame": self._frame.__data__ if self._frame else None,
+            "on_boundary": self._on_boundary,
+            "area": self._area,
+            "volume": self._volume,
+            "results_format": self._results_format,
+            "rigid": self._rigid,
+            "heat": self._heat,
+            "reference_point": self._reference_point.__data__ if self._reference_point else None,
+            "shape": self._shape.__data__ if self._shape else None,
+            "ndim": self._ndim,
+            "faces": [face.__data__ for face in self._faces],
+            "edges": [edge.__data__ for edge in self._edges],
+            "face_indices": {face.__data__: indices for face, indices in self._face_indices.items()},
+            "length": self._length
+        })
+        return data
 
     @classmethod
-    def __from_data__(cls, data):
-        """Create an element instance from a data dictionary.
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
 
-        Parameters
-        ----------
-        data : dict
-            The data dictionary containing the element's attributes.
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
 
-        Returns
-        -------
-        _Element
-            An instance of the element.
-        """
-        from compas_fea2.model.nodes import Node
-        from compas_fea2.model.sections import _Section
+        nodes = [
+            registry.add_from_data(node_data, "compas_fea2.model.nodes")
+            for node_data in data.get("nodes", [])
+        ]
+        section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections") if data.get("section") else None
 
-        nodes = [Node.__from_data__(node_data) for node_data in data["nodes"]]
-        section = _Section.__from_data__(data["section"])
-        return cls(nodes, section, implementation=data.get("implementation"), rigid=data.get("rigid"))
+        element = cls(
+            nodes=nodes,
+            section=section,
+            implementation=data.get("implementation"),
+            rigid=data.get("rigid", False),
+            heat=data.get("heat", False),
+            faces_uids=[face_data.get("uid") for face_data in data.get("faces", [])] if data.get("faces") else None, # could be extended to names as well
+            edges_uids=[edge_data.get("uid") for edge_data in data.get("edges", [])] if data.get("edges") else None, # could be extended to names as well
+            uid = UUID(uid) if uid else None,
+            name =data.get("name", "")
+        )
+        element._frame = Frame.__from_data__(data["frame"]) if "frame" in data else None
+        element._on_boundary = data.get("on_boundary", None)
+        element._area = data.get("area", 0.0)
+        element._volume = data.get("volume", 0.0)
+        element._results_format = data.get("results_format", {})
+        element._reference_point = Point.__from_data__(data["reference_point"]) if "reference_point" in data else None
+        element._shape = registry.add_from_data(data.get("shape"), "compas_fea2.model.shapes") if data.get("shape") else None
+        element._ndim = data.get("ndim", 0)
+        element._length = data.get("length", 0.0)
+
+        if uid:
+            registry.add(uid, element)
+
+        return element
+
+    @property
+    def registration(self) -> Optional[Union["_Part", "Part", "RigidPart"]]:
+        """Get the object where this object is registered to."""
+        return self._registration
+
+    @registration.setter
+    def registration(self, value: Union["_Part", "Part", "RigidPart"]) -> None:
+        """Set the object where this object is registered to."""
+        for node in self.nodes:
+            if node.registration is not None and node.registration != value:
+                raise ValueError("All nodes of the elements must be registered to the same part")
+            node.registration = value  # type: ignore
+        self._registration = value
+
 
     @property
     def part(self) -> "_Part | None":
@@ -370,24 +425,6 @@ class _Element(FEAData):
             raise ValueError("Faces have not been constructed")
         return self._faces
 
-    def _construct_faces(self, face_indices: Dict[str, Tuple[int, ...]]) -> List["Face"]:
-        """Construct the face-nodes dictionary.
-
-        Parameters
-        ----------
-        face_indices : dict
-            Dictionary providing for each face the node indices. For example:
-            {'s1': (0,1,2), ...}
-
-        Returns
-        -------
-        list[:class:`compas_fea2.model.elements.Face`]
-            List of Face objects.
-        """
-        if not face_indices:
-            raise ValueError("Face indices must be provided")
-        return [Face(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in face_indices.items()]
-
     @property
     def length(self) -> float:
         """Return the length of the element."""
@@ -504,24 +541,9 @@ class _Element1D(_Element):
         self._ndim = 1
 
     @property
-    def __data__(self):
-        data = super().__data__
-        data["frame"] = self.frame.__data__
-        data["orientation"] = self._orientation.__data__
-        data["ndim"] = self._ndim
-        return data
-
-    @property
     def section(self) -> "_Section1D | None":
         """Return the section object assigned to the element."""
         return self._section
-
-    @classmethod
-    def __from_data__(cls, data):
-        nodes = [node_data.pop("class").__from_data__(node_data) for node_data in data["nodes"]]
-        section = data["section"].pop("class").__from_data__(data["section"])
-        frame = Frame.__from_data__(data["frame"])
-        return cls(nodes=nodes, section=section, frame=frame, implementation=data.get("implementation"), rigid=data.get("rigid"))  # type: ignore
 
     @property
     def curve(self) -> Line:
@@ -662,12 +684,43 @@ class TieElement(TrussElement):
 
 
 class Edge(FEAData):
-    def __init__(self, nodes: List["Node"], tag: str, element: Optional["_Element"] = None, **kwargs):
+    def __init__(self, nodes: List["Node"], tag: str, **kwargs):
         super().__init__(**kwargs)
         self._nodes = nodes
         self._tag = tag
         self._line = Line(start=nodes[0].point, end=nodes[1].point)  # TODO check when more than 3 nodes
-        self._registration = element  # FIXME: not updated when copying parts
+
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update(
+            {
+                "nodes": [node.__data__ for node in self.nodes],
+                "tag": self.tag,
+                "line": self._line.__data__ if self._line else None,
+            }
+        )
+
+    @classmethod
+    def __from_data__(cls, data: dict, registry: Optional[Registry]=None) -> "Edge": 
+        # Create a registry if not provided
+        if registry is None:
+            registry = Registry()
+        # check if the object already exists in the registry
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid) #type: ignore
+        # Create a new instance
+        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes") for node_data in data.get("nodes", [])]
+        tag = data.get("tag", "")
+        edge = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))
+        # Add specific properties
+        edge._line = Line.__from_data__(data["line"]) if "line" in data else None
+        # Add the object to the registry
+        if uid:
+            registry.add(uid, edge)
+        return edge
+        
 
     @property
     def nodes(self) -> List["Node"]:
@@ -747,29 +800,41 @@ class Face(FEAData):
         self._nodes = nodes
         self._tag = tag
         self._plane = Plane.from_three_points(*[node.xyz for node in nodes[:3]])  # TODO check when more than 3 nodes
-        self._registration = element  # FIXME: not updated when copying parts
-
+        self._registration = element
+        
     @property
     def __data__(self):
-        return {
+        data = super().__data__
+        data.update( {
             "nodes": [node.__data__ for node in self.nodes],
             "tag": self.tag,
             "element": self.element.__data__ if self.element else None,
-        }
+            "plane": self.plane.__data__ if self.plane else None,
+        })
+        return data
 
     @classmethod
-    def __from_data__(cls, data):
-        from importlib import import_module
-
-        from compas_fea2.model import Node
-
-        elements_module = import_module("compas_fea2.model.elements")
-        element_cls = getattr(elements_module, data["elements"]["class"])
-
-        nodes = [Node.__from_data__(node_data) for node_data in data["nodes"]]
-        element = element_cls[data["element"]["class"]].__from_data__(data["element"])
-        return cls(nodes, data["tag"], element=element)
-
+    def __from_data__(cls, data: dict, registry: Optional[Registry]=None) -> "Face": 
+        # Create a registry if not provided
+        if registry is None:
+            registry = Registry()
+        # check if the object already exists in the registry
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid) #type: ignore
+        # Create a new instance
+        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes") for node_data in data.get("nodes", [])]
+        tag = data.get("tag", "")
+        face = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))
+        # Add base properties
+        face._name = data.get("name", "")
+        # Add specific properties
+        face._plane = Plane.__from_data__(data["plane"]) if "plane" in data else None
+        # Add the object to the registry
+        if uid:
+            registry.add(uid, face)
+        return face
+    
     @property
     def nodes(self) -> List["Node"]:
         return self._nodes
@@ -954,7 +1019,7 @@ class _Element2D(_Element):
         if self.face_indices:
             return Mesh.from_vertices_and_faces(self.points, list(self.face_indices.values()))
 
-    def _construct_faces(self, face_indices: Dict[str, Tuple[int, ...]]) -> List[Face]:
+    def _construct_faces(self, face_indices: Dict[str, Tuple[int, ...]], uids: Optional[Union[List[UUID], str]] = None) -> List[Face]:
         """Construct the face-nodes dictionary.
 
         Parameters
@@ -968,9 +1033,17 @@ class _Element2D(_Element):
         dict
             Dictionary with face names and the corresponding nodes.
         """
-        return [Face(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in face_indices.items()]
+        faces = []
+        for name_indices, uid in zip(face_indices.items(), uids or [None] * len(face_indices)):
+            name, indices = name_indices
+            if len(indices) < 3:
+                raise ValueError(f"Face '{name}' must have at least 3 nodes, got {len(indices)}")
+            face = Face(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self, uid=uid)
+            face.registration = self 
+            faces.append(face)
+        return faces
 
-    def _construct_edges(self, edge_indices: Dict[str, Tuple[int, ...]]) -> List[Edge]:
+    def _construct_edges(self, edge_indices: Dict[str, Tuple[int, ...]], uids: Optional[Union[List[UUID], str]] = None) -> List[Edge]:
         """Construct the face-nodes dictionary.
 
         Parameters
@@ -984,7 +1057,15 @@ class _Element2D(_Element):
         dict
             Dictionary with edge names and the corresponding nodes.
         """
-        return [Edge(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in edge_indices.items()]
+        edges = []
+        for name_indices, uid in zip(edge_indices.items(), uids or [None] * len(edge_indices)):
+            name, indices = name_indices
+            if len(indices) < 2:
+                raise ValueError(f"Edge '{name}' must have at least 2 nodes, got {len(indices)}")
+            edge = Edge(nodes=itemgetter(*indices)(self.nodes), tag=name, uid=uid)
+            edge.registration = self
+            edges.append(edge)
+        return edges
 
     def stress_results(self, step: "_Step") -> "Result":
         """Get the stress results for the element.
@@ -1023,10 +1104,11 @@ class ShellElement(_Element2D):
         )
 
         self._face_indices = {"SPOS": tuple(range(len(nodes))), "SNEG": tuple(range(len(nodes)))[::-1]}
-        self._faces = self._construct_faces(self._face_indices)
+        self._faces = self._construct_faces(self._face_indices, uids=kwargs.get("faces_uids", None))
 
         self._edges_indices = {f"s{i + 1}": (i, i + 1) if i < len(nodes) - 1 else (i, 0) for i in range(len(nodes))}
-        self._edges = self._construct_edges(self._edges_indices)
+        self._edges = self._construct_edges(self._edges_indices, uids=kwargs.get("edges_uids", None))
+        
 
     @property
     def results_cls(self) -> Dict[str, type]:

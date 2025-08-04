@@ -7,6 +7,7 @@ from math import sqrt
 from typing import List
 from typing import Optional
 from typing import Tuple
+from uuid import UUID
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,6 +22,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon as MplPolygon
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
 
 
 class Shape(Polygon, FEAData):
@@ -60,19 +62,35 @@ class Shape(Polygon, FEAData):
 
     @property
     def __data__(self) -> dict:
-        """Return a dictionary representation of the shape."""
-        return {
-            "class": self.__class__.__name__,
-            "points": [point.__data__ for point in self.points],
-            "frame": self.frame.__data__,
-        }
+        data = super().__data__
+        data.update( 
+            {
+                "points": [point.__data__ for point in self.points], # type: ignore
+                "frame": self.frame.__data__ if self.frame else None,
+            }
+        )
+        return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Shape":
-        """Create a shape instance from a dictionary representation."""
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         points = [Point.__from_data__(pt) for pt in data["points"]]
-        frame = Frame.__from_data__(data["frame"])  # the return type is wrong in compas
-        return cls(points, frame)  # type: ignore[return-value]
+        frame_data = data.get("frame")
+        frame = Frame.__from_data__(frame_data) if isinstance(frame_data, dict) else Frame.worldXY()
+
+        shape = cls(points, frame)
+        shape._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, shape)
+
+        return shape
 
     # --------------------------------------------------------------------------
     # Properties
@@ -514,8 +532,20 @@ class Circle(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Circle":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["radius"], data["segments"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -610,8 +640,20 @@ class Ellipse(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Ellipse":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["radius_a"], data["radius_b"], data["segments"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -677,8 +719,20 @@ class Rectangle(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Rectangle":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["w"], data["h"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -719,8 +773,20 @@ class Rhombus(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Rhombus":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["a"], data["b"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -785,8 +851,20 @@ class UShape(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "UShape":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["t3"], data["direction"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -845,8 +923,20 @@ class TShape(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "TShape":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["direction"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -982,8 +1072,20 @@ class IShape(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "IShape":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["w"], data["h"], data["tw"], data["tbf"], data["ttf"], data["direction"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1040,8 +1142,20 @@ class LShape(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "LShape":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["a"], data["b"], data["t1"], data["t2"], data["direction"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1086,8 +1200,20 @@ class CShape(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "CShape":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["height"], data["flange_width"], data["web_thickness"], data["flange_thickness"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1153,7 +1279,14 @@ class CustomI(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "CustomI":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(
             data["height"],
             data["top_flange_width"],
@@ -1163,6 +1296,11 @@ class CustomI(Shape):
             data["bottom_flange_thickness"],
             Frame.__from_data__(data["frame"]),  # type: ignore[return-value] the return type is wrong in compas
         )
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1230,8 +1368,20 @@ class Star(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Star":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["a"], data["b"], data["c"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1275,8 +1425,20 @@ class Hexagon(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Hexagon":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["side_length"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1312,8 +1474,20 @@ class Pentagon(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Pentagon":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["circumradius"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1349,8 +1523,20 @@ class Octagon(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Octagon":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["circumradius"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1386,8 +1572,20 @@ class Triangle(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Triangle":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["circumradius"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1426,8 +1624,20 @@ class Parallelogram(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Parallelogram":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["width"], data["height"], data["angle"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance
 
 
@@ -1465,6 +1675,18 @@ class Trapezoid(Shape):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict) -> "Trapezoid":
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
         instance = cls(data["top_width"], data["bottom_width"], data["height"], Frame.__from_data__(data["frame"]))  # type: ignore[return-value] the return type is wrong in compas
+        instance._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, instance)
+
         return instance

@@ -1,5 +1,7 @@
 from math import pi
 from math import sqrt
+from uuid import UUID
+
 from typing import TYPE_CHECKING
 from typing import Optional
 
@@ -9,6 +11,7 @@ from matplotlib.patches import Polygon as mplPolygon
 from matplotlib.path import Path
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
 from compas_fea2.model.shapes import Circle
 from compas_fea2.model.shapes import IShape
 from compas_fea2.model.shapes import LShape
@@ -72,25 +75,32 @@ class _Section(FEAData):
 
     @property
     def __data__(self):
-        data = {}
-        data.update(
-            {
-                "class": self.__class__.__name__,
-                "material": self.material.__data__ if hasattr(self.material, "__data__") else self.material,
-                "name": self.name,
-                "uid": self.uid,
-            }
-        )
+        data = super().__data__
+        data.update({
+            "material": self.material.__data__ if self.material else None,
+        })
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
-        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid")}
-        obj = cls(material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
-        return obj
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
+
+        section = cls(
+            material=material
+        )
+        section._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, section)
+
+        return section
 
     def __str__(self) -> str:
         return f"""
@@ -167,18 +177,34 @@ class SpringSection(FEAData):
                 "axial": self.axial,
                 "lateral": self.lateral,
                 "rotational": self.rotational,
-                "uid": self.uid,
+                "uid": self._uid,
                 "name": self.name,
             }
         )
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        sec = cls(axial=data["axial"], lateral=data["lateral"], rotational=data["rotational"])
-        sec.uid = data.get("uid", None)
-        sec.name = data.get("name", None)
-        return sec
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        section = cls(
+            axial=data.get("axial"),
+            lateral=data.get("lateral"),
+            rotational=data.get("rotational"),
+        )
+        section._uid = UUID(uid) if uid else None
+        if "name" in data:
+            section.name = data["name"]
+
+        if uid:
+            registry.add(uid, section)
+
+        return section
 
     def __str__(self) -> str:
         return f"""
@@ -312,13 +338,24 @@ class _Section1D(_Section):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         shape = data.get("shape", None)
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "shape")}
         obj = cls(material=material, shape=shape, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
     def __str__(self) -> str:
@@ -770,8 +807,24 @@ class GenericBeamSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        return super().__from_data__(data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid")}
+        obj = cls(material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
+        return obj
 
 
 class AngleSection(_Section1D):
@@ -850,8 +903,15 @@ class AngleSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         a = data.get("a")
         b = data.get("b")
         t1 = data.get("t1")
@@ -860,7 +920,11 @@ class AngleSection(_Section1D):
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "a", "b", "t1", "t2", "direction")}
         obj = cls(a=a, b=b, t1=t1, t2=t2, direction=direction, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
 
@@ -971,8 +1035,15 @@ class BoxSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         w = data.get("w")
         h = data.get("h")
         tw = data.get("tw")
@@ -980,7 +1051,11 @@ class BoxSection(_Section1D):
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h", "tw", "tf")}
         obj = cls(w=w, h=h, tw=tw, tf=tf, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
 
@@ -1036,13 +1111,24 @@ class CircularSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         r = data.get("r")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "r")}
         obj = cls(r=r, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
 
@@ -1185,8 +1271,15 @@ class ISection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         w = data.get("w")
         h = data.get("h")
         tw = data.get("tw")
@@ -1195,7 +1288,11 @@ class ISection(_Section1D):
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h", "tw", "tbf", "ttf")}
         obj = cls(w=w, h=h, tw=tw, tbf=tbf, ttf=ttf, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
     @classmethod
@@ -1630,14 +1727,25 @@ class PipeSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         r = data.get("r")
         t = data.get("t")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "r", "t")}
         obj = cls(r=r, t=t, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
 
@@ -1699,14 +1807,25 @@ class RectangularSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         w = data.get("w")
         h = data.get("h")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h")}
         obj = cls(w=w, h=h, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
 
@@ -1805,15 +1924,26 @@ class TrapezoidalSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         w1 = data.get("w1")
         w2 = data.get("w2")
         h = data.get("h")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w1", "w2", "h")}
         obj = cls(w1=w1, w2=w2, h=h, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
 
@@ -1894,13 +2024,24 @@ class TrussSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         A = data.get("A")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "A")}
         obj = cls(A=A, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
 
@@ -1945,8 +2086,8 @@ class StrutSection(TrussSection):
         super(StrutSection, self).__init__(A=A, material=material, **kwargs)
 
     @classmethod
-    def __from_data__(cls, data):
-        return super().__from_data__(data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        return super().__from_data__(data, registry)
 
 
 class TieSection(TrussSection):
@@ -1990,8 +2131,8 @@ class TieSection(TrussSection):
         super(TieSection, self).__init__(A=A, material=material, **kwargs)
 
     @classmethod
-    def __from_data__(cls, data):
-        return super().__from_data__(data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        return super().__from_data__(data, registry)
 
 
 # ==============================================================================
@@ -2023,13 +2164,24 @@ class _Section2D(_Section):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        material = data.get("material")
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
         t = data.get("t")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "t")}
         obj = cls(t=t, material=material, **kwargs)
         obj.name = data.get("name", None)
-        obj.uid = data.get("uid", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
         return obj
 
 
@@ -2068,8 +2220,8 @@ class ShellSection(_Section2D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        return super().__from_data__(data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        return super().__from_data__(data, registry)
 
 
 class MembraneSection(_Section2D):
@@ -2107,8 +2259,8 @@ class MembraneSection(_Section2D):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
-        return super().__from_data__(data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        return super().__from_data__(data, registry)
 
 
 # ==============================================================================
@@ -2132,8 +2284,24 @@ class _Section3D(_Section):
         return super().__data__
 
     @classmethod
-    def __from_data__(cls, data):
-        return super().__from_data__(data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = registry.get(data.get("material"))
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid")}
+        obj = cls(material=material, **kwargs)
+        obj.name = data.get("name", None)
+        obj._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, obj)
+
+        return obj
 
 
 class SolidSection(_Section3D):
@@ -2161,5 +2329,5 @@ class SolidSection(_Section3D):
         return super().__data__
 
     @classmethod
-    def __from_data__(cls, data):
-        return super().__from_data__(data)
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        return super().__from_data__(data, registry)

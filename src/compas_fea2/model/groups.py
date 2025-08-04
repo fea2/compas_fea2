@@ -1,5 +1,6 @@
 import logging
 from importlib import import_module
+from uuid import UUID
 from itertools import groupby
 from typing import TYPE_CHECKING
 from typing import Any
@@ -12,9 +13,12 @@ from typing import List
 from typing import Set
 from typing import TypeVar
 from typing import Union
+from typing import Optional
+
 from typing import cast
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
 
 # Type-checking imports to avoid circular dependencies at runtime
 if TYPE_CHECKING:
@@ -34,6 +38,8 @@ if TYPE_CHECKING:
     from compas_fea2.model.model import Model
     from compas_fea2.model.nodes import Node
     from compas_fea2.model.parts import _Part
+    from compas_fea2.model.parts import Part
+    from compas_fea2.model.parts import RigidPart
     from compas_fea2.model.releases import _BeamEndRelease
     from compas_fea2.model.sections import _Section
 
@@ -89,8 +95,45 @@ class _Group(FEAData, Generic[_MemberType]):
         else:
             self._members = set()
 
-        self._part = None
-        self._model = None
+    @property
+    def __data__(self) -> Dict[str, Any]:
+        """
+        Data representation of the group for serialization.
+        """
+        data = super().__data__
+        data.update(
+            {
+                "members": [member.__data__ for member in self._members],  # type: ignore
+                "member_class": self._members_class.__name__ if self._members_class else None,
+            }
+        )
+        return data
+
+    @classmethod
+    def __from_data__(cls, data, registry: Optional["Registry"] = None) -> Union["_Group[Any]", "NodesGroup", "ElementsGroup", "EdgesGroup", "FacesGroup"]:
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        member_class_name = data.get("member_class")
+        members = [registry.add_from_data(member, "compas_fea2.model") for member in data["members"]]
+        if "member_class" in cls.__dict__:
+            member_class = import_module("compas_fea2.model").__dict__.get(member_class_name) if member_class_name else None
+            group = cls(member_class=member_class, members=members)  # type: ignore
+        else:
+            group = cls(members=members)  # type: ignore (this is for the specific groups where _member_class is already defined)
+        # Add base properties
+        group._uid = UUID(uid) if uid else None
+        # group._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
+        group._name = data.get("name", "")
+
+        # Add the object to the registry
+        if uid:
+            registry.add(uid, group)
+        return group
 
     def __len__(self) -> int:
         """Return the number of members in the group."""
@@ -124,6 +167,28 @@ class _Group(FEAData, Generic[_MemberType]):
         return list(self._members)
 
     @property
+    def registration(self) -> Optional[Union["_Part", "Part", "RigidPart"]]:
+        """Get the object where this object is registered to."""
+        return self._registration
+
+    @registration.setter
+    def registration(self, value: Union["_Part", "Part", "RigidPart"]) -> None:
+        """Set the object where this object is registered to."""
+        for member in self._members:
+            member.registration = value # type: ignore
+        self._registration = value
+
+    @property
+    def part(self) -> Union["_Part", "Part", "RigidPart", None]:
+        if isinstance(self._registration, _Part):
+            return self._part
+
+    @property
+    def model(self) -> Union["Model", None]:
+        if isinstance(self._registration, Model):
+            return self._model
+
+    @property
     def members(self) -> Set[_MemberType]:
         """Return the members of the group."""
         return self._members
@@ -140,7 +205,7 @@ class _Group(FEAData, Generic[_MemberType]):
         """
         return sorted(self._members, key=lambda x: getattr(x, "key", str(x)))
 
-    def sorted_by(self, key: Callable[[_MemberType], object], reverse: bool = False) -> List[_MemberType]:
+    def sorted_by(self, key: Callable[[_MemberType], Union[str, int, float]], reverse: bool = False) -> List[_MemberType]:
         """
         Return the members of the group sorted based on a custom key function.
 
@@ -334,52 +399,6 @@ class _Group(FEAData, Generic[_MemberType]):
         """Clear all members from the group."""
         self._members.clear()
 
-    def serialize(self) -> Dict[str, Any]:
-        """
-        Serialize the group to a dictionary.
-
-        Returns
-        -------
-        Dict[str, Any]
-            A dictionary representation of the group.
-        """
-        # This serialization is generic, but subclasses will override to handle complex members
-        return {"members": list(self._members)}
-
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        """
-        Data representation of the group for serialization.
-        """
-        members_data = []
-        for member in self._members:
-            if hasattr(member, "__data__"):
-                members_data.append(member.__data__)
-            else:
-                members_data.append(member)
-        return {"members": members_data}
-
-    @classmethod
-    def deserialize(cls: type[G], data: Dict[str, Any]) -> G:
-        """
-        Deserialize a dictionary to create a `_Group` instance.
-        Note: This base deserialize is very basic and will likely be overridden
-        by subclasses to properly handle complex member types.
-
-        Parameters
-        ----------
-        data : Dict[str, Any]
-            A dictionary representation of the group.
-
-        Returns
-        -------
-        G
-            A `_Group` instance with the deserialized members.
-        """
-        # This assumes members are directly deserializable, which might not be true for complex types
-        # Subclasses should override this.
-        raise NotImplementedError("Subclasses should implement their own deserialize method.")
-
 
 class NodesGroup(_Group["Node"]):
     """Base class nodes groups.
@@ -411,29 +430,20 @@ class NodesGroup(_Group["Node"]):
         super().__init__(members=members, member_class=Node, **kwargs)
 
     @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [node.__data__ for node in self.nodes]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "NodesGroup":
-        from compas_fea2.model.nodes import Node
-
-        nodes = [Node.__from_data__(node_data) for node_data in data["members"]]
-        return cls(members=nodes)
-
-    @property
-    def part(self) -> Any:
-        return self._part
-
-    @property
-    def model(self) -> Any:
-        return self._model
-
-    @property
     def nodes(self) -> Set["Node"]:
         return self._members
+
+    @property
+    def gkey_node(self) -> Dict[str, "Node"]:
+        """Return a dictionary mapping gkeys to nodes."""
+        gkey_node_map = {}
+        for node in self.nodes:
+            if node.gkey is not None:
+                gkey_node_map[node.gkey] = node
+            else:
+                # Handle case where node.gkey is None
+                logger.warning(f"Node {node} has no gkey, skipping in gkey_node_map.")
+        return gkey_node_map
 
 
 class ElementsGroup(_Group[Union["_Element", "_Element1D", "_Element2D", "_Element3D"]]):
@@ -466,18 +476,6 @@ class ElementsGroup(_Group[Union["_Element", "_Element1D", "_Element2D", "_Eleme
         super().__init__(members=members, member_class=_Element, **kwargs)
 
     @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [element.__data__ for element in self.elements]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "ElementsGroup":
-        elements_module = import_module("compas_fea2.model.elements")
-        elements = [getattr(elements_module, element_data["class"]).__from_data__(element_data) for element_data in data["members"]]
-        return cls(members=elements)
-
-    @property
     def part(self) -> Any:
         return self._registration
 
@@ -497,20 +495,6 @@ class EdgesGroup(_Group["Edge"]):
         from compas_fea2.model.elements import Edge
 
         super().__init__(members=members, member_class=Edge, **kwargs)
-
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [edge.__data__ for edge in self.edges]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "EdgesGroup":
-        from compas_fea2.model.elements import Edge
-
-        edges = [Edge.__from_data__(edge_data) for edge_data in data["members"]]
-        obj = cls(members=edges)
-        return obj
 
     @property
     def model(self) -> "Model | None":
@@ -536,20 +520,6 @@ class FacesGroup(_Group["Face"]):
         from compas_fea2.model.elements import Face
 
         super().__init__(members=members, member_class=Face, **kwargs)
-
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [face.__data__ for face in self.faces]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "FacesGroup":
-        from compas_fea2.model.elements import Face
-
-        faces = [Face.__from_data__(face_data) for face_data in data["members"]]
-        obj = cls(members=faces)
-        return obj
 
     @property
     def part(self) -> "_Part | None":
@@ -599,24 +569,6 @@ class PartsGroup(_Group["_Part"]):
         super().__init__(members=members, member_class=_Part, **kwargs)
 
     @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [part.__data__ for part in self.parts]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "PartsGroup":
-        from compas_fea2.model.parts import _Part
-
-        part_classes = {subcls.__name__: subcls for subcls in _Part.__subclasses__() + [_Part]}  # Include _Part itself if it can be instantiated
-        parts = [part_classes[part_data["class"]].__from_data__(part_data) for part_data in data["members"]]
-        return cls(members=parts)
-
-    @property
-    def model(self) -> "Model | None":
-        return self._registration
-
-    @property
     def parts(self) -> Set["_Part"]:
         return self._members
 
@@ -633,20 +585,6 @@ class SectionsGroup(_Group["_Section"]):
     def sections(self) -> Set["_Section"]:
         return self._members
 
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [section.__data__ for section in self.sections]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "SectionsGroup":
-        from compas_fea2.model.sections import _Section
-
-        section_classes = {subcls.__name__: subcls for subcls in _Section.__subclasses__() + [_Section]}  # Include _Section itself if it can be instantiated
-        sections = [section_classes[section_data["class"]].__from_data__(section_data) for section_data in data["members"]]
-        return cls(members=sections)
-
 
 class MaterialsGroup(_Group["_Material"]):
     """Base class for materials groups."""
@@ -659,19 +597,6 @@ class MaterialsGroup(_Group["_Material"]):
     @property
     def materials(self) -> Set["_Material"]:
         return self._members
-
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [mat.__data__ for mat in self.materials]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "MaterialsGroup":
-        from compas_fea2.model.materials.material import _Material
-
-        mats = [_Material.__from_data__(md) for md in data["members"]]
-        return cls(members=mats)
 
 
 class InterfacesGroup(_Group["_Interface"]):
@@ -686,19 +611,6 @@ class InterfacesGroup(_Group["_Interface"]):
     def interfaces(self) -> Set["_Interface"]:
         return self._members
 
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [iface.__data__ for iface in self.interfaces]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "InterfacesGroup":
-        from compas_fea2.model.interfaces import _Interface
-
-        ifaces = [_Interface.__from_data__(dd) for dd in data["members"]]
-        return cls(members=ifaces)
-
 
 class InteractionsGroup(_Group["_Interaction"]):
     """Base class for interactions groups."""
@@ -711,19 +623,6 @@ class InteractionsGroup(_Group["_Interaction"]):
     @property
     def interactions(self) -> Set["_Interaction"]:
         return self._members
-
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [interaction.__data__ for interaction in self.interactions]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "InteractionsGroup":
-        from compas_fea2.model.interactions import _Interaction
-
-        interactions = [_Interaction.__from_data__(dd) for dd in data["members"]]
-        return cls(members=interactions)
 
 
 class BCsGroup(_Group["_BoundaryCondition"]):
@@ -738,19 +637,6 @@ class BCsGroup(_Group["_BoundaryCondition"]):
     def bcs(self) -> Set["_BoundaryCondition"]:
         return self._members
 
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [bc.__data__ for bc in self.bcs]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "BCsGroup":
-        from compas_fea2.model.bcs import _BoundaryCondition
-
-        bcs = [_BoundaryCondition.__from_data__(bd) for bd in data["members"]]
-        return cls(members=bcs)
-
 
 class ConnectorsGroup(_Group["_Connector"]):
     """Base class for connectors groups."""
@@ -763,19 +649,6 @@ class ConnectorsGroup(_Group["_Connector"]):
     @property
     def connectors(self) -> Set["_Connector"]:
         return self._members
-
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [conn.__data__ for conn in self.connectors]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "ConnectorsGroup":
-        from compas_fea2.model.connectors import _Connector
-
-        conns = [_Connector.__from_data__(d) for d in data["members"]]
-        return cls(members=conns)
 
 
 class ConstraintsGroup(_Group["_Constraint"]):
@@ -790,19 +663,6 @@ class ConstraintsGroup(_Group["_Constraint"]):
     def constraints(self) -> Set["_Constraint"]:
         return self._members
 
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [c.__data__ for c in self.constraints]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "ConstraintsGroup":
-        from compas_fea2.model.constraints import _Constraint
-
-        cons = [_Constraint.__from_data__(dd) for dd in data["members"]]
-        return cls(members=cons)
-
 
 class ICsGroup(_Group["_InitialCondition"]):
     """Base class for initial conditions groups."""
@@ -816,19 +676,6 @@ class ICsGroup(_Group["_InitialCondition"]):
     def ics(self) -> Set["_InitialCondition"]:
         return self._members
 
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [ic.__data__ for ic in self.ics]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "ICsGroup":
-        from compas_fea2.model.ics import _InitialCondition
-
-        ics = [_InitialCondition.__from_data__(dd) for dd in data["members"]]
-        return cls(members=ics)
-
 
 class ReleasesGroup(_Group["_BeamEndRelease"]):
     """Base class for releases groups."""
@@ -841,16 +688,3 @@ class ReleasesGroup(_Group["_BeamEndRelease"]):
     @property
     def releases(self) -> Set["_BeamEndRelease"]:
         return self._members
-
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        data.update({"members": [r.__data__ for r in self.releases]})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]) -> "ReleasesGroup":
-        from compas_fea2.model.releases import _BeamEndRelease
-
-        rels = [_BeamEndRelease.__from_data__(dd) for dd in data["members"]]
-        return cls(members=rels)

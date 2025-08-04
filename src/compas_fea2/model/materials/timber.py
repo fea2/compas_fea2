@@ -1,5 +1,7 @@
 from compas_fea2.units import UnitRegistry
 from compas_fea2.units import units as u
+from typing import Optional
+from compas_fea2.base import Registry
 
 from .material import ElasticOrthotropic
 
@@ -93,41 +95,60 @@ class Timber(ElasticOrthotropic):
 
     @property
     def __data__(self):
-        return {
-            "fmk": self.fmk,
-            "ft0k": self.ft0k,
-            "fc0k": self.fc0k,
-            "ft90k": self.ft90k,
-            "fc90k": self.fc90k,
-            "fvk": self.fvk,
-            "vLT": self.vyz,
-            "vTT": self.vxy,
-            "E0mean": self.Ex,
-            "E90mean": self.Ey,
-            "Gmean": self.Gxy,
-            "densityk": self.densityk,
-            "density": self.density,
-            "name": self.name,
-        }
+        data = super().__data__
+        data.update(
+            {
+                "fmk": self.fmk,
+                "ft0k": self.ft0k,
+                "fc0k": self.fc0k,
+                "ft90k": self.ft90k,
+                "fc90k": self.fc90k,
+                "fvk": self.fvk,
+                "vLT": self.vyz,
+                "vTT": self.vxy,
+                "E0mean": self.Ex,
+                "E90mean": self.Ey,
+                "Gmean": self.Gxy,
+                "densityk": self.densityk,
+                "density": self.density,
+                "name": self.name,
+            }
+        )
+        return data
 
     @classmethod
-    def __from_data__(cls, data):
-        return cls(
-            fmk=data["fmk"],
-            ft0k=data["ft0k"],
-            fc0k=data["fc0k"],
-            ft90k=data["ft90k"],
-            fc90k=data["fc90k"],
-            fvk=data["fvk"],
-            vLT=data["vLT"],
-            vTT=data["vTT"],
-            E0mean=data["E0mean"],
-            E90mean=data["E90mean"],
-            Gmean=data["Gmean"],
-            densityk=data["densityk"],
-            density=data["density"],
-            name=data["name"],
+    def __from_data__(cls, data, registry: Optional[Registry] = None):
+        from uuid import UUID
+
+        if registry is None:
+            registry = Registry()
+
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+
+        material = cls(
+            fmk=data.get("fmk"),
+            ft0k=data.get("ft0k"),
+            fc0k=data.get("fc0k"),
+            ft90k=data.get("ft90k"),
+            fc90k=data.get("fc90k"),
+            fvk=data.get("fvk"),
+            vLT=data.get("vLT"),
+            vTT=data.get("vTT"),
+            E0mean=data.get("E0mean"),
+            E90mean=data.get("E90mean"),
+            Gmean=data.get("Gmean"),
+            densityk=data.get("densityk"),
+            density=data.get("density"),
+            name=data.get("name"),
         )
+        material._uid = UUID(uid) if uid else None
+
+        if uid:
+            registry.add(uid, material)
+
+        return material
 
     # --- Softwood Classes (C-classes) ---
     @classmethod
