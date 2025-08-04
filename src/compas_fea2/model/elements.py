@@ -684,6 +684,38 @@ class TieElement(TrussElement):
 
 
 class Edge(FEAData):
+    """Element representing an edge.
+
+    Parameters
+    ----------
+    nodes : list[:class:`compas_fea2.model.Node`]
+        Ordered list of nodes to which the element connects.
+    tag : str
+        The tag of the face.
+    element : :class:`compas_fea2.model._Element`
+        The element to which the edge belongs.
+
+    Attributes
+    ----------
+    nodes : list[:class:`compas_fea2.model.Node`]
+        Nodes to which the element is connected.
+    tag : str
+        The tag of the edge.
+    elements : :class:`compas_fea2.model._Element`
+        The elements to which the edge belongs.
+    part : :class:`compas_fea2.model._Part`
+        Part to which the edge belongs.
+    model : :class:`compas_fea2.model.Model`
+        Model to which the edge belongs.
+    centroid : list[float]
+        Coordinates of the centroid of the edge
+    nodes_key : list[int]
+        Keys of the nodes defining the edge.
+    points : list[:class:`compas.geometry.Point`]
+        List of the points defining the edge.
+    line : :class:`compas.geometry.Line`
+        The line of the edge.
+    """
     def __init__(self, nodes: List["Node"], tag: str, **kwargs):
         super().__init__(**kwargs)
         self._nodes = nodes
@@ -756,6 +788,9 @@ class Edge(FEAData):
     def points(self) -> List["Point"]:
         return [node.point for node in self.nodes]
 
+    @property
+    def line(self) -> Line:
+        self._line
 
 class Face(FEAData):
     """Element representing a face.
