@@ -1,9 +1,8 @@
 from math import pi
 from math import sqrt
-from uuid import UUID
-
 from typing import TYPE_CHECKING
 from typing import Optional
+from uuid import UUID
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -76,9 +75,11 @@ class _Section(FEAData):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "material": self.material.__data__ if self.material else None,
-        })
+        data.update(
+            {
+                "material": self.material.__data__ if self.material else None,
+            }
+        )
         return data
 
     @classmethod
@@ -92,9 +93,7 @@ class _Section(FEAData):
 
         material = registry.get(data.get("material"))
 
-        section = cls(
-            material=material
-        )
+        section = cls(material=material)
         section._uid = UUID(uid) if uid else None
 
         if uid:

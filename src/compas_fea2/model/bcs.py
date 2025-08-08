@@ -1,13 +1,11 @@
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import TypeVar
-from typing import TYPE_CHECKING
-
 from uuid import UUID
 
 from compas_fea2.base import FEAData
-from compas_fea2.model.groups import FacesGroup
 from compas_fea2.base import Registry
 
 if TYPE_CHECKING:
@@ -142,7 +140,7 @@ class _BoundaryCondition(FEAData):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None): 
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
         # Create a registry if not provided
         if registry is None:
             registry = Registry()
@@ -174,22 +172,24 @@ class _BoundaryCondition(FEAData):
         if not isinstance(other, _BoundaryCondition):
             return NotImplemented
         combined = _BoundaryCondition()
-        combined._x=self.x or other.x
-        combined._y=self.y or other.y
-        combined._z=self.z or other.z
-        combined._xx=self.xx or other.xx
-        combined._yy=self.yy or other.yy
-        combined._zz=self.zz or other.zz
-        combined._axes=self.axes
+        combined._x = self.x or other.x
+        combined._y = self.y or other.y
+        combined._z = self.z or other.z
+        combined._xx = self.xx or other.xx
+        combined._yy = self.yy or other.yy
+        combined._zz = self.zz or other.zz
+        combined._axes = self.axes
         if self.temperature and other.temperature:
             print(f"Two thermal boundary conditions are applied to the same node. The boundary condition of the {other.name} boundary condition has been applied.")
         combined._temperature = other.temperature if other.temperature else self.temperature
-        
+
         return combined
 
+
 class _MechanicalBoundaryCondition(_BoundaryCondition):
-    def __init__(self, axes = "global", **kwargs):
+    def __init__(self, axes="global", **kwargs):
         super().__init__(axes, **kwargs)
+
 
 class GeneralBC(_MechanicalBoundaryCondition):
     """Customized boundary condition."""
@@ -395,13 +395,14 @@ class RollerBCXZ(PinnedBC):
 # HEAT ANALYSIS
 # ===================================================================
 
+
 class ImposedTemperature(_BoundaryCondition):
     """Imposed temperature condition for analysis involving temperature.
-    
-    Additional Parameters
----------------------
-temperature : float
-    Value of imposed temperature applied
+
+        Additional Parameters
+    ---------------------
+    temperature : float
+        Value of imposed temperature applied
     """
 
     __doc__ = __doc__ or ""

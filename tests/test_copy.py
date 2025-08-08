@@ -11,7 +11,6 @@ from compas_fea2.model.sections import GenericBeamSection  # type: ignore
 
 
 class TestFEADataCopy(unittest.TestCase):
-    
     def test_copy_guid_and_name(self):
         m1 = Model(name="orig")
         m2 = m1.copy()
@@ -46,7 +45,7 @@ class TestFEADataCopy(unittest.TestCase):
     def test_copy_part(self):
         m = Model(name="test")
         part = m.add_part(Part(name="p1"))
-        p2 = part.copy() 
+        p2 = part.copy()
         self.assertNotEqual(part.name, p2.name)
         self.assertNotEqual(part, p2)
 

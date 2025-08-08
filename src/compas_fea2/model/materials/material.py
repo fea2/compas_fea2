@@ -1,10 +1,8 @@
 from typing import Optional
-
 from uuid import UUID
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
-
 
 
 class _Material(FEAData):
@@ -55,15 +53,16 @@ class _Material(FEAData):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "density": self.density,
-            "expansion": self.expansion,
-        })
+        data.update(
+            {
+                "density": self.density,
+                "expansion": self.expansion,
+            }
+        )
         return data
 
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None):
-
         if registry is None:
             registry = Registry()
 
@@ -73,13 +72,13 @@ class _Material(FEAData):
 
         density = data.get("density", 0.0)
         expansion = data.get("expansion", None)
-        
+
         material = cls(
             density=density,
             expansion=expansion,
         )
         material._uid = UUID(uid) if uid else None
-        
+
         if uid:
             registry.add(uid, material)
 
@@ -219,7 +218,6 @@ class ElasticOrthotropic(_Material):
 
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None):
-
         if registry is None:
             registry = Registry()
 
@@ -322,7 +320,6 @@ class ElasticIsotropic(_Material):
 
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None):
-
         if registry is None:
             registry = Registry()
 
@@ -343,8 +340,6 @@ class ElasticIsotropic(_Material):
 
         return material
 
-    
-    
     def __str__(self) -> str:
         return """
 ElasticIsotropic Material
@@ -408,14 +403,15 @@ class ElasticPlastic(ElasticIsotropic):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "strain_stress": self.strain_stress,
-        })
+        data.update(
+            {
+                "strain_stress": self.strain_stress,
+            }
+        )
         return data
 
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None):
-
         if registry is None:
             registry = Registry()
 

@@ -17,10 +17,13 @@ from compas.geometry import centroid_points_weighted
 import compas_fea2
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
-from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.bcs import ImposedTemperature
+from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.connectors import _Connector
 from compas_fea2.model.constraints import _Constraint
+from compas_fea2.model.fields import InitialTemperatureField
+from compas_fea2.model.fields import ThermalBCField
+from compas_fea2.model.fields import _BoundaryConditionsField
 from compas_fea2.model.groups import ConnectorsGroup
 from compas_fea2.model.groups import ConstraintsGroup
 from compas_fea2.model.groups import ElementsGroup
@@ -28,9 +31,6 @@ from compas_fea2.model.groups import InteractionsGroup
 from compas_fea2.model.groups import InterfacesGroup
 from compas_fea2.model.groups import MaterialsGroup
 from compas_fea2.model.groups import NodesGroup
-from compas_fea2.model.fields import _BoundaryConditionsField
-from compas_fea2.model.fields import ThermalBCField
-from compas_fea2.model.fields import InitialTemperatureField
 from compas_fea2.model.groups import PartsGroup
 from compas_fea2.model.groups import SectionsGroup
 from compas_fea2.model.groups import _Group
@@ -44,7 +44,6 @@ from compas_fea2.utilities._utils import part_method
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Dict
     from typing import List
     from typing import Optional
     from typing import Set
@@ -53,11 +52,10 @@ if TYPE_CHECKING:
     from compas.geometry import Polygon
 
     from compas_fea2.model.bcs import _BoundaryCondition
-    from compas_fea2.model.fields import _BoundaryConditionsField
-    from compas_fea2.model.fields import _InitialConditionField
     from compas_fea2.model.connectors import _Connector
     from compas_fea2.model.constraints import _Constraint
-    from compas_fea2.model.elements import _Element
+    from compas_fea2.model.fields import _BoundaryConditionsField
+    from compas_fea2.model.fields import _InitialConditionField
     from compas_fea2.model.groups import ConnectorsGroup
     from compas_fea2.model.groups import ConstraintsGroup
     from compas_fea2.model.groups import ElementsGroup
@@ -66,7 +64,6 @@ if TYPE_CHECKING:
     from compas_fea2.model.groups import MaterialsGroup
     from compas_fea2.model.groups import SectionsGroup
     from compas_fea2.model.ics import InitialTemperature
-    from compas_fea2.model.interactions import ThermalInteraction
     from compas_fea2.model.interactions import _Interaction
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.sections import _Section
@@ -342,8 +339,8 @@ class Model(FEAData):
     @property
     def amplitudes(self):
         amplitudes = set()
-        #Amplitude is for now only set for the thermal interfaces.
-        for interface in filter(lambda x: hasattr(x.behavior, "temperature"), filter(lambda y : hasattr(y.behavior, "temperature"), self.interfaces)):
+        # Amplitude is for now only set for the thermal interfaces.
+        for interface in filter(lambda x: hasattr(x.behavior, "temperature"), filter(lambda y: hasattr(y.behavior, "temperature"), self.interfaces)):
             amplitudes.add(interface.behavior.temperature.amplitude)
         return amplitudes
 
@@ -1009,7 +1006,7 @@ class Model(FEAData):
         bc_field._registration = self
 
         return bc_field
-    
+
     def add_bcs_fields(self, bc_fields: List["_BoundaryConditionsField"]) -> "_BoundaryCondition":
         for field in bc_fields:
             self.add_bcs_field(bc_field=field)
@@ -1206,9 +1203,9 @@ class Model(FEAData):
 
         """
         return self._add_bcfield_type("rollerYZ", nodes, axes)
-   
+
     def add_uniform_thermal_bcs_field(self, temperature: float, nodes) -> InitialTemperatureField:
-        return self.add_ics_field(ThermalBCField(nodes = nodes, conditions=ImposedTemperature(temperature=temperature)))
+        return self.add_ics_field(ThermalBCField(nodes=nodes, conditions=ImposedTemperature(temperature=temperature)))
 
     def remove_bcs(self, nodes):
         """Release nodes that were previously restrained.
@@ -1221,14 +1218,14 @@ class Model(FEAData):
         None
 
         """
-        
+
         if isinstance(nodes, Node):
             nodes = [nodes]
         if not all(node in self.nodes for node in nodes):
             raise ValueError("Some nodes are not registered to the model.")
         for bcs_field in self.bcs_fields:
             bcs_field.remove_nodes(nodes)
-        
+
     def add_ics_field(self, ic_field: "_InitialConditionField") -> "_InitialConditionField":
         """Add a :class=`compas_fea2.model._InitialCondition` to the model.
 
@@ -1244,9 +1241,7 @@ class Model(FEAData):
         :class=`compas_fea2.model._InitialCondition`
             The applied initial condition.
         """
-        from compas_fea2.model.elements import _Element
-        from compas_fea2.model.ics import _InitialCondition
-        
+
         if not isinstance(ic_field, _InitialConditionField):
             raise TypeError("{!r} is not an Initial Condition Field.".format(ic_field))
 
@@ -1266,15 +1261,14 @@ class Model(FEAData):
         ic_field._registration = self
 
         return ic_field
-    
-    def add_ics_fields(self, ics_fields : list["_InitialConditionField"]) -> list["_InitialConditionField"]:
 
+    def add_ics_fields(self, ics_fields: list["_InitialConditionField"]) -> list["_InitialConditionField"]:
         for ics_field in ics_fields:
             self.add_ics_field(ics_field)
         return ics_field
-    
-    def add_uniform_thermal_ics_field(self, T0 : float, nodes) -> InitialTemperatureField:
-        return self.add_ics_field(InitialTemperatureField(nodes = nodes, conditions=InitialTemperature(T0 = T0)))
+
+    def add_uniform_thermal_ics_field(self, T0: float, nodes) -> InitialTemperatureField:
+        return self.add_ics_field(InitialTemperatureField(nodes=nodes, conditions=InitialTemperature(T0=T0)))
 
     # =========================================================================
     #                           Constraints methods
@@ -1378,10 +1372,11 @@ class Model(FEAData):
 
     def add_interface(self, interface):
         """
-            :class:`compas_fea2.model.Interface`
+        :class:`compas_fea2.model.Interface`
 
         """
         from compas_fea2.model.interfaces import _Interface
+
         if not isinstance(interface, _Interface):
             raise TypeError("{!r} is not an Interface.".format(interface))
         self._interfaces.add(interface)
@@ -1389,9 +1384,9 @@ class Model(FEAData):
         return interface
 
     def add_interfaces(self, interfaces):
-        """Add multiple :class:`compas_fea2.model.Interface` objects to the model.
-        """
+        """Add multiple :class:`compas_fea2.model.Interface` objects to the model."""
         return [self.add_interface(interface) for interface in interfaces]
+
     # =========================================================================
     #                           Problems methods
     # =========================================================================

@@ -60,11 +60,13 @@ class _Interface(FEAData):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "master": self._master.__data__,
-            "slave": self._slave.__data__,
-            "behavior": self._behavior.__data__,
-        })
+        data.update(
+            {
+                "master": self._master.__data__,
+                "slave": self._slave.__data__,
+                "behavior": self._behavior.__data__,
+            }
+        )
         return data
 
     @classmethod
@@ -75,12 +77,12 @@ class _Interface(FEAData):
         uid = data.get("uid")
         if uid and registry.get(uid):
             return registry.get(uid)
-        
+
         master = registry.add_from_data(data.get("master"), "compas_fea2.model.elements")
         slave = registry.add_from_data(data.get("slave"), "compas_fea2.model.elements")
         behavior = registry.add_from_data(data.get("behavior"), "compas_fea2.model.interactions")
         interface = cls(master, slave, behavior)
-        
+
         # Add base properties
         interface._uid = UUID(uid) if uid else None
         # interface._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
@@ -139,10 +141,12 @@ class BoundaryInterface(_Interface):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "master": self._master.__data__,
-            "behavior": self._behavior.__data__,
-        })
+        data.update(
+            {
+                "master": self._master.__data__,
+                "behavior": self._behavior.__data__,
+            }
+        )
         return data
 
     @classmethod
@@ -153,11 +157,11 @@ class BoundaryInterface(_Interface):
         uid = data.get("uid")
         if uid and registry.get(uid):
             return registry.get(uid)
-        
+
         master = registry.add_from_data(data.get("master"), "compas_fea2.model.elements")
         behavior = registry.add_from_data(data.get("behavior"), "compas_fea2.model.interactions")
         interface = cls(master, behavior)
-        
+
         # Add base properties
         interface._uid = UUID(uid) if uid else None
         # interface._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None

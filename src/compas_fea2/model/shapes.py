@@ -63,9 +63,9 @@ class Shape(Polygon, FEAData):
     @property
     def __data__(self) -> dict:
         data = super().__data__
-        data.update( 
+        data.update(
             {
-                "points": [point.__data__ for point in self.points], # type: ignore
+                "points": [point.__data__ for point in self.points],  # type: ignore
                 "frame": self.frame.__data__ if self.frame else None,
             }
         )

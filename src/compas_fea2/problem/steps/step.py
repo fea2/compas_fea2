@@ -101,10 +101,10 @@ class _Step(FEAData):
     @property
     def prescribed_fields(self):
         return self._prescribed_fields
-        
+
     @property
     def amplitudes(self):
-        amplitudes=set()
+        amplitudes = set()
         for load_field in self.load_fields:
             for load in filter(lambda p: getattr(p, "amplitude"), load_field.loads):
                 amplitudes.add(load.amplitudes)

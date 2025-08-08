@@ -1,13 +1,11 @@
-from typing import Optional
 from typing import TYPE_CHECKING
-
-from uuid import UUID
+from typing import Optional
 
 from compas_fea2.base import FEAData
-from compas_fea2.base import Registry
 
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model
+
 
 class _Constraint(FEAData):
     """Base class for constraints.
@@ -33,7 +31,6 @@ class _Constraint(FEAData):
     def registration(self, value: "Model") -> None:
         """Set the object where this object is registered to."""
         self._registration = value
-
 
 
 # ------------------------------------------------------------------------------
@@ -79,10 +76,12 @@ class _MultiPointConstraint(_Constraint):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "constraint_type": self.constraint_type,
-            # Add other attributes as needed
-        })
+        data.update(
+            {
+                "constraint_type": self.constraint_type,
+                # Add other attributes as needed
+            }
+        )
         return data
 
     @classmethod

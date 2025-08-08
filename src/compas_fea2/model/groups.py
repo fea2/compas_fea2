@@ -1,6 +1,5 @@
 import logging
 from importlib import import_module
-from uuid import UUID
 from itertools import groupby
 from typing import TYPE_CHECKING
 from typing import Any
@@ -10,12 +9,12 @@ from typing import Generic
 from typing import Iterable
 from typing import Iterator
 from typing import List
+from typing import Optional
 from typing import Set
 from typing import TypeVar
 from typing import Union
-from typing import Optional
-
 from typing import cast
+from uuid import UUID
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
@@ -37,9 +36,9 @@ if TYPE_CHECKING:
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.model import Model
     from compas_fea2.model.nodes import Node
-    from compas_fea2.model.parts import _Part
     from compas_fea2.model.parts import Part
     from compas_fea2.model.parts import RigidPart
+    from compas_fea2.model.parts import _Part
     from compas_fea2.model.releases import _BeamEndRelease
     from compas_fea2.model.sections import _Section
 
@@ -175,7 +174,7 @@ class _Group(FEAData, Generic[_MemberType]):
     def registration(self, value: Union["_Part", "Part", "RigidPart"]) -> None:
         """Set the object where this object is registered to."""
         for member in self._members:
-            member.registration = value # type: ignore
+            member.registration = value  # type: ignore
         self._registration = value
 
     @property

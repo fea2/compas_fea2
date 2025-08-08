@@ -1,5 +1,4 @@
 from typing import Optional
-
 from uuid import UUID
 
 from compas_fea2.base import FEAData
@@ -26,7 +25,6 @@ class _InitialCondition(FEAData):
 
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None):
-        
         if registry is None:
             registry = Registry()
 
@@ -43,7 +41,6 @@ class _InitialCondition(FEAData):
         if uid:
             registry.add(uid, ic)
         return ic
-
 
 
 class InitialTemperature(_InitialCondition):
@@ -107,7 +104,6 @@ class InitialTemperature(_InitialCondition):
         if uid:
             registry.add(uid, ic)
         return ic
-        
 
     @classmethod
     def from_file(cls, path, **kwargs):

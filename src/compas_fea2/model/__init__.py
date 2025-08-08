@@ -135,8 +135,7 @@ from .fields import (
     RollerBCXYField,
     RollerBCYZField,
     RollerBCXZField,
-    ThermalBCField
-    
+    ThermalBCField,
 )
 
 from .interfaces import (

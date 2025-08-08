@@ -41,16 +41,14 @@ from .elements import _Element
 from .elements import _Element1D
 from .elements import _Element2D
 from .elements import _Element3D
-from .groups import NodesGroup
 from .groups import EdgesGroup
 from .groups import ElementsGroup
-from .groups import EdgesGroup
 from .groups import FacesGroup
-from .groups import MaterialsGroup
-from .groups import SectionsGroup
 from .groups import InteractionsGroup
 from .groups import InterfacesGroup
-from .groups import ReleasesGroup
+from .groups import MaterialsGroup
+from .groups import NodesGroup
+from .groups import SectionsGroup
 from .materials.material import _Material
 from .nodes import Node
 from .releases import _BeamEndRelease
@@ -70,22 +68,22 @@ if TYPE_CHECKING:
     from compas_fea2.model.elements import _Element1D
     from compas_fea2.model.elements import _Element2D
     from compas_fea2.model.elements import _Element3D
-    from compas_fea2.model.groups import NodesGroup
-    from compas_fea2.model.groups import ElementsGroup
     from compas_fea2.model.groups import EdgesGroup
+    from compas_fea2.model.groups import ElementsGroup
     from compas_fea2.model.groups import FacesGroup
     from compas_fea2.model.groups import InteractionsGroup
     from compas_fea2.model.groups import InterfacesGroup
     from compas_fea2.model.groups import MaterialsGroup
+    from compas_fea2.model.groups import NodesGroup
     from compas_fea2.model.groups import SectionsGroup
-    from compas_fea2.model.groups import ReleasesGroup
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.model import Model
     from compas_fea2.model.nodes import Node
+    from compas_fea2.model.parts import RigidPart
+    from compas_fea2.model.parts import _Part
     from compas_fea2.model.sections import _Section
     from compas_fea2.model.sections import _Section2D
     from compas_fea2.model.sections import _Section3D
-    from compas_fea2.model.parts import _Part, Parts, RigidPart
 
 
 GroupType = Union["NodesGroup", "ElementsGroup", "FacesGroup", "MaterialsGroup", "SectionsGroup", "InterfacesGroup", "InteractionsGroup"]
@@ -151,16 +149,18 @@ class _Part(FEAData):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "ndm": self._ndm,
-            "ndf": self._ndf,
-            "nodes": self._nodes.__data__,
-            "elements": self._elements.__data__,
-            "groups": [group.__data__ for group in self._groups],
-            "boundary_mesh": self._boundary_mesh.__data__ if self._boundary_mesh else None,
-            "discretized_boundary_mesh": self._discretized_boundary_mesh.__data__ if self._discretized_boundary_mesh else None,
-            "reference_node": self._reference_node.__data__ if self._reference_node else None,
-        })
+        data.update(
+            {
+                "ndm": self._ndm,
+                "ndf": self._ndf,
+                "nodes": self._nodes.__data__,
+                "elements": self._elements.__data__,
+                "groups": [group.__data__ for group in self._groups],
+                "boundary_mesh": self._boundary_mesh.__data__ if self._boundary_mesh else None,
+                "discretized_boundary_mesh": self._discretized_boundary_mesh.__data__ if self._discretized_boundary_mesh else None,
+                "reference_node": self._reference_node.__data__ if self._reference_node else None,
+            }
+        )
         return data
 
     @classmethod
@@ -174,26 +174,26 @@ class _Part(FEAData):
 
         part = cls()
         part._uid = uid
-        
+
         part._name = data.get("name", "")
         part._ndm = data.get("ndm")
         part._ndf = data.get("ndf")
-        
+
         nodes = NodesGroup.__from_data__(data["nodes"], registry=registry)
-        part.add_nodes(nodes) # type: ignore
-        part._nodes._uid = data.get("nodes", {}).get("uid", None) # change the uid of the nodes group
-        
+        part.add_nodes(nodes)  # type: ignore
+        part._nodes._uid = data.get("nodes", {}).get("uid", None)  # change the uid of the nodes group
+
         elements = ElementsGroup.__from_data__(data["elements"], registry=registry)  # type: ignore
         part.add_elements(elements)  # type: ignore
-        part._elements._uid = data.get("elements", {}).get("uid", None) # change the uid of the nodes group
+        part._elements._uid = data.get("elements", {}).get("uid", None)  # change the uid of the nodes group
 
         part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups") for group in data.get("groups", [])])
-        
+
         part._boundary_mesh = Mesh.__from_data__(data["boundary_mesh"]) if data.get("boundary_mesh") else None
         part._discretized_boundary_mesh = Mesh.__from_data__(data["discretized_boundary_mesh"]) if data.get("discretized_boundary_mesh") else None
-        
+
         part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes") if data.get("reference_node") else None
-        
+
         if uid:
             registry.add(uid, part)
 
@@ -576,7 +576,7 @@ class _Part(FEAData):
     def graph(self):
         """The directed graph of the part."""
         return self._graph
-    
+
     @property
     def nodes(self) -> NodesGroup:
         """The nodes of the part."""
@@ -877,7 +877,6 @@ class _Part(FEAData):
         if dimension not in dimenstion_map:
             raise ValueError(f"Invalid dimension {dimension}. Valid dimensions are {list(dimenstion_map.keys())}.")
         return self.elements.subgroup(condition=lambda x: isinstance(x, dimenstion_map[dimension])).elements
-        
 
     # =========================================================================
     #                           BCs methods
@@ -1689,7 +1688,7 @@ class _Part(FEAData):
 
         """
         group.registration = self
-        
+
         self._groups.add(group)
         return group
 
@@ -1843,7 +1842,6 @@ class Part(_Part):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
     # =========================================================================
     #                       Constructor methods
     # =========================================================================
@@ -1954,7 +1952,7 @@ class Part(_Part):
         :class:`compas_fea2.model._BeamEndRelease`
             The release applied to the element.
         """
-        raise NotImplemented
+        raise NotImplementedError
         if not isinstance(release, _BeamEndRelease):
             raise TypeError(f"{release!r} is not a beam release element.")
         release.element = element
@@ -1980,7 +1978,6 @@ class RigidPart(_Part):
     def __init__(self, reference_node: Optional[Node] = None, **kwargs):
         super().__init__(**kwargs)
         self._reference_node = reference_node
-
 
     @classmethod
     def from_gmsh(cls, gmshModel: object, name: Optional[str] = None, **kwargs) -> "_Part":

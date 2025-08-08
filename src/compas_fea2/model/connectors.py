@@ -3,7 +3,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
-
 from uuid import UUID
 
 from compas_fea2.base import FEAData
@@ -13,8 +12,8 @@ from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import RigidPart
 
 if TYPE_CHECKING:
-    from compas_fea2.model.model import Model
     from compas_fea2.model.groups import NodesGroup
+    from compas_fea2.model.model import Model
     from compas_fea2.model.nodes import Node
     from compas_fea2.model.parts import RigidPart
 
@@ -91,7 +90,7 @@ class _Connector(FEAData):
     def registration(self, value: "Model") -> None:
         """Set the object where this object is registered to."""
         self._registration = value
-        
+
     @property
     def nodes(self) -> List["Node"]:
         return self._nodes

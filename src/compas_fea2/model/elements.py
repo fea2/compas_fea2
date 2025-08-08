@@ -1,6 +1,4 @@
 from operator import itemgetter
-from uuid import UUID
-
 from typing import TYPE_CHECKING
 from typing import Dict
 from typing import Iterator
@@ -8,6 +6,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+from uuid import UUID
 
 from compas.datastructures import Mesh
 from compas.geometry import Frame
@@ -38,9 +37,9 @@ if TYPE_CHECKING:
 
     from .model import Model
     from .nodes import Node
-    from .parts import _Part
     from .parts import Part
     from .parts import RigidPart
+    from .parts import _Part
     from .shapes import Shape
 
 
@@ -125,7 +124,7 @@ class _Element(FEAData):
         self._results_format = {}
         self._rigid = rigid
         self._heat = heat
-        self._reference_point = None # TODO: should be Node or Point?
+        self._reference_point = None  # TODO: should be Node or Point?
         self._shape = None
         self._ndim = 0
         self._faces = []
@@ -137,25 +136,27 @@ class _Element(FEAData):
     def __data__(self):
         """Return a dictionary representation of the element's data."""
         data = super().__data__
-        data.update({
-            "nodes": [node.__data__ for node in self.nodes],
-            "section": self.section.__data__ if self.section else None,
-            "implementation": self.implementation,
-            "frame": self._frame.__data__ if self._frame else None,
-            "on_boundary": self._on_boundary,
-            "area": self._area,
-            "volume": self._volume,
-            "results_format": self._results_format,
-            "rigid": self._rigid,
-            "heat": self._heat,
-            "reference_point": self._reference_point.__data__ if self._reference_point else None,
-            "shape": self._shape.__data__ if self._shape else None,
-            "ndim": self._ndim,
-            "faces": [face.__data__ for face in self._faces],
-            "edges": [edge.__data__ for edge in self._edges],
-            "face_indices": {face.__data__: indices for face, indices in self._face_indices.items()},
-            "length": self._length
-        })
+        data.update(
+            {
+                "nodes": [node.__data__ for node in self.nodes],
+                "section": self.section.__data__ if self.section else None,
+                "implementation": self.implementation,
+                "frame": self._frame.__data__ if self._frame else None,
+                "on_boundary": self._on_boundary,
+                "area": self._area,
+                "volume": self._volume,
+                "results_format": self._results_format,
+                "rigid": self._rigid,
+                "heat": self._heat,
+                "reference_point": self._reference_point.__data__ if self._reference_point else None,
+                "shape": self._shape.__data__ if self._shape else None,
+                "ndim": self._ndim,
+                "faces": [face.__data__ for face in self._faces],
+                "edges": [edge.__data__ for edge in self._edges],
+                "face_indices": {face.__data__: indices for face, indices in self._face_indices.items()},
+                "length": self._length,
+            }
+        )
         return data
 
     @classmethod
@@ -167,10 +168,7 @@ class _Element(FEAData):
         if uid and registry.get(uid):
             return registry.get(uid)
 
-        nodes = [
-            registry.add_from_data(node_data, "compas_fea2.model.nodes")
-            for node_data in data.get("nodes", [])
-        ]
+        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes") for node_data in data.get("nodes", [])]
         section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections") if data.get("section") else None
 
         element = cls(
@@ -179,10 +177,10 @@ class _Element(FEAData):
             implementation=data.get("implementation"),
             rigid=data.get("rigid", False),
             heat=data.get("heat", False),
-            faces_uids=[face_data.get("uid") for face_data in data.get("faces", [])] if data.get("faces") else None, # could be extended to names as well
-            edges_uids=[edge_data.get("uid") for edge_data in data.get("edges", [])] if data.get("edges") else None, # could be extended to names as well
-            uid = UUID(uid) if uid else None,
-            name =data.get("name", "")
+            faces_uids=[face_data.get("uid") for face_data in data.get("faces", [])] if data.get("faces") else None,  # could be extended to names as well
+            edges_uids=[edge_data.get("uid") for edge_data in data.get("edges", [])] if data.get("edges") else None,  # could be extended to names as well
+            uid=UUID(uid) if uid else None,
+            name=data.get("name", ""),
         )
         element._frame = Frame.__from_data__(data["frame"]) if "frame" in data else None
         element._on_boundary = data.get("on_boundary", None)
@@ -212,7 +210,6 @@ class _Element(FEAData):
                 raise ValueError("All nodes of the elements must be registered to the same part")
             node.registration = value  # type: ignore
         self._registration = value
-
 
     @property
     def part(self) -> "_Part | None":
@@ -716,6 +713,7 @@ class Edge(FEAData):
     line : :class:`compas.geometry.Line`
         The line of the edge.
     """
+
     def __init__(self, nodes: List["Node"], tag: str, **kwargs):
         super().__init__(**kwargs)
         self._nodes = nodes
@@ -734,14 +732,14 @@ class Edge(FEAData):
         )
 
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None) -> "Edge": 
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None) -> "Edge":
         # Create a registry if not provided
         if registry is None:
             registry = Registry()
         # check if the object already exists in the registry
         uid = data.get("uid")
         if uid and registry.get(uid):
-            return registry.get(uid) #type: ignore
+            return registry.get(uid)  # type: ignore
         # Create a new instance
         nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes") for node_data in data.get("nodes", [])]
         tag = data.get("tag", "")
@@ -752,7 +750,6 @@ class Edge(FEAData):
         if uid:
             registry.add(uid, edge)
         return edge
-        
 
     @property
     def nodes(self) -> List["Node"]:
@@ -791,6 +788,7 @@ class Edge(FEAData):
     @property
     def line(self) -> Line:
         self._line
+
 
 class Face(FEAData):
     """Element representing a face.
@@ -836,27 +834,29 @@ class Face(FEAData):
         self._tag = tag
         self._plane = Plane.from_three_points(*[node.xyz for node in nodes[:3]])  # TODO check when more than 3 nodes
         self._registration = element
-        
+
     @property
     def __data__(self):
         data = super().__data__
-        data.update( {
-            "nodes": [node.__data__ for node in self.nodes],
-            "tag": self.tag,
-            "element": self.element.__data__ if self.element else None,
-            "plane": self.plane.__data__ if self.plane else None,
-        })
+        data.update(
+            {
+                "nodes": [node.__data__ for node in self.nodes],
+                "tag": self.tag,
+                "element": self.element.__data__ if self.element else None,
+                "plane": self.plane.__data__ if self.plane else None,
+            }
+        )
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None) -> "Face": 
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None) -> "Face":
         # Create a registry if not provided
         if registry is None:
             registry = Registry()
         # check if the object already exists in the registry
         uid = data.get("uid")
         if uid and registry.get(uid):
-            return registry.get(uid) #type: ignore
+            return registry.get(uid)  # type: ignore
         # Create a new instance
         nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes") for node_data in data.get("nodes", [])]
         tag = data.get("tag", "")
@@ -869,7 +869,7 @@ class Face(FEAData):
         if uid:
             registry.add(uid, face)
         return face
-    
+
     @property
     def nodes(self) -> List["Node"]:
         return self._nodes
@@ -1074,7 +1074,7 @@ class _Element2D(_Element):
             if len(indices) < 3:
                 raise ValueError(f"Face '{name}' must have at least 3 nodes, got {len(indices)}")
             face = Face(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self, uid=uid)
-            face.registration = self 
+            face.registration = self
             faces.append(face)
         return faces
 
@@ -1143,7 +1143,6 @@ class ShellElement(_Element2D):
 
         self._edges_indices = {f"s{i + 1}": (i, i + 1) if i < len(nodes) - 1 else (i, 0) for i in range(len(nodes))}
         self._edges = self._construct_edges(self._edges_indices, uids=kwargs.get("edges_uids", None))
-        
 
     @property
     def results_cls(self) -> Dict[str, type]:
