@@ -220,10 +220,10 @@ class UniformSurfaceLoadField(NodeLoadField):
         direction = direction or surface.normal
         amplitude = kwargs.pop("amplitude", None)
 
-        components = [i * load * area for i in direction] if isinstance(load, (int, float)) else [l * area for l in load]
+        components = [i * load * area for i in direction] if isinstance(load, (int, float)) else [l * area for l in load.components.values()]
         vector_load = VectorLoad(*components, amplitude=amplitude)
 
-        super().__init__(loads=[vector_load], distribution=distribution, **kwargs)
+        super().__init__(loads=vector_load, nodes=distribution, **kwargs)
         self._surface = surface
 
     @property
@@ -245,14 +245,14 @@ class GravityLoadField(NodeLoadField):
     """
 
     def __init__(self, g=9.81, direction=[0, 0, -1], parts=None, load_case=None, **kwargs):
-        load = VectorLoad([g * v for v in direction], name="gravity_load", load_case=load_case)
+        load = VectorLoad(x = g*direction[0], y = g*direction[1], z = g*direction[2], name="gravity_load", load_case=load_case)
         nodes = []
         if parts:
             for part in parts:
                 nodes.extend(part.nodes)
         else:
             nodes = self.model.nodes
-        super().__init__(loads=[load] * len(nodes), distribution=nodes, load_case=load_case, **kwargs)
+        super().__init__(loads=[load] * len(nodes), nodes=nodes, load_case=load_case, **kwargs)
 
 
 class PrescribedTemperatureField(_PrescribedField):
