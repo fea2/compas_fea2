@@ -45,18 +45,17 @@ class _InitialCondition(FEAData):
         return ic
 
 
-# FIXME this is not really a field in the sense that it is only applied to 1 node/element
-class InitialTemperatureField(_InitialCondition):
-    """Temperature field.
+class InitialTemperature(_InitialCondition):
+    """Initial temperature object for initial temperature field.
 
     Parameters
     ----------
-    temperature : float
+    T0 : float
         The temperature value.
 
     Attributes
     ----------
-    temperature : float
+    T0 : float
         The temperature value.
 
     Notes
@@ -66,17 +65,17 @@ class InitialTemperatureField(_InitialCondition):
 
     """
 
-    def __init__(self, temperature, **kwargs):
+    def __init__(self, T0, **kwargs):
         super().__init__(**kwargs)
-        self._t = temperature
+        self._T0 = T0
 
     @property
-    def temperature(self):
-        return self._t
+    def T0(self):
+        return self._T0
 
-    @temperature.setter
-    def temperature(self, value):
-        self._t = value
+    @T0.setter
+    def T0(self, value):
+        self._T0 = value
 
     @property
     def __data__(self):
@@ -97,8 +96,8 @@ class InitialTemperatureField(_InitialCondition):
         if uid and registry.get(uid):
             return registry.get(uid)
 
-        temperature = data.get("temperature")
-        ic = cls(temperature)
+        T0 = data.get("T0")
+        ic = cls(T0)
         # Add base properties
         ic._uid = UUID(uid) if uid else None
         # ic._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
@@ -108,7 +107,6 @@ class InitialTemperatureField(_InitialCondition):
             registry.add(uid, ic)
         return ic
         
-
     @classmethod
     def from_file(cls, path, **kwargs):
         return NotImplementedError("InitialTemperatureField is not implemented for the current backend. ")
@@ -119,12 +117,12 @@ class InitialStressField(_InitialCondition):
 
     Parameters
     ----------
-    stress : touple(float, float, float)
+    stress : tuple(float, float, float)
         The stress values.
 
     Attributes
     ----------
-    stress : touple(float, float, float)
+    stress : tuple(float, float, float)
         The stress values.
 
     Notes

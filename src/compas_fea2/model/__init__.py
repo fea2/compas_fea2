@@ -111,6 +111,11 @@ from .bcs import (
 
 from .ics import (
     _InitialCondition,
+    InitialTemperature,
+    InitialStress,
+)
+
+from .fields import (
     InitialTemperatureField,
     InitialStressField,
 )
@@ -126,8 +131,8 @@ from .interactions import (
     HardContactNoFriction,
     LinearContactFrictionPenalty,
     HardContactRough,
-    SurfaceConvection,
-    SurfaceRadiation,
+    Convection,
+    Radiation,
 )
 
 __all__ = [  # type: ignore[reportUnsupportedDunderAll]

@@ -1,3 +1,6 @@
+from typing import Optional
+
+from compas_fea2.base import Registry
 from compas_fea2.units import UnitRegistry
 from compas_fea2.units import units as u
 from typing import Optional

@@ -91,7 +91,7 @@ class _Connector(FEAData):
     def registration(self, value: "Model") -> None:
         """Set the object where this object is registered to."""
         self._registration = value
-        
+
     @property
     def nodes(self) -> List["Node"]:
         return self._nodes

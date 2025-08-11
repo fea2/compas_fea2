@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import Iterable
+from typing import List
 from typing import Optional
 from typing import Type
 from typing import TypeVar
 from typing import Union
-from typing import List
 
 import compas
 from compas.data import Data
@@ -21,7 +21,6 @@ import compas_fea2
 from .utilities._utils import to_dimensionless
 
 if TYPE_CHECKING:
-    from compas_fea2.model.model import Model
     from pathlib import Path
 
 
@@ -45,6 +44,7 @@ class DimensionlessMeta(type):
 
 
 T = TypeVar("T", bound="FEAData")
+
 
 class FEAData(Data, metaclass=DimensionlessMeta):
     """Base class for all FEA model objects.
@@ -95,7 +95,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         self._name: str = name or "".join([c for c in type(self).__name__ if c.isupper()]) + "_" + str(id(self))
         self._registration: Any = None
         self._key: Optional[int] = None
-        
+
     @property
     def uid(self) -> uuid.UUID | None:
         """Get the unique identifier of the object."""
@@ -108,7 +108,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
     @property
     def name(self) -> str:
         return self._name
-    
+
     @property
     def registration(self) -> Optional[Any]:
         """Get the object where this object is registered to."""
@@ -138,6 +138,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
                         data_extended.append("{0:<15} : {1}".format(a, attr.__repr__()))
                     else:
                         from collections.abc import Sized
+
                         if isinstance(attr, Sized):
                             data_extended.append("{0:<15} : {1}".format(a, len(attr)))
                         else:
@@ -176,7 +177,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
     @classmethod
     def __from_data__(cls: Type[T], data: dict, registry: "Registry") -> T:
         """Construct an object of this type from the provided data.
-        
+
         Parameters
         ----------
         data : dict
@@ -273,25 +274,27 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         """
         json.dump(self.__data__, open(filepath, "w"), indent=4)
 
+
 class Registry:
     """A centralized registry to track deserialized objects."""
+
     def __init__(self):
         self._registry = {}
 
     def get(self, key) -> Any:
         """Retrieve an object from the registry by its key."""
         return self._registry.get(key)
-    
+
     def add_from_data(self, data, module_name) -> Any:
         """Add an object to the registry from its data representation."""
         uid = data.get("uid")
         if uid in self._registry:
             return self._registry[uid]
-        
+
         cls = getattr(importlib.import_module(module_name), data["class"])
         if not issubclass(cls, FEAData):
             raise TypeError(f"Class {data['class']} is not a subclass of FEAData.")
-        
+
         # Create a new object from the data
         obj = cls.__from_data__(data, registry=self)
         self._registry[uid] = obj
@@ -301,7 +304,7 @@ class Registry:
         """Add an object to the registry."""
         if key in self._registry:
             raise ValueError(f"Key '{key}' already exists in the registry.")
-        
+
         self._registry[key] = obj
         return obj
 

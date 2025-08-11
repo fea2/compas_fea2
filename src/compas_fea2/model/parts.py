@@ -70,13 +70,13 @@ if TYPE_CHECKING:
     from compas_fea2.model.elements import _Element1D
     from compas_fea2.model.elements import _Element2D
     from compas_fea2.model.elements import _Element3D
-    from compas_fea2.model.groups import NodesGroup
-    from compas_fea2.model.groups import ElementsGroup
     from compas_fea2.model.groups import EdgesGroup
+    from compas_fea2.model.groups import ElementsGroup
     from compas_fea2.model.groups import FacesGroup
     from compas_fea2.model.groups import InteractionsGroup
     from compas_fea2.model.groups import InterfacesGroup
     from compas_fea2.model.groups import MaterialsGroup
+    from compas_fea2.model.groups import NodesGroup
     from compas_fea2.model.groups import SectionsGroup
     from compas_fea2.model.groups import ReleasesGroup
     from compas_fea2.model.materials.material import _Material
@@ -1954,7 +1954,7 @@ class Part(_Part):
         :class:`compas_fea2.model._BeamEndRelease`
             The release applied to the element.
         """
-        raise NotImplemented
+        raise NotImplementedError("Beam releases are not implemented in Part class. Use RigidPart instead.")
         if not isinstance(release, _BeamEndRelease):
             raise TypeError(f"{release!r} is not a beam release element.")
         release.element = element

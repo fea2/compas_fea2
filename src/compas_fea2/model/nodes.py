@@ -17,6 +17,7 @@ from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.model.bcs import GeneralBC
 from compas_fea2.model.bcs import _BoundaryCondition
+from compas_fea2.model.groups import BCsGroup
 
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model
