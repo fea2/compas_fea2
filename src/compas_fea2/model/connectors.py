@@ -8,6 +8,7 @@ from uuid import UUID
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import RigidPart
@@ -50,15 +51,9 @@ class _Connector(FEAData):
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
-        # Create a registry if not provided
-        if registry is None:
-            registry = Registry()
-        # check if the object already exists in the registry
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
         # Create a new instance
         nodes_data = data.get("nodes", [])
         nodes = []
@@ -67,30 +62,12 @@ class _Connector(FEAData):
             if not node_uid:
                 raise ValueError("Node data must contain a 'uid' field.")
             if node_uid not in registry:
-                node = registry.add_from_data(node_data, "compas_fea2.model.nodes")
+                node = registry.add_from_data(node_data, "compas_fea2.model.nodes")  # type: ignore[no-any-return]
             else:
-                node = registry.get(node_uid)
+                node = registry.get(node_uid)  # type: ignore[no-any-return]
             nodes.append(node)
         connector = cls(nodes=nodes)
-        # Add base properties
-        connector._uid = UUID(uid) if uid else None
-        # connector._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
-        connector._name = data.get("name", "")
-        # Add specific properties
-        # Add the connector to the registry
-        if uid:
-            registry.add(uid, connector)
         return connector
-
-    @property
-    def registration(self) -> Optional["Model"]:
-        """Get the object where this object is registered to."""
-        return self._registration
-
-    @registration.setter
-    def registration(self, value: "Model") -> None:
-        """Set the object where this object is registered to."""
-        self._registration = value
 
     @property
     def nodes(self) -> List["Node"]:
@@ -145,6 +122,17 @@ class LinearConnector(_Connector):
         self._nodes = [self.master, self.slave]
 
     @property
+    def __data__(self):
+        data = super().__data__
+        data.update({"dofs": self._dofs})
+        return data
+
+    @from_data
+    @classmethod
+    def __from_data__(cls, data):
+        raise NotImplementedError("LinearConnector does not support from_data method yet.")
+    
+    @property
     def nodes(self) -> List["Node"]:
         return self._nodes
 
@@ -169,18 +157,6 @@ class LinearConnector(_Connector):
     @property
     def section(self):
         return self._section
-
-    @property
-    def __data__(self):
-        data = super().__data__
-        data.update({"dofs": self._dofs})
-        return data
-
-    @classmethod
-    def __from_data__(cls, data):
-        instance = super().__from_data__(data)
-        instance._dofs = data["dofs"]
-        return instance
 
     @property
     def dofs(self) -> str:
@@ -209,11 +185,10 @@ class RigidLinkConnector(_Connector):
         data.update({"dofs": self._dofs})
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data, model):
-        instance = super().__from_data__(data)
-        instance._dofs = data["dofs"]
-        return instance
+        raise NotImplementedError("LinearConnector does not support from_data method yet.")
 
     @property
     def dofs(self) -> str:
@@ -241,16 +216,10 @@ class SpringConnector(_Connector):
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data):
-        from importlib import import_module
-
-        instance = super().__from_data__(data)
-        cls_section = import_module(".".join(data["section"]["class"].split(".")[:-1]))
-        instance._section = cls_section.__from_data__(data["section"])
-        instance._yielding = data["yielding"]
-        instance._failure = data["failure"]
-        return instance
+        raise NotImplementedError("LinearConnector does not support from_data method yet.")
 
     @property
     def section(self):
@@ -296,12 +265,11 @@ class ZeroLengthConnector(_Connector):
         data.update({"direction": self._direction})
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data):
-        instance = super().__from_data__(data)
-        instance._direction = data["direction"]
-        return instance
-
+        raise NotImplementedError("LinearConnector does not support from_data method yet.")
+    
     @property
     def direction(self):
         return self._direction
@@ -331,16 +299,10 @@ class ZeroLengthSpringConnector(ZeroLengthConnector):
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data):
-        from importlib import import_module
-
-        instance = super().__from_data__(data)
-        cls_section = import_module(".".join(data["section"]["class"].split(".")[:-1]))
-        instance._section = cls_section.__from_data__(data["section"])
-        instance._yielding = data["yielding"]
-        instance._failure = data["failure"]
-        return instance
+        raise NotImplementedError("LinearConnector does not support from_data method yet.")
 
 
 class ZeroLengthContactConnector(ZeroLengthConnector):
@@ -376,10 +338,7 @@ class ZeroLengthContactConnector(ZeroLengthConnector):
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data):
-        instance = super().__from_data__(data)
-        instance._Kn = data["Kn"]
-        instance._Kt = data["Kt"]
-        instance._mu = data["mu"]
-        return instance
+        raise NotImplementedError("LinearConnector does not support from_data method yet.")

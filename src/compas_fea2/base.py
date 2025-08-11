@@ -19,6 +19,7 @@ from compas.data import Data
 import compas_fea2
 
 from .utilities._utils import to_dimensionless
+from functools import wraps
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 class DimensionlessMeta(type):
     """Metaclass for converting pint Quantity objects to dimensionless."""
 
-    def __new__(meta: Type[type], name: str, bases: tuple, class_dict: Dict[str, Any]) -> type:
+    def __new__(cls: Type[type], name: str, bases: tuple, class_dict: Dict[str, Any]) -> type:
         # Decorate each method
         for attributeName, attribute in class_dict.items():
             if callable(attribute) or isinstance(attribute, (classmethod, staticmethod)):
@@ -40,10 +41,62 @@ class DimensionlessMeta(type):
                 else:
                     attribute = to_dimensionless(attribute)
                 class_dict[attributeName] = attribute
-        return type.__new__(meta, name, bases, class_dict)
+        return type.__new__(cls, name, bases, class_dict)
 
 
 T = TypeVar("T", bound="FEAData")
+
+
+def from_data(method=None, *, set_uid: bool = True, set_name: bool = True, register: bool = True):
+    """Decorator to reduce boilerplate in __from_data__ implementations.
+
+    Handles:
+    - registry defaulting
+    - short-circuit if uid already in registry
+    - setting _uid and _name
+    - registering the created instance
+
+    Usage:
+        @from_data
+        def __from_data__(cls, data, registry=None):
+            obj = cls(...)
+            return obj
+
+    Toggle behaviors with keyword-only args if a class needs a different behavior.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(cls: Type[T], data: dict, registry: Optional["Registry"] = None) -> T:
+            # Ensure registry
+            if registry is None:
+                registry = Registry()
+            # Reuse existing
+            uid = data.get("uid")
+            if uid:
+                existing = registry.get(uid)
+                if existing:
+                    return existing  # type: ignore[return-value]
+            # Build object with class-specific logic
+            obj: T = func(cls, data, registry)
+            if obj is None:
+                raise RuntimeError("__from_data__ did not return an object.")
+            # Set base props
+            if set_uid:
+                setattr(obj, "_uid", uuid.UUID(uid) if uid else None)
+            if set_name:
+                setattr(obj, "_name", data.get("name", getattr(obj, "_name", "")))
+            # Register
+            if register and uid:
+                registry.add(uid, obj)
+            return obj
+        # Ensure classmethod behavior
+        return classmethod(wrapper)
+    if method is None:
+        return decorator
+    # Tolerate accidental stacking like @from_data over @classmethod/@staticmethod
+    if isinstance(method, (classmethod, staticmethod)):
+        method = method.__func__
+    return decorator(method)
 
 
 class FEAData(Data, metaclass=DimensionlessMeta):
@@ -174,8 +227,8 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             "registration": registration_data
         }
 
-    @classmethod
-    def __from_data__(cls: Type[T], data: dict, registry: "Registry") -> T:
+    @from_data
+    def __from_data__(cls: Type[T], data: dict, registry: Optional["Registry"] = None) -> T: # type: ignore[override]
         """Construct an object of this type from the provided data.
 
         Parameters
@@ -187,7 +240,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
 
         Returns
         -------
-        T
+        FEAData
             An instance of the class with the provided data.
 
         Notes
@@ -218,7 +271,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
 
         """
         registry = Registry()
-        return cls.__from_data__(compas.json_load(filepath), registry)
+        return cls.__from_data__(compas.json_load(filepath), registry) # type: ignore[return-value, no-any-return]  
 
     # ==========================================================================
     # Copy and Serialization
@@ -252,7 +305,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             data["uid"] = str(uuid.uuid4())  # Generate a new UID
             data["name"] = f"{self.name}_copy"  # Generate a new name
         try:
-            obj = cls.__from_data__(data, registry)
+            obj = cls.__from_data__(data, registry) # type: ignore[return-value, no-any-return]
         except Exception as e:
             raise RuntimeError(f"Failed to copy object: {e}")
         return obj
@@ -281,6 +334,9 @@ class Registry:
     def __init__(self):
         self._registry = {}
 
+    def __contains__(self, key) -> bool:
+        return key in self._registry
+
     def get(self, key) -> Any:
         """Retrieve an object from the registry by its key."""
         return self._registry.get(key)
@@ -296,7 +352,7 @@ class Registry:
             raise TypeError(f"Class {data['class']} is not a subclass of FEAData.")
 
         # Create a new object from the data
-        obj = cls.__from_data__(data, registry=self)
+        obj = cls.__from_data__(data, registry=self) # type: ignore[return-value, no-any-return]
         self._registry[uid] = obj
         return obj
 

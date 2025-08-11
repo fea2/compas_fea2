@@ -1,10 +1,8 @@
 from typing import Optional, List
 
-from uuid import UUID
-
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
-
+from compas_fea2.base import from_data
 
 class _InitialCondition(FEAData):
     """Base class for all predefined initial conditions.
@@ -23,26 +21,6 @@ class _InitialCondition(FEAData):
     def __data__(self) -> dict:
         data = super().__data__
         return data
-
-    @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
-        
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        ic = cls()
-        # Add base properties
-        ic._uid = UUID(uid) if uid else None
-        # ic._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
-        ic._name = data.get("name", "")
-
-        if uid:
-            registry.add(uid, ic)
-        return ic
 
 
 class InitialTemperature(_InitialCondition):
@@ -82,29 +60,16 @@ class InitialTemperature(_InitialCondition):
         data = super().__data__
         data.update(
             {
-                "temperature": self._t,
+                "temperature": self._T0,
             }
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None):
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
         T0 = data.get("T0")
         ic = cls(T0)
-        # Add base properties
-        ic._uid = UUID(uid) if uid else None
-        # ic._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
-        ic._name = data.get("name", "")
-
-        if uid:
-            registry.add(uid, ic)
         return ic
         
     @classmethod
@@ -133,8 +98,10 @@ class InitialStressField(_InitialCondition):
     """
 
     def __init__(self, stress, **kwargs):
+        raise NotImplementedError("InitialStressField is not implemented for the current backend. ")
         super().__init__(**kwargs)
         self._s = stress
+        
 
     @property
     def stress(self):
@@ -152,22 +119,9 @@ class InitialStressField(_InitialCondition):
         data.update({"stress": self._s})
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None):
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
         stress = data.get("stress")
         ic = cls(stress)
-        # Add base properties
-        ic._uid = UUID(uid) if uid else None
-        # ic._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
-        ic._name = data.get("name", "")
-
-        if uid:
-            registry.add(uid, ic)
         return ic

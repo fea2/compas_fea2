@@ -23,6 +23,7 @@ from matplotlib.patches import Polygon as MplPolygon
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 
 
 class Shape(Polygon, FEAData):
@@ -71,25 +72,14 @@ class Shape(Polygon, FEAData):
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
 
         points = [Point.__from_data__(pt) for pt in data["points"]]
         frame_data = data.get("frame")
-        frame = Frame.__from_data__(frame_data) if isinstance(frame_data, dict) else Frame.worldXY()
-
-        shape = cls(points, frame)
-        shape._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, shape)
-
+        frame = Frame.__from_data__(frame_data) if isinstance(frame_data, dict) else None
+        shape = cls(points, frame) # type: ignore
         return shape
 
     # --------------------------------------------------------------------------

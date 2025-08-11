@@ -32,6 +32,7 @@ from scipy.spatial import KDTree
 import compas_fea2
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 
 from .elements import BeamElement
 from .elements import HexahedronElement
@@ -163,24 +164,18 @@ class _Part(FEAData):
         })
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data, registry: Optional["Registry"] = None):
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
+        if not registry:
+            raise ValueError("A registry is required to create a Part from data.")
         part = cls()
-        part._uid = uid
-        
         part._name = data.get("name", "")
         part._ndm = data.get("ndm")
         part._ndf = data.get("ndf")
         
-        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry)
-        part.add_nodes(nodes) # type: ignore
+        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry) # type: ignore
+        part.add_nodes(nodes) 
         part._nodes._uid = data.get("nodes", {}).get("uid", None) # change the uid of the nodes group
         
         elements = ElementsGroup.__from_data__(data["elements"], registry=registry)  # type: ignore
@@ -193,9 +188,6 @@ class _Part(FEAData):
         part._discretized_boundary_mesh = Mesh.__from_data__(data["discretized_boundary_mesh"]) if data.get("discretized_boundary_mesh") else None
         
         part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes") if data.get("reference_node") else None
-        
-        if uid:
-            registry.add(uid, part)
 
         return part
 
@@ -877,41 +869,12 @@ class _Part(FEAData):
         if dimension not in dimenstion_map:
             raise ValueError(f"Invalid dimension {dimension}. Valid dimensions are {list(dimenstion_map.keys())}.")
         return self.elements.subgroup(condition=lambda x: isinstance(x, dimenstion_map[dimension])).elements
-        
 
-    # =========================================================================
-    #                           BCs methods
-    # =========================================================================
-    def add_bc(self, nodes: "List[Node]", bc: "_BoundaryCondition") -> "_BoundaryCondition":
-        """Add a boundary condition to the part.
-
-        Parameters
-        ----------
-        bc : _BoundaryCondition
-            The boundary condition to add.
-
-        Returns
-        -------
-        _BoundaryCondition
-            The added boundary condition.
-
-        Raises
-        ------
-        TypeError
-            If the boundary condition is not a valid type.
-        """
-        if not self.model:
-            raise ValueError("Part must be registered to a model before adding boundary conditions.")
-
-        if not isinstance(bc, _BoundaryCondition):
-            raise TypeError(f"{bc!r} is not a boundary condition.")
-        self.model.add_bcs(bc, nodes=nodes)
-        return bc
 
     # =========================================================================
     #                           Materials methods
     # =========================================================================
-
+       
     def find_materials_by_name(self, name: str) -> Set[_Material]:
         """Find all materials with a given name.
 
@@ -923,8 +886,28 @@ class _Part(FEAData):
         -------
         List[_Material]
         """
-        mg = MaterialsGroup(self.materials)
-        return mg.subgroup(condition=lambda x: x.name == name).materials
+        return self.materials.subgroup(condition=lambda x: x.name == name).materials
+    
+    def find_material_by_name(self, name: str) -> Optional[_Material]:
+        """Find a material with a given name.
+
+        Parameters
+        ----------
+        name : str
+
+        Returns
+        -------
+        Optional[_Material]
+        """
+        subset = self.find_materials_by_name(name)
+        if len(subset) == 1:
+            return subset.pop()
+        if len(self.materials) == 0:
+            print(f"No materials found in part {self.name}.")
+            return None
+        if len(subset) > 1:
+            raise ValueError(f"Multiple materials found with name '{name}' in part '{self.name}'. Please use find_materials_by_name to retrieve all matching materials.")
+        
 
     def find_material_by_uid(self, uid: str) -> Optional[_Material]:
         """Find a material with a given unique identifier.
@@ -955,27 +938,12 @@ class _Part(FEAData):
         """
         return material in self.materials
 
-    def find_material_by_name(self, name: str) -> Optional[_Material]:
-        """Find a material with a given name.
-
-        Parameters
-        ----------
-        name : str
-
-        Returns
-        -------
-        Optional[_Material]
-        """
-        for material in self.materials:
-            if material.name == name:
-                return material
-        return None
 
     # =========================================================================
     #                        Sections methods
     # =========================================================================
 
-    def find_sections_by_name(self, name: str) -> List[_Section]:
+    def find_sections_by_name(self, name: str) -> Set[_Section]:
         """Find all sections with a given name.
 
         Parameters
@@ -986,7 +954,27 @@ class _Part(FEAData):
         -------
         List[_Section]
         """
-        return [section for section in self.sections if section.name == name]
+        return self.sections.subgroup(condition=lambda x: x.name == name).sections
+    
+    def find_section_by_name(self, name: str) -> Optional[_Section]:
+        """Find a section with a given name.
+
+        Parameters
+        ----------
+        name : str
+
+        Returns
+        -------
+        Optional[_Section]
+        """
+        subset = self.find_sections_by_name(name)
+        if len(subset) == 1:
+            return subset.pop()
+        if len(self.sections) == 0:
+            print(f"No sections found in part {self.name}.")
+            return None
+        if len(subset) > 1:
+            raise ValueError(f"Multiple sections found with name '{name}' in part '{self.name}'. Please use find_sections_by_name to retrieve all matching sections.")
 
     def find_section_by_uid(self, uid: str) -> Optional[_Section]:
         """Find a section with a given unique identifier.
@@ -1016,22 +1004,6 @@ class _Part(FEAData):
         bool
         """
         return section in self.sections
-
-    def find_section_by_name(self, name: str) -> Optional[_Section]:
-        """Find a section with a given name.
-
-        Parameters
-        ----------
-        name : str
-
-        Returns
-        -------
-        Optional[_Section]
-        """
-        for section in self.sections:
-            if section.name == name:
-                return section
-        return
 
     # =========================================================================
     #                           Nodes methods
@@ -1075,7 +1047,7 @@ class _Part(FEAData):
         print(f"No nodes found with key {key}")
         return None
 
-    def find_node_by_name(self, name: str) -> "Node | None":
+    def find_node_by_name(self, name: str) -> Set[Node]:
         """Find a node with a given name.
 
         Parameters
@@ -1088,11 +1060,7 @@ class _Part(FEAData):
             List of nodes with the given name.
 
         """
-        for node in self._nodes:
-            if node.name == name:
-                return node
-        print(f"No nodes found with name {name}")
-        return None
+        return self.nodes.subgroup(condition=lambda x: x.name == name).members
 
     def find_nodes_on_plane(self, plane: Plane, tol: float = 1.0) -> NodesGroup:
         """Find all nodes on a given plane.

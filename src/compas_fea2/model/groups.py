@@ -1,7 +1,3 @@
-import logging
-from importlib import import_module
-from uuid import UUID
-from itertools import groupby
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -14,11 +10,15 @@ from typing import Set
 from typing import TypeVar
 from typing import Union
 from typing import Optional
-
 from typing import cast
+
+import logging
+from importlib import import_module
+from itertools import groupby
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 
 # Type-checking imports to avoid circular dependencies at runtime
 if TYPE_CHECKING:
@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from compas_fea2.model.parts import RigidPart
     from compas_fea2.model.releases import _BeamEndRelease
     from compas_fea2.model.sections import _Section
+    from compas_fea2.model.fields import _ConditionsField
 
 
 # Define a generic type for members of _Group
@@ -109,30 +110,16 @@ class _Group(FEAData, Generic[_MemberType]):
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data, registry: Optional["Registry"] = None) -> Union["_Group[Any]", "NodesGroup", "ElementsGroup", "EdgesGroup", "FacesGroup"]:
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
         member_class_name = data.get("member_class")
-        members = [registry.add_from_data(member, "compas_fea2.model") for member in data["members"]]
+        members = [registry.add_from_data(member, "compas_fea2.model") for member in data["members"]]  # type: ignore
         if "member_class" in cls.__dict__:
             member_class = import_module("compas_fea2.model").__dict__.get(member_class_name) if member_class_name else None
             group = cls(member_class=member_class, members=members)  # type: ignore
         else:
             group = cls(members=members)  # type: ignore (this is for the specific groups where _member_class is already defined)
-        # Add base properties
-        group._uid = UUID(uid) if uid else None
-        # group._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
-        group._name = data.get("name", "")
-
-        # Add the object to the registry
-        if uid:
-            registry.add(uid, group)
         return group
 
     def __len__(self) -> int:
@@ -175,7 +162,7 @@ class _Group(FEAData, Generic[_MemberType]):
     def registration(self, value: Union["_Part", "Part", "RigidPart"]) -> None:
         """Set the object where this object is registered to."""
         for member in self._members:
-            member.registration = value # type: ignore
+            member.registration = value  # type: ignore
         self._registration = value
 
     @property
@@ -424,9 +411,11 @@ class NodesGroup(_Group["Node"]):
 
     """
 
-    def __init__(self, members: Iterable["Node"], **kwargs) -> None:
+    def __init__(self, members: Iterable["Node"] | "Node", **kwargs) -> None:
         from compas_fea2.model.nodes import Node
 
+        if isinstance(members, Node):
+            members = [members]
         super().__init__(members=members, member_class=Node, **kwargs)
 
     @property
@@ -687,4 +676,14 @@ class ReleasesGroup(_Group["_BeamEndRelease"]):
 
     @property
     def releases(self) -> Set["_BeamEndRelease"]:
+        return self._members
+    
+
+class FieldsGroup(_Group["_ConditionsField"]):
+    def __init__(self, members: Iterable["_ConditionsField"], **kwargs) -> None:
+        from compas_fea2.model.fields import _ConditionsField
+        super().__init__(members=members, member_class=_ConditionsField, **kwargs)
+
+    @property
+    def fields(self) -> Set["_ConditionsField"]:
         return self._members

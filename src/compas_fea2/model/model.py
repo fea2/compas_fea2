@@ -17,6 +17,7 @@ from compas.geometry import centroid_points_weighted
 import compas_fea2
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.bcs import _ThermalBoundaryCondition
 from compas_fea2.model.connectors import _Connector
@@ -32,7 +33,13 @@ from compas_fea2.model.groups import PartsGroup
 from compas_fea2.model.groups import SectionsGroup
 from compas_fea2.model.groups import _Group
 from compas_fea2.model.ics import _InitialCondition
+from compas_fea2.model.ics import InitialTemperature
+from compas_fea2.model.fields import BoundaryConditionsField
+from compas_fea2.model.fields import _InitialConditionField
+from compas_fea2.model.fields import InitialTemperatureField
+from compas_fea2.model.interactions import _Interaction
 from compas_fea2.model.nodes import Node
+from compas_fea2.model.elements import _Element
 from compas_fea2.model.parts import Part
 from compas_fea2.model.parts import RigidPart
 from compas_fea2.model.parts import _Part
@@ -54,7 +61,7 @@ if TYPE_CHECKING:
     from compas_fea2.model.bcs import _ThermalBoundaryCondition
     from compas_fea2.model.connectors import _Connector
     from compas_fea2.model.constraints import _Constraint
-    from compas_fea2.model.fields import _BoundaryConditionsField
+    from compas_fea2.model.fields import BoundaryConditionsField
     from compas_fea2.model.fields import _InitialConditionField
     from compas_fea2.model.groups import ConnectorsGroup
     from compas_fea2.model.groups import ConstraintsGroup
@@ -63,8 +70,10 @@ if TYPE_CHECKING:
     from compas_fea2.model.groups import InterfacesGroup
     from compas_fea2.model.groups import MaterialsGroup
     from compas_fea2.model.groups import SectionsGroup
+    from compas_fea2.model.groups import FieldsGroup
     from compas_fea2.model.ics import InitialTemperature
     from compas_fea2.model.interactions import _Interaction
+    from compas_fea2.model.interfaces import _Interface
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.sections import _Section
     from compas_fea2.units import UnitRegistry
@@ -135,40 +144,42 @@ class Model(FEAData):
         self._interactions: "InteractionsGroup" = InteractionsGroup(members=[], name="ALL_INTERACTIONS")
         self._connectors: "ConnectorsGroup" = ConnectorsGroup(members=[], name="ALL_CONNECTORS")
         self._constraints: "ConstraintsGroup" = ConstraintsGroup(members=[], name="ALL_CONSTRAINTS")
-        self._groups: "Set[_Group]" = set([self._parts, self._materials, self._sections, self._interfaces, self._interactions, self._connectors, self._constraints])
+        self._fields: "FieldsGroup" = FieldsGroup(members=[], name="ALL_FIELDS")
+        self._groups: "Set[_Group]" = set([self._parts, self._materials, self._sections, self._interfaces, self._interactions, self._connectors, self._constraints, self._fields])
 
         self._problems: "Set[Problem]" = set()
-        self._bcs_fields: "Set[_BoundaryConditionsField]" = set()
-        self._ics_fields: "Set[_InitialConditionField]" = set()
 
     @property
     def __data__(self):
-        return {
-            "class": self.__class__.__name__,
-            "description": self.description,
-            "author": self.author,
-            "parts": [part.__data__ for part in self.parts],
-            "materials": [material.__data__ for material in self.materials],
-            "sections": [section.__data__ for section in self.sections],
-            "interfaces": [interface.__data__ for interface in self.interfaces],
-            "interactions": [interaction.__data__ for interaction in self.interactions],
-            "constraints": [constraint.__data__ for constraint in self.constraints],
-            "connectors": [connector.__data__ for connector in self.connectors],
-            "problems": [problem.__data__ for problem in self.problems],
-            "path": str(self.path) if self.path else None,
-            "constants": self.constants,
-            "name": self.name,
-        }
+        data = super().__data__
+        data.update(
+            {
+                "description": self.description,
+                "author": self.author,
+                "constants": self._constants,
+                "parts": [part.__data__ for part in self._parts],
+                "materials": [material.__data__ for material in self._materials],
+                "sections": [section.__data__ for section in self._sections],
+                "interfaces": [interface.__data__ for interface in self._interfaces],
+                "interactions": [interaction.__data__ for interaction in self._interactions],
+                "constraints": [constraint.__data__ for constraint in self._constraints],
+                "fields": [field.__data__ for field in self._fields],
+                "connectors": [connector.__data__ for connector in self._connectors],
+                "problems": [problem.__data__ for problem in self._problems],
+                "path": str(self.path) if self._path else None,
+            }
+        )
+        return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None):
         if registry is None:
-            registry = Registry()
+            raise ValueError("Registry is required to create a Model from data.")
 
         model = cls(description=data.get("description"), author=data.get("author"))
         model._path = data.get("path")
         model._constants = data.get("constants", {})
-        model._name = data.get("name", model._name)
 
         for part_data in data.get("parts", []):
             model.add_part(registry.add_from_data(part_data, "compas_fea2.model.parts"))
@@ -277,25 +288,23 @@ class Model(FEAData):
         return [group for group in self._groups if isinstance(group, InterfacesGroup)][0] if self._groups else InterfacesGroup(members=[])
 
     @property
-    def bcs(self) -> "Dict[Union[_BoundaryCondition, _ThermalBoundaryCondition], Set[Node]]":
+    def bcs(self) -> "FieldsGroup":
         """Return the boundary conditions of the model."""
-        return self._bcs
+        return self._fields.subgroup(lambda x: isinstance(x, _BoundaryCondition))
 
     @property
-    def bcs_nodes(self)  -> dict[_BoundaryCondition, "NodesGroup"]:
-        bcs_nodes = {}
-        for bc in self.bcs:
-            nodes = NodesGroup(self.nodes).subgroup(lambda p: (isinstance(xbc, type(bc)) for xbc in p.bcs))
-            if len(nodes) == 0:
-                self.bcs.remove(bc)
-            else :
-                bcs_nodes[bc] = nodes
-        return bcs_nodes
+    def bcs_nodes(self) -> dict[_BoundaryCondition, "NodesGroup"]:
+        return {field.condition: field.distribution for field in self.bcs if isinstance(field.condition, _BoundaryCondition)}
 
     @property
-    def ics(self) -> "Dict[_InitialCondition, Set[Union[Node, _Element]]]":
+    def ics(self) -> "FieldsGroup":
         """Return the initial conditions of the model."""
-        return self._ics
+        return self._fields.subgroup(lambda x: isinstance(x, _InitialCondition))
+
+    @property
+    def ics_nodes(self) -> dict[_InitialCondition, "NodesGroup"]:
+        """Return a dictionary with the initial conditions and the nodes where they are applied."""
+        return {field.condition: field.distribution for field in self.ics if isinstance(field.condition, _InitialCondition)}
 
     @property
     def constraints(self) -> "ConstraintsGroup":
@@ -311,6 +320,11 @@ class Model(FEAData):
     def constants(self) -> "dict":
         """Return the constants of the model."""
         return self._constants
+    
+    @property
+    def fields(self) -> "FieldsGroup":
+        """Return the fields of the model."""
+        return self._fields
 
     @property
     def g(self) -> "float":
@@ -322,30 +336,24 @@ class Model(FEAData):
         self._constants["g"] = value
 
     @property
-    def materials_dict(self) -> "dict[_Part, MaterialsGroup]":
-        """Return a dictionary with the materials assigned to each part in the model."""
-        materials = {part: part.materials for part in self.parts if not isinstance(part, RigidPart)}
-        if not materials:
-            raise ValueError("No materials found in the model.")
-        return materials
-
-    @property
-    def materials(self) -> "Set[_Material]":
+    def materials(self) -> "MaterialsGroup":
         """Return a set of all materials in the model."""
-        part_materials = chain.from_iterable(part.materials for part in self.parts if not isinstance(part, RigidPart))
-        return set(chain(part_materials, self._materials))
+        return self._materials
 
     @property
-    def sections_dict(self) -> "dict[_Part, SectionsGroup]":
-        """Return a dictionary with the sections contained in each part in the model."""
-        sections = {part: part.sections for part in self.parts if not isinstance(part, RigidPart)}
-        return sections
+    def part_materials(self) -> "Dict[_Part, Set[_Material]]":
+        """Return a dictionary with the materials contained in each part in the model."""
+        return {part: part.materials.members for part in self.parts if not isinstance(part, RigidPart)}
 
     @property
-    def sections(self) -> "Set[_Section]":
+    def sections(self) -> "SectionsGroup":
         """Return a set of all sections in the model."""
-        part_sections = chain.from_iterable(part.sections for part in self.parts if not isinstance(part, RigidPart))
-        return set(chain(part_sections, self._sections))
+        return self._sections
+
+    @property
+    def part_sections(self) -> "Dict[_Part, Set[_Section]]":
+        """Return a dictionary with the sections contained in each part in the model."""
+        return {part: part.sections.members for part in self.parts if not isinstance(part, RigidPart)}
 
     @property
     def interfaces(self) -> "InterfacesGroup":
@@ -360,8 +368,8 @@ class Model(FEAData):
     @property
     def amplitudes(self):
         amplitudes = set()
-        #Amplitude is for now only set for the thermal interfaces.
-        for interface in filter(lambda x: hasattr(x.behavior, "temperature"), filter(lambda y : hasattr(y.behavior, "temperature"), self.interfaces)):
+        # Amplitude is for now only set for the thermal interfaces.
+        for interface in filter(lambda x: hasattr(x.behavior, "temperature"), filter(lambda y: hasattr(y.behavior, "temperature"), self.interfaces)):
             amplitudes.add(interface.behavior.temperature.amplitude)
         return amplitudes
 
@@ -983,47 +991,23 @@ class Model(FEAData):
     # =========================================================================
     #                           BCs methods
     # =========================================================================
-    def add_bcs_field(self, bc_field: "_BoundaryConditionsField") -> "_BoundaryCondition":
-        """Add a :class=`compas_fea2.model._BoundaryCondition` to the model.
+    def add_bcs(self, bc_field: "BoundaryConditionsField") -> "BoundaryConditionsField":
+        """Add a :class=`compas_fea2.model.BoundaryConditionsField` to the model.
 
         Parameters
         ----------
-        bc : :class=`compas_fea2.model._BoundaryCondition`
-        nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        bc : :class=`compas_fea2.model.BoundaryConditionsField`
 
         Returns
         -------
         :class=`compas_fea2.model._BoundaryCondition`
 
         """
-        if not isinstance(bc_field, _BoundaryConditionsField):
-            raise TypeError("{!r} is not a Boundary Condition Field.".format(bc))
-
-        for node in bc_field.distribution:
-            if not isinstance(node, Node):
-                raise TypeError("{!r} is not a Node.".format(node))
-            if not node.part:
-                raise ValueError("{!r} is not registered to any part.".format(node))
-            elif node.part not in self.parts:
-                raise ValueError("{!r} belongs to a part not registered to this model.".format(node))
-            if isinstance(node.part, RigidPart):
-                if not node.is_reference:
-                    raise ValueError("For rigid parts bundary conditions can be assigned only to the reference point")
-            node._bcs.add_members(bc_field.conditions)
-
-        self._bcs_fields.add(bc_field)
+        self._fields.add_member(bc_field)
         bc_field._registration = self
-
         return bc_field
 
-    def add_bcs_fields(self, bc_fields: List["_BoundaryConditionsField"]) -> "_BoundaryCondition":
-        for field in bc_fields:
-            self.add_bcs_field(bc_field=field)
-        return bc_fields
-
-    def _add_bcfield_type(self, bc_type: str, nodes: "Union[list[Node], NodesGroup]", axes="global") -> "_BoundaryCondition":
+    def _add_bc_type(self, bc_type: str, nodes: "Union[list[Node], NodesGroup]", axes="global") -> "BoundaryConditionsField":
         """Add a :class=`compas_fea2.model.BoundaryCondition` by type.
 
         Parameters
@@ -1052,7 +1036,8 @@ class Model(FEAData):
         }
         m = importlib.import_module("compas_fea2.model.bcs")
         bc = getattr(m, types[bc_type])()
-        return self.add_bcs(bc, nodes, axes)
+        field = BoundaryConditionsField(condition=bc, distribution=nodes, axes=axes)
+        return self.add_bcs(field)
 
     def add_fix_bc(self, nodes, axes="global"):
         """Add a :class=`compas_fea2.model.bcs.FixedBC` to the given nodes.
@@ -1065,7 +1050,7 @@ class Model(FEAData):
             Axes of the boundary condition, by default 'global'.
 
         """
-        return self._add_bcfield_type("fix", nodes, axes)
+        return self._add_bc_type("fix", nodes, axes)
 
     def add_pin_bc(self, nodes, axes="global"):
         """Add a :class=`compas_fea2.model.bcs.PinnedBC` to the given nodes.
@@ -1078,7 +1063,7 @@ class Model(FEAData):
             Axes of the boundary condition, by default 'global'.
 
         """
-        return self._add_bcfield_type("pin", nodes, axes)
+        return self._add_bc_type("pin", nodes, axes)
 
     def add_clampXX_bc(self, nodes, axes="global"):
         """Add a :class=`compas_fea2.model.bcs.ClampBCXX` to the given nodes.
@@ -1093,7 +1078,7 @@ class Model(FEAData):
             Axes of the boundary condition, by default 'global'.
 
         """
-        return self._add_bcfield_type("clampXX", nodes, axes)
+        return self._add_bc_type("clampXX", nodes, axes)
 
     def add_clampYY_bc(self, nodes, axes="global"):
         """Add a :class=`compas_fea2.model.bcs.ClampBCYY` to the given nodes.
@@ -1108,7 +1093,7 @@ class Model(FEAData):
             Axes of the boundary condition, by default 'global'.
 
         """
-        return self._add_bcfield_type("clampYY", nodes, axes)
+        return self._add_bc_type("clampYY", nodes, axes)
 
     def add_clampZZ_bc(self, nodes, axes="global"):
         """Add a :class=`compas_fea2.model.bcs.ClampBCZZ` to the given nodes.
@@ -1123,7 +1108,7 @@ class Model(FEAData):
             Axes of the boundary condition, by default 'global'.
 
         """
-        return self._add_bcfield_type("clampZZ", nodes, axes)
+        return self._add_bc_type("clampZZ", nodes, axes)
 
     def add_rollerX_bc(self, nodes, axes="global"):
         """Add a :class=`compas_fea2.model.bcs.RollerBCX` to the given nodes.
@@ -1138,7 +1123,7 @@ class Model(FEAData):
             Axes of the boundary condition, by default 'global'.
 
         """
-        return self._add_bcfield_type("rollerX", nodes, axes)
+        return self._add_bc_type("rollerX", nodes, axes)
 
     def add_rollerY_bc(self, nodes, axes="global"):
         """Add a :class=`compas_fea2.model.bcs.RollerBCY` to the given nodes.
@@ -1153,7 +1138,7 @@ class Model(FEAData):
             Axes of the boundary condition, by default 'global'.
 
         """
-        return self._add_bcfield_type("rollerY", nodes, axes)
+        return self._add_bc_type("rollerY", nodes, axes)
 
     def add_rollerZ_bc(self, nodes, axes="global"):
         """Add a :class=`compas_fea2.model.bcs.RollerBCZ` to the given nodes.
@@ -1168,7 +1153,7 @@ class Model(FEAData):
             Axes of the boundary condition, by default 'global'.
 
         """
-        return self._add_bcfield_type("rollerZ", nodes, axes)
+        return self._add_bc_type("rollerZ", nodes, axes)
 
     def add_rollerXY_bc(self, nodes, axes="global"):
         """Add a :class:`compas_fea2.model.bcs.RollerBCXY` to the given nodes.
@@ -1214,12 +1199,12 @@ class Model(FEAData):
 
         """
         return self._add_bc_type("rollerYZ", nodes, axes)
-    
+
     def add_thermal_bc(
         self,
         nodes: "Union[list[Node], NodesGroup]",
         temperature: "float",
-    ) -> "_ThermalBoundaryCondition":
+    ) -> "BoundaryConditionsField":
         """Add a :class:`compas_fea2.model.bcs.ThermalBC` to the model.
 
         Parameters
@@ -1236,40 +1221,14 @@ class Model(FEAData):
         """
         from compas_fea2.model.bcs import ImposedTemperature
 
-        it = ImposedTemperature(temp=temperature)
-        if isinstance(nodes, _Group):
-            nodeset = nodes.members
-        else:
-            nodeset = set(nodes)
-        return self.add_bcs(it, nodeset)
+        it = ImposedTemperature(temperature=temperature)
+        if not isinstance(nodes, NodesGroup):
+            nodes = NodesGroup(nodes)
 
-    def add_imposedHeatFlux_bc(self, q, surface, axes="global"):
-        """Add a :class:`compas_fea2.model.bcs.RollerBCYZ` to the given nodes.
+        field = BoundaryConditionsField(condition=it, distribution=nodes, axes="global")
+        return self.add_bcs(field)
 
-        This boundary condition allows translation along the local YZ-plane.
-
-        Parameters
-        ----------
-        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
-            List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes_ of the boundary condition, by default 'global'.
-
-        """
-        from compas_fea2.model.groups import FacesGroup
-        m = importlib.import_module("compas_fea2.model.bcs")
-        bc = getattr(m, "ImposedHeatFlux")
-        dic = {}
-        for face in surface :
-            if face.part in dic :
-                dic[face.part].add_face(face)
-            else :
-                dic[face.part] = FacesGroup(faces=[face])
-        for part, faces in dic.items():
-            part.add_group(faces)
-            self.add_bcs(bc(q, faces), faces.nodes)
-
-    def remove_bcs(self, nodes):
+    def remove_bcs(self, field):
         """Release nodes that were previously restrained.
 
         Parameters
@@ -1280,20 +1239,23 @@ class Model(FEAData):
         None
 
         """
-        for _, nodes in self.bcs.items():
-            self.remove_bcs(nodes)
+        self._fields.remove_member(field)
 
-        if isinstance(nodes, Node):
-            nodes = [nodes]
+    def remove_nodes_from_bcs(self, nodes: "Union[list[Node], NodesGroup]", field: "BoundaryConditionsField"):
+        """Remove nodes from a boundary condition field.
 
-        for node in nodes:
-            node.bcs=set()
-            if node.dof:
-                self.bcs[node.dof].remove(node)
-                node.dof = None
-            else:
-                print("WARNING: {!r} was not restrained. skipped!".format(node))
-        
+        Parameters
+        ----------
+        nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
+            The nodes to remove from the boundary condition.
+        field : :class:`compas_fea2.model.BoundaryConditionsField`
+            The boundary condition field from which to remove the nodes.
+
+        """
+        if not isinstance(nodes, NodesGroup):
+            nodes = NodesGroup(nodes)
+        field.distribution.remove_members(nodes)
+
     def add_ics(self, ic: "_InitialCondition", members: "Union[list[Union[Node, _Element]], NodesGroup]") -> "_InitialCondition":
         """Add a :class=`compas_fea2.model._InitialCondition` to the model.
 
@@ -1309,6 +1271,7 @@ class Model(FEAData):
         :class=`compas_fea2.model._InitialCondition`
             The applied initial condition.
         """
+        raise NotImplementedError("This method is not implemented in the base Model class. Please use a specific model subclass.")
 
         if not isinstance(ic_field, _InitialConditionField):
             raise TypeError("{!r} is not an Initial Condition Field.".format(ic_field))
@@ -1331,11 +1294,13 @@ class Model(FEAData):
         return ic_field
 
     def add_ics_fields(self, ics_fields: list["_InitialConditionField"]) -> list["_InitialConditionField"]:
+        raise NotImplementedError("This method is not implemented in the base Model class. Please use a specific model subclass.")
         for ics_field in ics_fields:
             self.add_ics_field(ics_field)
         return ics_field
 
     def add_uniform_thermal_ics_field(self, T0: float, nodes) -> InitialTemperatureField:
+        raise NotImplementedError("This method is not implemented in the base Model class. Please use a specific model subclass.")
         return self.add_ics_field(InitialTemperatureField(nodes=nodes, conditions=InitialTemperature(T0=T0)))
 
     # =========================================================================
@@ -1417,8 +1382,7 @@ class Model(FEAData):
         :class=`compas_fea2.model.interactions.Interaction`
             The added interaction.
         """
-        if not isinstance(interaction, _Interaction):
-            raise TypeError("{!r} is not an interaction.".format(interaction))
+
         interaction._registration = self
         self._interactions.add_member(interaction)
         return interaction
@@ -1438,21 +1402,19 @@ class Model(FEAData):
         """
         return [self.add_interaction(interaction) for interaction in interactions]
 
-    def add_interface(self, interface):
+    def add_interface(self, interface: "_Interface") -> "_Interface":
         """
-            :class:`compas_fea2.model.Interface`
+        :class:`compas_fea2.model.Interface`
 
         """
-        if not isinstance(interface, _Interface):
-            raise TypeError("{!r} is not an Interface.".format(interface))
-        self._interfaces.add(interface)
         interface._registration = self
+        self._interfaces.add_member(interface)
         return interface
 
     def add_interfaces(self, interfaces):
-        """Add multiple :class:`compas_fea2.model.Interface` objects to the model.
-        """
+        """Add multiple :class:`compas_fea2.model.Interface` objects to the model."""
         return [self.add_interface(interface) for interface in interfaces]
+
     # =========================================================================
     #                           Problems methods
     # =========================================================================
@@ -1508,12 +1470,12 @@ class Model(FEAData):
             )
 
         bcs_info = []
-        for field in self.bcs_fields:
-            bcs_info.append("{!r} - # of restrained nodes {}".format(field.conditions[0], len(field.distribution)))
+        for field in self.bcs:
+            bcs_info.append("{!r} - # of restrained nodes {}".format(field.condition, len(field.distribution)))
 
         ics_info = []
-        for field in self.ics_fields:
-            ics_info.append("{!r} - # of restrained nodes {}".format(field.conditions[0], len(field.distribution)))
+        for field in self.ics:
+            ics_info.append("{!r} - # of restrained nodes {}".format(field.condition, len(field.distribution)))
 
         constraints_info = []
         for constraint in self.constraints:
@@ -1574,11 +1536,9 @@ Problems
         self._parts.clear()
         self._materials.clear()
         self._sections.clear()
-        self._bcs_fields.clear()
-        self._ics_fields.clear()
         self._constraints.clear()
         self._connectors.clear()
-        self._interfaces.members.clear()
+        self._interfaces.clear()
         self._problems.clear()
         self._groups.clear()
         self._graph = Graph()

@@ -789,7 +789,7 @@ class Edge(FEAData):
         return [node.point for node in self.nodes]
 
     @property
-    def line(self) -> Line:
+    def line(self) -> Line | None:
         self._line
 
 class Face(FEAData):

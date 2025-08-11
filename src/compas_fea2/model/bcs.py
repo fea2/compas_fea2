@@ -1,19 +1,16 @@
 from typing import Any
 from typing import Dict
 from typing import Optional
-from typing import TypeVar
 from typing import TYPE_CHECKING
 
 from uuid import UUID
 
 from compas_fea2.base import FEAData
-from compas_fea2.model.groups import FacesGroup
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model
-
-T = TypeVar("T", bound="_BoundaryCondition")
 
 docs = """
 Note
@@ -48,32 +45,16 @@ yy : bool
     Restrain rotations around the y axis.
 zz : bool
     Restrain rotations around the z axis.
-temp : float (False otherwise)
-    Imposed temperature for heat analysis.
-components : dict
-    Dictionary with component-value pairs summarizing the boundary condition.
 axes : str
     The reference axes.
 """
 
 
 class _BoundaryCondition(FEAData):
-    """Base class for all zero-valued boundary conditions."""
+    """Base class for all boundary conditions."""
 
-    __doc__ = __doc__ or ""
-    __doc__ += docs
-
-    def __init__(self, axes: str = "global", **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._axes = axes
-        self._x = False
-        self._y = False
-        self._z = False
-        self._xx = False
-        self._yy = False
-        self._zz = False
-        self._temperature = None
-        self._q = None
 
     @property
     def registration(self) -> Optional["Model"]:
@@ -84,6 +65,74 @@ class _BoundaryCondition(FEAData):
     def registration(self, value: "Model") -> None:
         """Set the object where this object is registered to."""
         self._registration = value
+
+
+class MechanicalBC(_BoundaryCondition):
+    """Base class for all zero-valued mechanical boundary conditions."""
+
+    __doc__ = __doc__ or ""
+    __doc__ += docs
+
+    DOF_MASK: Dict[str, bool] | None = None
+
+    def __init__(self, x: bool = False, y: bool = False, z: bool = False, xx: bool = False, yy: bool = False, zz: bool = False, axes: str = "global", **kwargs):
+        super().__init__(**kwargs)
+        self._axes = axes
+        self._x = x
+        self._y = y
+        self._z = z
+        self._xx = xx
+        self._yy = yy
+        self._zz = zz
+
+    @property
+    def __data__(self) -> dict:
+        data = super().__data__
+        data.update(
+            {
+                "axes": self._axes,
+                "x": self._x,
+                "y": self._y,
+                "z": self._z,
+                "xx": self._xx,
+                "yy": self._yy,
+                "zz": self._zz,
+            }
+        )
+        return data
+
+    @from_data
+    @classmethod
+    def __from_data__(cls: type["MechanicalBC"], data: dict, registry: Optional[Registry] = None) -> "MechanicalBC":
+        bc = cls(axes=data.get("axes", "global"))
+        bc._x = data.get("x", False)
+        bc._y = data.get("y", False)
+        bc._z = data.get("z", False)
+        bc._xx = data.get("xx", False)
+        bc._yy = data.get("yy", False)
+        bc._zz = data.get("zz", False)
+        mask = getattr(cls, "DOF_MASK", None)
+        if mask:
+            for k, v in mask.items():
+                setattr(bc, f"_{k}", v)
+        return bc
+
+    def __add__(self, other: "MechanicalBC") -> "MechanicalBC":
+        """Combine two boundary conditions by OR-ing their component restraints."""
+        if not isinstance(other, MechanicalBC):
+            return NotImplemented
+        if self.axes != other.axes:
+            raise ValueError(f"Cannot combine BCs with different axes: {self.axes!r} vs {other.axes!r}")
+        combined = MechanicalBC(
+            x=self.x or other.x,
+            y=self.y or other.y,
+            z=self.z or other.z,
+            xx=self.xx or other.xx,
+            yy=self.yy or other.yy,
+            zz=self.zz or other.zz,
+            axes=self.axes,
+        )
+        return combined
 
     @property
     def x(self) -> bool:
@@ -110,14 +159,6 @@ class _BoundaryCondition(FEAData):
         return self._zz
 
     @property
-    def temperature(self) -> float | None:
-        return self._temperature
-    
-    @property
-    def q(self) -> float | None :
-        return self._q
-
-    @property
     def axes(self) -> str:
         return self._axes
 
@@ -126,73 +167,11 @@ class _BoundaryCondition(FEAData):
         self._axes = value
 
     @property
-    def components(self) -> Dict[str, bool]:
-        return {c: getattr(self, c) for c in ["x", "y", "z", "xx", "yy", "zz", "temp"]}
-
-    @property
-    def __data__(self) -> dict:
-        data = super().__data__
-        data.update(
-            {
-                "axes": self._axes,
-                "x": self._x,
-                "y": self._y,
-                "z": self._z,
-                "xx": self._xx,
-                "yy": self._yy,
-                "zz": self._zz,
-                "temperature": self._temperature,
-            }
-        )
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None): 
-        # Create a registry if not provided
-        if registry is None:
-            registry = Registry()
-        # check if the object already exists in the registry
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-        # Create a new instance
-        bc = cls(axes=data.get("axes", "global"))
-        # Add base properties
-        bc._uid = UUID(uid) if uid else None
-        # bc._registration = registry.add_from_data(data.get("registration"), "compas_fea2.model.model") if data.get("registration") else None
-        bc._name = data.get("name", "")
-        # Add specific properties
-        bc._x = data.get("x", False)
-        bc._y = data.get("y", False)
-        bc._z = data.get("z", False)
-        bc._xx = data.get("xx", False)
-        bc._yy = data.get("yy", False)
-        bc._zz = data.get("zz", False)
-        bc._temperature = data.get("temperature", None)
-        bc._q = data.get("q", None)
-        # Add the object to the registry
-        if uid:
-            registry.add(uid, bc)
-        return bc
-
-    def __add__(self, other: "_BoundaryCondition") -> "GeneralBC":
-        """Combine two boundary conditions by OR-ing their component restraints."""
-        if not isinstance(other, _BoundaryCondition):
-            return NotImplemented
-        combined = GeneralBC(
-            x=self.x or other.x,
-            y=self.y or other.y,
-            z=self.z or other.z,
-            xx=self.xx or other.xx,
-            yy=self.yy or other.yy,
-            zz=self.zz or other.zz,
-            axes=self.axes,
-        )
-        combined._temp = self.temp or other.temp
-        return combined
+    def components(self) -> Dict[str, Any]:
+        return {c: getattr(self, c) for c in ["x", "y", "z", "xx", "yy", "zz"]}
 
 
-class GeneralBC(_BoundaryCondition):
+class GeneralBC(MechanicalBC):
     """Customized boundary condition."""
 
     __doc__ = __doc__ or ""
@@ -216,180 +195,175 @@ zz : bool
     """
 
     def __init__(self, x: bool = False, y: bool = False, z: bool = False, xx: bool = False, yy: bool = False, zz: bool = False, **kwargs):
-        super().__init__(**kwargs)
-        self._x = x
-        self._y = y
-        self._z = z
-        self._xx = xx
-        self._yy = yy
-        self._zz = zz
+        super().__init__(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, **kwargs)
 
 
-class FixedBC(_BoundaryCondition):
+class FixedBC(MechanicalBC):
     """A fixed nodal displacement boundary condition."""
 
+    DOF_MASK = dict(x=True, y=True, z=True, xx=True, yy=True, zz=True)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._x = True
-        self._y = True
-        self._z = True
-        self._xx = True
-        self._yy = True
-        self._zz = True
+        super().__init__(x=True, y=True, z=True, xx=True, yy=True, zz=True, **kwargs)
 
 
-class FixedBCX(_BoundaryCondition):
+class FixedBCX(MechanicalBC):
     """A fixed nodal displacement boundary condition along and around X."""
 
+    DOF_MASK = dict(x=True, y=False, z=False, xx=True, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._x = True
-        self._xx = True
+        super().__init__(x=True, y=False, z=False, xx=True, yy=False, zz=False, **kwargs)
 
 
-class FixedBCY(_BoundaryCondition):
+class FixedBCY(MechanicalBC):
     """A fixed nodal displacement boundary condition along and around Y."""
 
+    DOF_MASK = dict(x=False, y=True, z=False, xx=False, yy=True, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._y = True
-        self._yy = True
+        super().__init__(x=False, y=True, z=False, xx=False, yy=True, zz=False, **kwargs)
 
 
-class FixedBCZ(_BoundaryCondition):
+class FixedBCZ(MechanicalBC):
     """A fixed nodal displacement boundary condition along and around Z."""
 
+    DOF_MASK = dict(x=False, y=False, z=True, xx=False, yy=False, zz=True)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._z = True
-        self._zz = True
+        super().__init__(x=False, y=False, z=True, xx=False, yy=False, zz=True, **kwargs)
 
 
-class PinnedBC(_BoundaryCondition):
+class PinnedBC(MechanicalBC):
     """A pinned nodal displacement boundary condition."""
 
+    DOF_MASK = dict(x=True, y=True, z=True, xx=False, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._x = True
-        self._y = True
-        self._z = True
+        super().__init__(x=True, y=True, z=True, **kwargs)
 
 
-class ClampBCXX(PinnedBC):
+class ClampBCXX(MechanicalBC):
     """A pinned nodal displacement boundary condition clamped in XX."""
 
+    DOF_MASK = dict(x=True, y=True, z=True, xx=True, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._xx = True
+        super().__init__(x=True, y=True, z=True, xx=True, **kwargs)
 
 
-class ClampBCYY(PinnedBC):
+class ClampBCYY(MechanicalBC):
     """A pinned nodal displacement boundary condition clamped in YY."""
 
+    DOF_MASK = dict(x=True, y=True, z=True, xx=False, yy=True, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._yy = True
+        super().__init__(x=True, y=True, z=True, yy=True, **kwargs)
 
 
-class ClampBCZZ(PinnedBC):
+class ClampBCZZ(MechanicalBC):
     """A pinned nodal displacement boundary condition clamped in ZZ."""
 
+    DOF_MASK = dict(x=True, y=True, z=True, xx=False, yy=False, zz=True)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._zz = True
+        super().__init__(x=True, y=True, z=True, zz=True, **kwargs)
 
 
-class RollerBCX(PinnedBC):
+class RollerBCX(MechanicalBC):
     """A pinned nodal displacement boundary condition released in X."""
 
+    DOF_MASK = dict(x=False, y=True, z=True, xx=False, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._x = False
+        super().__init__(x=False, y=True, z=True, **kwargs)
 
 
-class RollerBCY(PinnedBC):
+class RollerBCY(MechanicalBC):
     """A pinned nodal displacement boundary condition released in Y."""
 
+    DOF_MASK = dict(x=True, y=False, z=True, xx=False, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._y = False
+        super().__init__(x=True, y=False, z=True, **kwargs)
 
 
-class RollerBCZ(PinnedBC):
+class RollerBCZ(MechanicalBC):
     """A pinned nodal displacement boundary condition released in Z."""
 
+    DOF_MASK = dict(x=True, y=True, z=False, xx=False, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._z = False
+        super().__init__(x=True, y=True, z=False, **kwargs)
 
 
-class RollerBCXY(PinnedBC):
+class RollerBCXY(MechanicalBC):
     """A pinned nodal displacement boundary condition released in X and Y."""
 
+    DOF_MASK = dict(x=False, y=False, z=True, xx=False, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._x = False
-        self._y = False
+        super().__init__(x=False, y=False, z=True, **kwargs)
 
 
-class RollerBCYZ(PinnedBC):
+class RollerBCYZ(MechanicalBC):
     """A pinned nodal displacement boundary condition released in Y and Z."""
 
+    DOF_MASK = dict(x=True, y=False, z=False, xx=False, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._y = False
-        self._z = False
+        super().__init__(x=True, y=False, z=False, **kwargs)
 
 
-class RollerBCXZ(PinnedBC):
+class RollerBCXZ(MechanicalBC):
     """A pinned nodal displacement boundary condition released in X and Z."""
 
+    DOF_MASK = dict(x=False, y=True, z=False, xx=False, yy=False, zz=False)
+
     __doc__ = __doc__ or ""
     __doc__ += docs
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._x = False
-        self._z = False
+        super().__init__(x=False, y=True, z=False, **kwargs)
 
 
 # ===================================================================
@@ -398,47 +372,14 @@ class RollerBCXZ(PinnedBC):
 
 
 class _ThermalBoundaryCondition(_BoundaryCondition):
-    def __init__(self, axes = "global", **kwargs):
-        super().__init__(axes, **kwargs)
+    """Base class for thermal boundary conditions."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
 
 class ImposedTemperature(_ThermalBoundaryCondition):
     """Imposed temperature condition for analysis involving temperature.
-    
-    Additional Parameters
----------------------
-temperature : float
-    Value of imposed temperature applied
-    """
-
-    __doc__ = __doc__ or ""
-    __doc__ += docs
-
-    def __init__(self, temperature: float, **kwargs):
-        super().__init__(temperature=temperature, **kwargs)
-        self._temperature = temperature
-
-    @property
-    def __data__(self) -> Dict[str, Any]:
-        data = super().__data__
-        if not isinstance(data, dict):
-            data = {}
-        data.update(
-            {
-                "temperature": self._temperature,
-            }
-        )
-        return data
-
-    @classmethod
-    def __from_data__(cls, data: Dict[str, Any]):
-        temperature = data.get("temperature", None)
-        if temperature is not None and not isinstance(temperature, float):
-            raise TypeError(f"'temp' must be a float or None, got {type(temperature).__name__}")
-        return cls(temp=temperature)
-
-
-class ImposedTemperature(_ThermalBoundaryCondition):
-    """Imposed temperature conidtion for heat analysis.
 
         Additional Parameters
     ---------------------
@@ -450,5 +391,20 @@ class ImposedTemperature(_ThermalBoundaryCondition):
     __doc__ += docs
 
     def __init__(self, temperature: float, **kwargs):
-        super().__init__(temperature=temperature, **kwargs)
+        super().__init__(**kwargs)
+        self._temperature = float(temperature)
 
+    @property
+    def __data__(self) -> Dict[str, Any]:
+        data = super().__data__
+        data.update({"temperature": self._temperature})
+        return data
+
+    @from_data
+    @classmethod
+    def __from_data__(cls: type["ImposedTemperature"], data: Dict[str, Any], registry: Optional[Registry] = None) -> "ImposedTemperature":
+        temperature = data.get("temperature")
+        if temperature is None:
+            raise ValueError("ImposedTemperature requires a 'temperature' value in the data.")
+        obj = cls(temperature=float(temperature))
+        return obj
