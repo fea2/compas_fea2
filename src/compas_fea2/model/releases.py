@@ -92,7 +92,8 @@ class _BeamEndRelease(FEAData):
 
     @property
     def __data__(self):
-        return {
+        data = super().__data__
+        data.update( {
             "class": self.__class__.__name__,
             "element": self._element,
             "location": self._location,
@@ -102,10 +103,12 @@ class _BeamEndRelease(FEAData):
             "m1": self.m1,
             "m2": self.m2,
             "t": self.t,
-        }
+        })
+        return data
 
     @classmethod
     def __from_data__(cls, data):
+        raise NotImplementedError("BeamEndRelease does not support from_data method yet.")
         obj = cls(
             n=data["n"],
             v1=data["v1"],

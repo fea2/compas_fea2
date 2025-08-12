@@ -84,7 +84,7 @@ class Contact(_Interaction):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool] = False, set_name: Optional[bool] = True):
         normal = data.get("normal")
         tangent = data.get("tangent")
         interaction = cls(normal, tangent)
@@ -138,7 +138,7 @@ class HardContactNoFriction(Contact):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool] = False, set_name: Optional[bool] = True):
         tol = data.get("tol")
         interaction = cls(tol)
         return interaction
@@ -183,7 +183,7 @@ class HardContactFrictionPenalty(Contact):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool] = False, set_name: Optional[bool] = True):
         tol = data.get("tolerance")
         mu = data.get("mu")
         interaction = cls(mu, tol)
@@ -245,7 +245,7 @@ class LinearContactFrictionPenalty(Contact):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool] = False, set_name: Optional[bool] = True):
         tol = data.get("tolerance")
         mu = data.get("mu")
         stiffness = data.get("stiffness")
@@ -299,7 +299,7 @@ class HardContactRough(Contact):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool] = False, set_name: Optional[bool] = True):
         interaction = cls()
         return interaction
 
@@ -349,7 +349,7 @@ class ThermalInteraction(_Interaction):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         temperature = data.get("temperature")
         interaction = cls(temperature)
         return interaction
@@ -404,10 +404,10 @@ class Convection(ThermalInteraction):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         temperature = data.get("temperature")
         h = data.get("h")
-        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups")  # type: ignore[no-any-return]
+        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups", set_uid=set_uid, set_name=set_name)  # type: ignore[no-any-return]
         interaction = cls(surface, h, temperature)
         return interaction
 
@@ -461,10 +461,10 @@ class Radiation(ThermalInteraction):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         temperature = data.get("temperature")
         eps = data.get("eps")
-        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups")  # type: ignore[no-any-return]
+        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups", set_uid=set_uid, set_name=set_name)  # type: ignore[no-any-return]
         interaction = cls(surface, eps, temperature)
         return interaction
 

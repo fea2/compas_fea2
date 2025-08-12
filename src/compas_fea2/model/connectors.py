@@ -53,7 +53,7 @@ class _Connector(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         # Create a new instance
         nodes_data = data.get("nodes", [])
         nodes = []
@@ -62,7 +62,7 @@ class _Connector(FEAData):
             if not node_uid:
                 raise ValueError("Node data must contain a 'uid' field.")
             if node_uid not in registry:
-                node = registry.add_from_data(node_data, "compas_fea2.model.nodes")  # type: ignore[no-any-return]
+                node = registry.add_from_data(node_data, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name)  # type: ignore[no-any-return]
             else:
                 node = registry.get(node_uid)  # type: ignore[no-any-return]
             nodes.append(node)

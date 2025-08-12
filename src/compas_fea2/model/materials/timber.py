@@ -120,7 +120,7 @@ class Timber(ElasticOrthotropic):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         from uuid import UUID
 
         if registry is None:

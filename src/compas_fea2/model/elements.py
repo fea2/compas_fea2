@@ -23,6 +23,7 @@ from compas.itertools import pairwise
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 
 if TYPE_CHECKING:
     from compas_fea2.model.sections import SpringSection
@@ -158,20 +159,14 @@ class _Element(FEAData):
         })
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         nodes = [
-            registry.add_from_data(node_data, "compas_fea2.model.nodes")
+            registry.add_from_data(node_data, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name)
             for node_data in data.get("nodes", [])
         ]
-        section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections") if data.get("section") else None
+        section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections", set_uid=set_uid, set_name=set_name) if data.get("section") else None
 
         element = cls(
             nodes=nodes,
@@ -190,12 +185,9 @@ class _Element(FEAData):
         element._volume = data.get("volume", 0.0)
         element._results_format = data.get("results_format", {})
         element._reference_point = Point.__from_data__(data["reference_point"]) if "reference_point" in data else None
-        element._shape = registry.add_from_data(data.get("shape"), "compas_fea2.model.shapes") if data.get("shape") else None
+        element._shape = registry.add_from_data(data.get("shape"), "compas_fea2.model.shapes", set_uid=set_uid, set_name=set_name) if data.get("shape") else None
         element._ndim = data.get("ndim", 0)
         element._length = data.get("length", 0.0)
-
-        if uid:
-            registry.add(uid, element)
 
         return element
 
@@ -440,7 +432,8 @@ class MassElement(_Element):
         return data
 
     @classmethod
-    def __from_data__(cls, data):
+    def __from_data__(cls, data, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+        raise NotImplementedError("MassElement does not support from_data method yet.")
         element = super().__from_data__(data)
         return element
 
@@ -734,7 +727,7 @@ class Edge(FEAData):
         )
 
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None) -> "Edge": 
+    def __from_data__(cls, data: dict, registry: Optional[Registry]=None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True) -> "Edge": 
         # Create a registry if not provided
         if registry is None:
             registry = Registry()
@@ -743,7 +736,7 @@ class Edge(FEAData):
         if uid and registry.get(uid):
             return registry.get(uid) #type: ignore
         # Create a new instance
-        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes") for node_data in data.get("nodes", [])]
+        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name) for node_data in data.get("nodes", [])]
         tag = data.get("tag", "")
         edge = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))
         # Add specific properties
@@ -849,7 +842,7 @@ class Face(FEAData):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None) -> "Face": 
+    def __from_data__(cls, data: dict, registry: Optional[Registry]=None, set_uid=False, set_name=False) -> "Face": 
         # Create a registry if not provided
         if registry is None:
             registry = Registry()
@@ -858,7 +851,7 @@ class Face(FEAData):
         if uid and registry.get(uid):
             return registry.get(uid) #type: ignore
         # Create a new instance
-        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes") for node_data in data.get("nodes", [])]
+        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name) for node_data in data.get("nodes", [])]
         tag = data.get("tag", "")
         face = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))
         # Add base properties

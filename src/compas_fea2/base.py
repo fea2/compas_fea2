@@ -64,9 +64,10 @@ def from_data(method=None, *, set_uid: bool = True, set_name: bool = True, regis
 
     Toggle behaviors with keyword-only args if a class needs a different behavior.
     """
+
     def decorator(func):
         @wraps(func)
-        def wrapper(cls: Type[T], data: dict, registry: Optional["Registry"] = None) -> T:
+        def wrapper(cls: Type[T], data: dict, registry: Optional["Registry"] = None, set_uid=set_uid, set_name=set_name) -> T:
             # Ensure registry
             if registry is None:
                 registry = Registry()
@@ -89,8 +90,10 @@ def from_data(method=None, *, set_uid: bool = True, set_name: bool = True, regis
             if register and uid:
                 registry.add(uid, obj)
             return obj
+
         # Ensure classmethod behavior
         return classmethod(wrapper)
+
     if method is None:
         return decorator
     # Tolerate accidental stacking like @from_data over @classmethod/@staticmethod
@@ -219,16 +222,10 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             registration_data = [registration.__class__.__name__, registration._uid]
         else:
             registration_data = None
-        return {
-            "class": self.__class__.__name__,
-            "name": self.name,
-            "uid": str(self._uid),
-            "key": self._key,
-            "registration": registration_data
-        }
+        return {"class": self.__class__.__name__, "name": self.name, "uid": str(self._uid), "key": self._key, "registration": registration_data}
 
     @from_data
-    def __from_data__(cls: Type[T], data: dict, registry: Optional["Registry"] = None) -> T: # type: ignore[override]
+    def __from_data__(cls: Type[T], data: dict, registry: Optional["Registry"] = None) -> T:  # type: ignore[override]
         """Construct an object of this type from the provided data.
 
         Parameters
@@ -271,7 +268,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
 
         """
         registry = Registry()
-        return cls.__from_data__(compas.json_load(filepath), registry) # type: ignore[return-value, no-any-return]  
+        return cls.__from_data__(compas.json_load(filepath), registry)  # type: ignore[return-value, no-any-return]
 
     # ==========================================================================
     # Copy and Serialization
@@ -301,11 +298,15 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         cls = type(self)
         registry = Registry()
         data = deepcopy(self.__data__)
+        set_uid: bool = False
+        set_name: bool = False
         if not duplicate:
-            data["uid"] = str(uuid.uuid4())  # Generate a new UID
-            data["name"] = f"{self.name}_copy"  # Generate a new name
+            # data["uid"] = str(uuid.uuid4())  # Generate a new UID
+            # data["name"] = f"{self.name}_copy"  # Generate a new name
+            set_uid: bool = True
+            set_name: bool = True
         try:
-            obj = cls.__from_data__(data, registry) # type: ignore[return-value, no-any-return]
+            obj = cls.__from_data__(data, registry, set_uid=set_uid, set_name=set_name)  # type: ignore[return-value, no-any-return]
         except Exception as e:
             raise RuntimeError(f"Failed to copy object: {e}")
         return obj
@@ -341,19 +342,19 @@ class Registry:
         """Retrieve an object from the registry by its key."""
         return self._registry.get(key)
 
-    def add_from_data(self, data, module_name) -> Any:
+    def add_from_data(self, data, module_name, set_uid: bool, set_name: bool=True) -> Any:
         """Add an object to the registry from its data representation."""
-        uid = data.get("uid")
-        if uid in self._registry:
-            return self._registry[uid]
+        # uid = data.get("uid")
+        # if uid in self._registry:
+        #     return self._registry[uid]
 
         cls = getattr(importlib.import_module(module_name), data["class"])
         if not issubclass(cls, FEAData):
             raise TypeError(f"Class {data['class']} is not a subclass of FEAData.")
 
         # Create a new object from the data
-        obj = cls.__from_data__(data, registry=self) # type: ignore[return-value, no-any-return]
-        self._registry[uid] = obj
+        obj = cls.__from_data__(data, registry=self, set_uid=set_uid, set_name=set_name)  # type: ignore[return-value, no-any-return]
+        # self._registry[uid] = obj
         return obj
 
     def add(self, key, obj):

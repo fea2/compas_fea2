@@ -166,7 +166,7 @@ class _Part(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional["Registry"] = None):
+    def __from_data__(cls, data, registry: Optional["Registry"] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True) -> "_Part":
         if not registry:
             raise ValueError("A registry is required to create a Part from data.")
         part = cls()
@@ -182,12 +182,12 @@ class _Part(FEAData):
         part.add_elements(elements)  # type: ignore
         part._elements._uid = data.get("elements", {}).get("uid", None) # change the uid of the nodes group
 
-        part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups") for group in data.get("groups", [])])
+        part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups", set_uid=set_uid, set_name=set_name) for group in data.get("groups", [])])
         
         part._boundary_mesh = Mesh.__from_data__(data["boundary_mesh"]) if data.get("boundary_mesh") else None
         part._discretized_boundary_mesh = Mesh.__from_data__(data["discretized_boundary_mesh"]) if data.get("discretized_boundary_mesh") else None
         
-        part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes") if data.get("reference_node") else None
+        part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name) if data.get("reference_node") else None
 
         return part
 

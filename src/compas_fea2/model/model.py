@@ -31,6 +31,7 @@ from compas_fea2.model.groups import MaterialsGroup
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.groups import PartsGroup
 from compas_fea2.model.groups import SectionsGroup
+from compas_fea2.model.groups import FieldsGroup
 from compas_fea2.model.groups import _Group
 from compas_fea2.model.ics import _InitialCondition
 from compas_fea2.model.ics import InitialTemperature
@@ -173,7 +174,7 @@ class Model(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             raise ValueError("Registry is required to create a Model from data.")
 
@@ -182,28 +183,28 @@ class Model(FEAData):
         model._constants = data.get("constants", {})
 
         for part_data in data.get("parts", []):
-            model.add_part(registry.add_from_data(part_data, "compas_fea2.model.parts"))
+            model.add_part(registry.add_from_data(part_data, "compas_fea2.model.parts", set_uid=set_uid, set_name=set_name))
 
         for material_data in data.get("materials", []):
-            model.add_material(registry.add_from_data(material_data, "compas_fea2.model.materials.material"))
+            model.add_material(registry.add_from_data(material_data, "compas_fea2.model.materials.material", set_uid=set_uid, set_name=set_name))
 
         for section_data in data.get("sections", []):
-            model.add_section(registry.add_from_data(section_data, "compas_fea2.model.sections"))
+            model.add_section(registry.add_from_data(section_data, "compas_fea2.model.sections", set_uid=set_uid, set_name=set_name))
 
         for interface_data in data.get("interfaces", []):
-            model.interfaces.add_member(registry.add_from_data(interface_data, "compas_fea2.model.interfaces"))
+            model.interfaces.add_member(registry.add_from_data(interface_data, "compas_fea2.model.interfaces", set_uid=set_uid, set_name=set_name))
 
         for interaction_data in data.get("interactions", []):
-            model.interactions.add_member(registry.add_from_data(interaction_data, "compas_fea2.model.interactions"))
+            model.interactions.add_member(registry.add_from_data(interaction_data, "compas_fea2.model.interactions", set_uid=set_uid, set_name=set_name))
 
         for constraint_data in data.get("constraints", []):
-            model.constraints.add_member(registry.add_from_data(constraint_data, "compas_fea2.model.constraints"))
+            model.constraints.add_member(registry.add_from_data(constraint_data, "compas_fea2.model.constraints", set_uid=set_uid, set_name=set_name))
 
         for connector_data in data.get("connectors", []):
-            model.connectors.add_member(registry.add_from_data(connector_data, "compas_fea2.model.connectors"))
+            model.connectors.add_member(registry.add_from_data(connector_data, "compas_fea2.model.connectors", set_uid=set_uid, set_name=set_name))
 
         for problem_data in data.get("problems", []):
-            model.add_problem(registry.add_from_data(problem_data, "compas_fea2.problem"))
+            model.add_problem(registry.add_from_data(problem_data, "compas_fea2.problem", set_uid=set_uid, set_name=set_name))
 
         return model
 
@@ -991,7 +992,7 @@ class Model(FEAData):
     # =========================================================================
     #                           BCs methods
     # =========================================================================
-    def add_bcs(self, bc_field: "BoundaryConditionsField") -> "BoundaryConditionsField":
+    def add_bcs(self, bc_fields: "BoundaryConditionsField | List[BoundaryConditionsField]") -> List["BoundaryConditionsField"]:
         """Add a :class=`compas_fea2.model.BoundaryConditionsField` to the model.
 
         Parameters
@@ -1003,9 +1004,15 @@ class Model(FEAData):
         :class=`compas_fea2.model._BoundaryCondition`
 
         """
-        self._fields.add_member(bc_field)
-        bc_field._registration = self
-        return bc_field
+        if isinstance(bc_fields, BoundaryConditionsField):
+            bc_fields = [bc_fields]
+        elif not isinstance(bc_fields, list):
+            raise TypeError("Expected BoundaryConditionsField or list of BoundaryConditionsField, got {}".format(type(bc_fields)))
+        
+        for bc_field in bc_fields:
+            self._fields.add_member(bc_field)
+            bc_field._registration = self
+        return bc_fields
 
     def _add_bc_type(self, bc_type: str, nodes: "Union[list[Node], NodesGroup]", axes="global") -> "BoundaryConditionsField":
         """Add a :class=`compas_fea2.model.BoundaryCondition` by type.

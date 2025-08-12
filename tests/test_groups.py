@@ -365,7 +365,7 @@ class TestGroupDataOperations(unittest.TestCase):
 
         # Test deserialization
         restored = NodesGroup.__from_data__(data)
-        self.assertEqual(len(restored.nodes), 2)
+        self.assertEqual(len(restored.members), 2)
 
     def test_elements_group_serialization(self):
         """Test ElementsGroup serialization"""

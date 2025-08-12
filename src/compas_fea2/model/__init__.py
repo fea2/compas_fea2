@@ -107,12 +107,14 @@ from .bcs import (
     RollerBCXY,
     RollerBCYZ,
     RollerBCXZ,
+    _ThermalBoundaryCondition,
+    ImposedTemperature,
 )
 
 from .ics import (
     _InitialCondition,
     InitialTemperature,
-    InitialStress,
+    InitialStressField,
 )
 
 from .fields import (

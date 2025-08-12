@@ -103,7 +103,7 @@ class MechanicalBC(_BoundaryCondition):
 
     @from_data
     @classmethod
-    def __from_data__(cls: type["MechanicalBC"], data: dict, registry: Optional[Registry] = None) -> "MechanicalBC":
+    def __from_data__(cls: type["MechanicalBC"], data: dict, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True) -> "MechanicalBC":
         bc = cls(axes=data.get("axes", "global"))
         bc._x = data.get("x", False)
         bc._y = data.get("y", False)
@@ -402,7 +402,7 @@ class ImposedTemperature(_ThermalBoundaryCondition):
 
     @from_data
     @classmethod
-    def __from_data__(cls: type["ImposedTemperature"], data: Dict[str, Any], registry: Optional[Registry] = None) -> "ImposedTemperature":
+    def __from_data__(cls: type["ImposedTemperature"], data: Dict[str, Any], registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True) -> "ImposedTemperature":
         temperature = data.get("temperature")
         if temperature is None:
             raise ValueError("ImposedTemperature requires a 'temperature' value in the data.")

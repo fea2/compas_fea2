@@ -1,7 +1,11 @@
 from typing import TYPE_CHECKING
 from typing import Iterable
+from typing import Optional
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
+from compas_fea2.base import from_data
+
 from compas_fea2.model.bcs import ImposedTemperature
 from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.groups import NodesGroup
@@ -91,8 +95,38 @@ class BoundaryConditionsField(_ConditionsField):
     node_bc : zip[(:class:compas_fea2.model.Node, :class:compas_fea2.model._BoundaryCondition)]
         List of tuples of nodes and its associated boundary condition."""
 
-    def __init__(self, distribution, condition, **kwargs):
+    def __init__(self, distribution: "NodesGroup" | Iterable["Node"] | Node, condition: "_BoundaryCondition", **kwargs):
         super().__init__(distribution, condition, **kwargs)
+    
+    @property
+    def __data__(self):
+        super_data = super().__data__
+        data = {
+            "distribution": self.distribution.__data__,
+            "condition": self.condition.__data__,
+        }
+        data.update(super_data)
+        return data
+    
+    @from_data
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+        """Create a BoundaryConditionsField from data."""
+        distribution_data = data.get("distribution")
+        condition_data = data.get("condition")
+        field = cls(
+            distribution=[registry.add_from_data(n, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name) for n in distribution_data],
+            condition=registry.add_from_data(condition_data, "compas_fea2.model.bcs", set_uid=set_uid, set_name=set_name),
+        )
+        return field
+        
+    @property
+    def bc(self) -> "_BoundaryCondition":
+        """Return the boundary condition assigned to the field."""
+        if isinstance(self.condition, _BoundaryCondition):
+            return self.condition
+        raise ValueError("Condition is not a _BoundaryCondition.")
+
 
     @property
     def node_bc(self):

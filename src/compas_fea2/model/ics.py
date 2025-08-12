@@ -17,11 +17,6 @@ class _InitialCondition(FEAData):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @property
-    def __data__(self) -> dict:
-        data = super().__data__
-        return data
-
 
 class InitialTemperature(_InitialCondition):
     """Initial temperature object for initial temperature field.
@@ -67,7 +62,7 @@ class InitialTemperature(_InitialCondition):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         T0 = data.get("T0")
         ic = cls(T0)
         return ic
@@ -121,7 +116,7 @@ class InitialStressField(_InitialCondition):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         stress = data.get("stress")
         ic = cls(stress)
         return ic

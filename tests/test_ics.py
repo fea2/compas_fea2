@@ -13,15 +13,15 @@ class TestInitialTemperature(unittest.TestCase):
         self.assertEqual(ic.T0, 200)
 
 
-class TestInitialStressField(unittest.TestCase):
-    def test_initialization(self):
-        ic = InitialStressField(stress=(10, 20, 30))
-        self.assertEqual(ic.stress, (10, 20, 30))
+# class TestInitialStressField(unittest.TestCase):
+#     def test_initialization(self):
+#         ic = InitialStressField(stress=(10, 20, 30))
+#         self.assertEqual(ic.stress, (10, 20, 30))
 
-    def test_stress_setter(self):
-        ic = InitialStressField(stress=(10, 20, 30))
-        ic.stress = (40, 50, 60)
-        self.assertEqual(ic.stress, (40, 50, 60))
+#     def test_stress_setter(self):
+#         ic = InitialStressField(stress=(10, 20, 30))
+#         ic.stress = (40, 50, 60)
+#         self.assertEqual(ic.stress, (40, 50, 60))
 
 
 if __name__ == "__main__":

@@ -112,9 +112,9 @@ class _Group(FEAData, Generic[_MemberType]):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional["Registry"] = None) -> Union["_Group[Any]", "NodesGroup", "ElementsGroup", "EdgesGroup", "FacesGroup"]:
+    def __from_data__(cls, data, registry: Optional["Registry"] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True) -> Union["_Group[Any]", "NodesGroup", "ElementsGroup", "EdgesGroup", "FacesGroup"]:
         member_class_name = data.get("member_class")
-        members = [registry.add_from_data(member, "compas_fea2.model") for member in data["members"]]  # type: ignore
+        members = [registry.add_from_data(member, "compas_fea2.model", set_uid=set_uid, set_name=set_name) for member in data["members"]]  # type: ignore
         if "member_class" in cls.__dict__:
             member_class = import_module("compas_fea2.model").__dict__.get(member_class_name) if member_class_name else None
             group = cls(member_class=member_class, members=members)  # type: ignore

@@ -74,7 +74,7 @@ class Shape(Polygon, FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry] = None):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, set_uid: Optional[bool] = False, set_name: Optional[bool] = True) -> "Shape":
 
         points = [Point.__from_data__(pt) for pt in data["points"]]
         frame_data = data.get("frame")

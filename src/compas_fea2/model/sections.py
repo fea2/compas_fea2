@@ -82,7 +82,7 @@ class _Section(FEAData):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -184,7 +184,7 @@ class SpringSection(FEAData):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -338,7 +338,7 @@ class _Section1D(_Section):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -807,7 +807,7 @@ class GenericBeamSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -903,7 +903,7 @@ class AngleSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -1035,7 +1035,7 @@ class BoxSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -1111,7 +1111,7 @@ class CircularSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -1271,7 +1271,7 @@ class ISection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -1727,7 +1727,7 @@ class PipeSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -1807,7 +1807,7 @@ class RectangularSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -1924,7 +1924,7 @@ class TrapezoidalSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -2024,7 +2024,7 @@ class TrussSection(_Section1D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -2086,7 +2086,7 @@ class StrutSection(TrussSection):
         super(StrutSection, self).__init__(A=A, material=material, **kwargs)
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         return super().__from_data__(data, registry)
 
 
@@ -2131,7 +2131,7 @@ class TieSection(TrussSection):
         super(TieSection, self).__init__(A=A, material=material, **kwargs)
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         return super().__from_data__(data, registry)
 
 
@@ -2164,7 +2164,7 @@ class _Section2D(_Section):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -2220,7 +2220,7 @@ class ShellSection(_Section2D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         return super().__from_data__(data, registry)
 
 
@@ -2259,7 +2259,7 @@ class MembraneSection(_Section2D):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         return super().__from_data__(data, registry)
 
 
@@ -2284,7 +2284,7 @@ class _Section3D(_Section):
         return super().__data__
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         if registry is None:
             registry = Registry()
 
@@ -2329,5 +2329,5 @@ class SolidSection(_Section3D):
         return super().__data__
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
         return super().__from_data__(data, registry)
