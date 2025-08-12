@@ -15,40 +15,45 @@ class TestFEADataCopy(unittest.TestCase):
     def test_copy_guid_and_name(self):
         m1 = Model(name="orig")
         m2 = m1.copy()
+        self.assertNotEqual(m1, m2)
         self.assertNotEqual(m1._uid, m2.uid)
         self.assertNotEqual(m1.name, m2.name)
         m3 = m1.copy(duplicate=True)  # type: ignore
-        # Some implementations may not allow copying the same UID, so check only name
+        self.assertNotEqual(m1, m3)
         self.assertEqual(m1.name, m3.name)
-        # If UID is not copied, ensure it's different
-        if hasattr(m1, "uid") and hasattr(m3, "uid"):
-            self.assertNotEqual(m1._uid, m3.uid)
+        self.assertEqual(m1._uid, m3.uid)
 
-    def test_copy_preserves_type(self):
+    def test_copy_without_duplicate(self):
         m1 = Model(name="orig")
         m2 = m1.copy()  # type: ignore
         self.assertIsInstance(m2, Model)
+        self.assertNotEqual(m1, m2)
+        self.assertNotEqual(m1._uid, m2.uid)
+        self.assertNotEqual(m1.name, m2.name)
 
-    def test_copy_model(self):
+    def test_copy_with_duplicate(self):
         m1 = Model(name="orig")
-        m2 = m1.copy()
+        m2 = m1.copy(duplicate=True)  # type: ignore
         self.assertIsInstance(m2, Model)
         self.assertNotEqual(m1, m2)
+        self.assertEqual(m1._uid, m2.uid)
+        self.assertEqual(m1.name, m2.name)
+        
 
-    def test_duplicate_part(self):
+    def test_duplicate_nested_object(self):
         m = Model(name="test")
         part = m.add_part(Part(name="p1"))
-        p2 = part.copy(duplicate=True)
-        self.assertEqual(part.name, p2.name)
-        if hasattr(part, "uid") and hasattr(p2, "uid"):
-            self.assertNotEqual(part._uid, p2.uid)
+        
+        m2 = m.copy(duplicate=True)
+        self.assertEqual(m2.parts[0].name, part.name)
+        self.assertEqual(m2.parts[0].uid, part.uid)
 
-    def test_copy_part(self):
+    def test_copy_nested_object(self):
         m = Model(name="test")
         part = m.add_part(Part(name="p1"))
-        p2 = part.copy() 
-        self.assertNotEqual(part.name, p2.name)
-        self.assertNotEqual(part, p2)
+        m2 = m.copy()
+        self.assertNotEqual(m2.parts[0].name, part.name)
+        self.assertNotEqual(m2.parts[0].uid, part.uid)
 
 
 class TestModelPartCopy(unittest.TestCase):

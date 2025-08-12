@@ -151,7 +151,7 @@ class Node(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         node = cls(
             xyz=data["xyz"],
             mass=data.get("mass"),
@@ -159,7 +159,7 @@ class Node(FEAData):
         )
         node._on_boundary = data.get("on_boundary")
         node._is_reference = data.get("is_reference")
-        node._connected_elements = set(registry.add_from_data(elem_data, "compas_fea2.model.elements", set_uid=set_uid, set_name=set_name) for elem_data in data.get("connected_elements", []))  # type: ignore
+        node._connected_elements = set(registry.add_from_data(elem_data, "compas_fea2.model.elements", duplicate = duplicate) for elem_data in data.get("connected_elements", []))  # type: ignore
         return node
 
     @classmethod

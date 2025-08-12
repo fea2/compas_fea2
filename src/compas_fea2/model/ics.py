@@ -62,7 +62,7 @@ class InitialTemperature(_InitialCondition):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         T0 = data.get("T0")
         ic = cls(T0)
         return ic
@@ -116,7 +116,7 @@ class InitialStressField(_InitialCondition):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         stress = data.get("stress")
         ic = cls(stress)
         return ic

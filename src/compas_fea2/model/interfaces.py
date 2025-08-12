@@ -60,7 +60,7 @@ class _Interface(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         master = registry.add_from_data(data.get("master"), "compas_fea2.model.elements")  # type: ignore
         slave = registry.add_from_data(data.get("slave"), "compas_fea2.model.elements")  # type: ignore
         behavior = registry.add_from_data(data.get("behavior"), "compas_fea2.model.interactions")  # type: ignore
@@ -138,8 +138,8 @@ class BoundaryInterface(_Interface):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
-        master = registry.add_from_data(data.get("master"), "compas_fea2.model.elements", set_uid=set_uid, set_name=set_name) # type: ignore
-        behavior = registry.add_from_data(data.get("behavior"), "compas_fea2.model.interactions", set_uid=set_uid, set_name=set_name) # type: ignore
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+        master = registry.add_from_data(data.get("master"), "compas_fea2.model.elements", duplicate = duplicate) # type: ignore
+        behavior = registry.add_from_data(data.get("behavior"), "compas_fea2.model.interactions", duplicate = duplicate) # type: ignore
         interface = cls(master, behavior)
         return interface

@@ -47,7 +47,7 @@ class DimensionlessMeta(type):
 T = TypeVar("T", bound="FEAData")
 
 
-def from_data(method=None, *, set_uid: bool = True, set_name: bool = True, register: bool = True):
+def from_data(method=None, *, duplicate=True, register: bool = True):
     """Decorator to reduce boilerplate in __from_data__ implementations.
 
     Handles:
@@ -67,7 +67,7 @@ def from_data(method=None, *, set_uid: bool = True, set_name: bool = True, regis
 
     def decorator(func):
         @wraps(func)
-        def wrapper(cls: Type[T], data: dict, registry: Optional["Registry"] = None, set_uid=set_uid, set_name=set_name) -> T:
+        def wrapper(cls: Type[T], data: dict, registry: Optional["Registry"] = None, duplicate=duplicate) -> T:
             # Ensure registry
             if registry is None:
                 registry = Registry()
@@ -78,14 +78,13 @@ def from_data(method=None, *, set_uid: bool = True, set_name: bool = True, regis
                 if existing:
                     return existing  # type: ignore[return-value]
             # Build object with class-specific logic
-            obj: T = func(cls, data, registry)
+            obj: T = func(cls, data, registry, duplicate)
             if obj is None:
                 raise RuntimeError("__from_data__ did not return an object.")
             # Set base props
-            if set_uid:
+            if duplicate:
                 setattr(obj, "_uid", uuid.UUID(uid) if uid else None)
-            if set_name:
-                setattr(obj, "_name", data.get("name", getattr(obj, "_name", "")))
+                setattr(obj, "_name", data.get("name", None))
             # Register
             if register and uid:
                 registry.add(uid, obj)
@@ -298,15 +297,8 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         cls = type(self)
         registry = Registry()
         data = deepcopy(self.__data__)
-        set_uid: bool = False
-        set_name: bool = False
-        if not duplicate:
-            # data["uid"] = str(uuid.uuid4())  # Generate a new UID
-            # data["name"] = f"{self.name}_copy"  # Generate a new name
-            set_uid: bool = True
-            set_name: bool = True
         try:
-            obj = cls.__from_data__(data, registry, set_uid=set_uid, set_name=set_name)  # type: ignore[return-value, no-any-return]
+            obj = cls.__from_data__(data, registry, duplicate=duplicate)  # type: ignore[return-value, no-any-return]
         except Exception as e:
             raise RuntimeError(f"Failed to copy object: {e}")
         return obj
@@ -342,19 +334,12 @@ class Registry:
         """Retrieve an object from the registry by its key."""
         return self._registry.get(key)
 
-    def add_from_data(self, data, module_name, set_uid: bool, set_name: bool=True) -> Any:
+    def add_from_data(self, data, module_name, duplicate) -> Any:
         """Add an object to the registry from its data representation."""
-        # uid = data.get("uid")
-        # if uid in self._registry:
-        #     return self._registry[uid]
-
         cls = getattr(importlib.import_module(module_name), data["class"])
         if not issubclass(cls, FEAData):
             raise TypeError(f"Class {data['class']} is not a subclass of FEAData.")
-
-        # Create a new object from the data
-        obj = cls.__from_data__(data, registry=self, set_uid=set_uid, set_name=set_name)  # type: ignore[return-value, no-any-return]
-        # self._registry[uid] = obj
+        obj = cls.__from_data__(data, registry=self, duplicate=duplicate)  # type: ignore[return-value, no-any-return]
         return obj
 
     def add(self, key, obj):

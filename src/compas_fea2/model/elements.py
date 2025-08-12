@@ -161,12 +161,12 @@ class _Element(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None,duplicate = True):
         nodes = [
-            registry.add_from_data(node_data, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name)
+            registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate = duplicate)
             for node_data in data.get("nodes", [])
         ]
-        section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections", set_uid=set_uid, set_name=set_name) if data.get("section") else None
+        section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections", duplicate = duplicate) if data.get("section") else None
 
         element = cls(
             nodes=nodes,
@@ -185,7 +185,7 @@ class _Element(FEAData):
         element._volume = data.get("volume", 0.0)
         element._results_format = data.get("results_format", {})
         element._reference_point = Point.__from_data__(data["reference_point"]) if "reference_point" in data else None
-        element._shape = registry.add_from_data(data.get("shape"), "compas_fea2.model.shapes", set_uid=set_uid, set_name=set_name) if data.get("shape") else None
+        element._shape = registry.add_from_data(data.get("shape"), "compas_fea2.model.shapes", duplicate = duplicate) if data.get("shape") else None
         element._ndim = data.get("ndim", 0)
         element._length = data.get("length", 0.0)
 
@@ -432,7 +432,7 @@ class MassElement(_Element):
         return data
 
     @classmethod
-    def __from_data__(cls, data, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data,duplicate = True):
         raise NotImplementedError("MassElement does not support from_data method yet.")
         element = super().__from_data__(data)
         return element
@@ -727,7 +727,7 @@ class Edge(FEAData):
         )
 
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True) -> "Edge": 
+    def __from_data__(cls, data: dict, registry: Optional[Registry]=None,duplicate = True) -> "Edge": 
         # Create a registry if not provided
         if registry is None:
             registry = Registry()
@@ -736,7 +736,7 @@ class Edge(FEAData):
         if uid and registry.get(uid):
             return registry.get(uid) #type: ignore
         # Create a new instance
-        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name) for node_data in data.get("nodes", [])]
+        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate = duplicate) for node_data in data.get("nodes", [])]
         tag = data.get("tag", "")
         edge = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))
         # Add specific properties
@@ -851,7 +851,7 @@ class Face(FEAData):
         if uid and registry.get(uid):
             return registry.get(uid) #type: ignore
         # Create a new instance
-        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name) for node_data in data.get("nodes", [])]
+        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate = duplicate) for node_data in data.get("nodes", [])]
         tag = data.get("tag", "")
         face = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))
         # Add base properties

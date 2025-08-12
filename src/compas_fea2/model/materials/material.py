@@ -62,7 +62,7 @@ class _Material(FEAData):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
 
         if registry is None:
             registry = Registry()
@@ -218,7 +218,7 @@ class ElasticOrthotropic(_Material):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
 
         if registry is None:
             registry = Registry()
@@ -321,7 +321,7 @@ class ElasticIsotropic(_Material):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
 
         if registry is None:
             registry = Registry()
@@ -414,7 +414,7 @@ class ElasticPlastic(ElasticIsotropic):
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
 
         if registry is None:
             registry = Registry()

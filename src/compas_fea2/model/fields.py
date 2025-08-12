@@ -110,13 +110,13 @@ class BoundaryConditionsField(_ConditionsField):
     
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         """Create a BoundaryConditionsField from data."""
         distribution_data = data.get("distribution")
         condition_data = data.get("condition")
         field = cls(
-            distribution=[registry.add_from_data(n, "compas_fea2.model.nodes", set_uid=set_uid, set_name=set_name) for n in distribution_data],
-            condition=registry.add_from_data(condition_data, "compas_fea2.model.bcs", set_uid=set_uid, set_name=set_name),
+            distribution=[registry.add_from_data(n, "compas_fea2.model.nodes", duplicate = duplicate) for n in distribution_data],
+            condition=registry.add_from_data(condition_data, "compas_fea2.model.bcs", duplicate = duplicate),
         )
         return field
         

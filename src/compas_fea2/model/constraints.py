@@ -37,7 +37,7 @@ class _Constraint(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
 
 # ------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ class _MultiPointConstraint(_Constraint):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
 
 class TieMPC(_MultiPointConstraint):
@@ -134,7 +134,7 @@ class _SurfaceConstraint(_Constraint):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
 
 

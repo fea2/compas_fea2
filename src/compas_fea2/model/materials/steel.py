@@ -116,7 +116,7 @@ ep : {:.2f}
         return data
 
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, set_uid: Optional[bool]=False, set_name: Optional[bool]=True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
         from uuid import UUID
 
         if registry is None:
