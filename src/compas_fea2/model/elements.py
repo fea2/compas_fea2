@@ -24,6 +24,7 @@ from compas.itertools import pairwise
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.base import Frameable
 
 if TYPE_CHECKING:
     from compas_fea2.model.sections import SpringSection
@@ -45,7 +46,7 @@ if TYPE_CHECKING:
     from .shapes import Shape
 
 
-class _Element(FEAData):
+class _Element(FEAData, Frameable):
     """Initialises a base Element object.
 
     Parameters
@@ -60,6 +61,8 @@ class _Element(FEAData):
         Define the element as rigid (no deformations allowed) or not. Defaults to False.
     heat : bool, optional
         Define the element as a heat transfer element. Defaults to False.
+    frame : :class:`compas.geometry.Frame`, optional
+        Optional local reference frame. If not provided, the GLOBAL frame is assumed (via Frameable).
 
     Attributes
     ----------
@@ -111,15 +114,17 @@ class _Element(FEAData):
         implementation: Optional[str] = None,
         rigid: bool = False,
         heat: bool = False,
+        frame: Frame | None = None,  # new optional frame param
         **kwargs,
     ):
-        super().__init__(**kwargs)
+        FEAData.__init__(self, **kwargs)
+        Frameable.__init__(self, frame=frame)
         self._part_key: Union[int, None] = None
         self._nodes = self._check_nodes(nodes)
         self._registration = nodes[0]._registration
         self._section = section
         self._implementation = implementation
-        self._frame = None
+        # self._frame handled by Frameable
         self._on_boundary = None
         self._area = 0.0
         self._volume = 0.0
@@ -142,7 +147,7 @@ class _Element(FEAData):
                 "nodes": [node.__data__ for node in self.nodes],
                 "section": self.section.__data__ if self.section else None,
                 "implementation": self.implementation,
-                "frame": self._frame.__data__ if self._frame else None,
+                "frame": self._frame_data(),  # via Frameable
                 "on_boundary": self._on_boundary,
                 "area": self._area,
                 "volume": self._volume,
@@ -161,34 +166,40 @@ class _Element(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry] = None,duplicate = True):
-        nodes = [
-            registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate = duplicate)
-            for node_data in data.get("nodes", [])
-        ]
-        section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections", duplicate = duplicate) if data.get("section") else None
-
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
+        if registry is None:
+            registry = Registry()
+        node_list = []
+        for node_data in data.get("nodes", []):
+            node_list.append(registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate))  # type: ignore[name-defined]
+        nodes = node_list
+        section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections", duplicate) if data.get("section") else None  # type: ignore[name-defined]
+        frame_data = data.get("frame")
+        frame: Frame | None = Frame.__from_data__(frame_data) if frame_data else None  # type: ignore[assignment]
+        uid_str = data.get("uid")
+        uid_obj = UUID(uid_str) if uid_str else None
         element = cls(
             nodes=nodes,
             section=section,
             implementation=data.get("implementation"),
             rigid=data.get("rigid", False),
             heat=data.get("heat", False),
-            faces_uids=[face_data.get("uid") for face_data in data.get("faces", [])] if data.get("faces") else None, # could be extended to names as well
-            edges_uids=[edge_data.get("uid") for edge_data in data.get("edges", [])] if data.get("edges") else None, # could be extended to names as well
-            uid = UUID(uid) if uid else None,
-            name =data.get("name", "")
+            frame=frame,
+            faces_uids=[face_data.get("uid") for face_data in data.get("faces", [])] if data.get("faces") else None,  # noqa: E501
+            edges_uids=[edge_data.get("uid") for edge_data in data.get("edges", [])] if data.get("edges") else None,  # noqa: E501
+            uid=uid_obj,
+            name=data.get("name", ""),
         )
-        element._frame = Frame.__from_data__(data["frame"]) if "frame" in data else None
         element._on_boundary = data.get("on_boundary", None)
         element._area = data.get("area", 0.0)
         element._volume = data.get("volume", 0.0)
         element._results_format = data.get("results_format", {})
-        element._reference_point = Point.__from_data__(data["reference_point"]) if "reference_point" in data else None
-        element._shape = registry.add_from_data(data.get("shape"), "compas_fea2.model.shapes", duplicate = duplicate) if data.get("shape") else None
+        if rp := data.get("reference_point"):
+            element._reference_point = Point.__from_data__(rp)  # type: ignore
+        if shape_data := data.get("shape"):
+            element._shape = registry.add_from_data(shape_data, "compas_fea2.model.shapes", duplicate)  # type: ignore[name-defined]
         element._ndim = data.get("ndim", 0)
         element._length = data.get("length", 0.0)
-
         return element
 
     @property
@@ -269,13 +280,6 @@ class _Element(FEAData):
             The section object to assign to the element.
         """
         self._section = value
-
-    @property
-    def frame(self) -> Optional[Frame]:
-        """Return the frame of the element."""
-        if not isinstance(self._frame, Frame):
-            raise ValueError("Frame must be a valid Frame object")
-        return self._frame
 
     @property
     def implementation(self) -> Optional[str]:
@@ -367,10 +371,8 @@ class _Element(FEAData):
     @property
     def mass(self) -> float | None:
         """Return the mass of the element."""
-        if self.section:
-            if self.section.material:
-                if self.volume and self.section.material.density:
-                    return self.volume * self.section.material.density
+        if self.section and self.section.material and self.volume and self.section.material.density:
+            return self.volume * self.section.material.density
         return None
 
     @property
@@ -422,6 +424,28 @@ class _Element(FEAData):
         """Return the length of the element."""
         return self._length
 
+    def outermesh(self) -> Mesh:
+        # Use element's local frame (Frameable.frame). If no local frame, clone to avoid mutating GLOBAL_FRAME.
+        base_f = self.frame
+        if not self.has_local_frame:
+            from compas.geometry import Frame as _F
+            f = _F(base_f.point, base_f.xaxis, base_f.yaxis)
+        else:
+            f = base_f
+        f.point = self.nodes[0].point  # update origin to current first node
+        shape = getattr(self.section, "shape", None) if self.section else None
+        if not shape:
+            raise ValueError("Section shape is required to create the outer mesh")
+        self._shape_i = shape.oriented(f, check_planarity=False)
+        self._shape_j = self._shape_i.translated(Vector.from_start_end(self.nodes[0].point, self.nodes[-1].point), check_planarity=False)
+        p = self._shape_i.points
+        n = len(p)
+        self._outermesh = Mesh.from_vertices_and_faces(
+            self._shape_i.points + self._shape_j.points,
+            [[p.index(v1), p.index(v2), p.index(v2) + n, p.index(v1) + n] for v1, v2 in pairwise(p)] + [[n - 1, 0, n, 2 * n - 1]],
+        )
+        return self._outermesh
+
 
 class MassElement(_Element):
     """A 0D element for concentrated point mass."""
@@ -442,14 +466,13 @@ class _Element0D(_Element):
     """Element with 1 dimension."""
 
     def __init__(self, nodes: List["Node"], frame: Frame, implementation: Optional[str] = None, **kwargs):
-        super().__init__(nodes, section=None, implementation=implementation, rigid=False, heat=False, **kwargs)
-        self._frame = frame
+        super().__init__(nodes, section=None, implementation=implementation, rigid=False, heat=False, frame=frame, **kwargs)
         self._ndim = 0
 
     @property
     def __data__(self):
         data = super().__data__
-        data["frame"] = self.frame
+        # frame already included via _Element serialization
         return data
 
 
@@ -482,6 +505,14 @@ class LinkElement(_Element0D):
 
 class _Element1D(_Element):
     """Element with 1 dimension.
+    
+    Notes
+    -----
+    1D elements are used to model beams, bars, and trusses. They connect two nodes and have a section assigned.
+    The local frame is defined by the start node, the end node, and an optional orientation point. The local
+    z-axis is aligned with the element axis (from start to end node), and the local y-axis is defined by the
+    vector from the start node to the orientation point. The local x-axis is computed as the cross product of
+    the local y and z axes, ensuring a right-handed coordinate system.
 
     Parameters
     ----------
@@ -490,7 +521,7 @@ class _Element1D(_Element):
     section : :class:`compas_fea2.model._Section`
         Section Object assigned to the element.
     frame : :class:`compas.geometry.Frame` or list
-        Frame or local X axis in global coordinates. This is used to define the section orientation.
+        Point defining the
     implementation : str, optional
         The name of the backend model implementation of the element.
     rigid : bool, optional
@@ -519,18 +550,25 @@ class _Element1D(_Element):
         heat: bool = False,
         **kwargs,
     ):
-        super().__init__(nodes, section, implementation=implementation, rigid=rigid, heat=heat, **kwargs)
-        if not orientation:
-            raise ValueError("Frame is required for 1D elements")
-
+        p1 = nodes[0].point
+        p2 = nodes[1].point
+        p3 = orientation or Point(x=0, y=0, z=1)
+        # Local z axis is along the element axis (start -> end)
+        z_axis = Vector.from_start_end(p1, p2)
+        if z_axis.length == 0:
+            raise ValueError("Degenerate 1D element: start and end node coincide.")
+        z = z_axis.unitized()
+        # Candidate vector for local y direction from start node to orientation point
+        v = Vector.from_start_end(p1, p3)
+        v_perp = v - z * v.dot(z)
+        if v_perp.length < 1e-9:
+            raise ValueError("Invalid orientation: orientation point produces a vector colinear with element axis.")
+        y = v_perp.unitized()
+        # Local x completes right-handed system: x = y x z
+        x = y.cross(z).unitized()
+        frame = Frame(p1, x, y)
+        super().__init__(nodes, section, implementation=implementation, rigid=rigid, heat=heat, frame=frame, **kwargs)
         self._orientation = orientation
-        n1 = nodes[0].point
-        n2 = nodes[1].point
-        n3 = orientation or Point(x=0, y=0, z=1)  # Default orientation if not provided
-        x = Vector.from_start_end(n1, n2)
-        v = Vector.from_start_end(n1, n3)
-        y = (v - x * v.dot(x)).unitized()
-        self._frame = Frame(n1, x, y)
         self._ndim = 1
 
     @property
@@ -544,10 +582,13 @@ class _Element1D(_Element):
 
     @property
     def outermesh(self) -> Mesh:
-        self._frame.point = self.nodes[0].point
-        if not self.section or not self.section.shape:
+        # Use element's local frame (Frameable.frame) and avoid mutating global frame accidentally
+        f = self.frame
+        f.point = self.nodes[0].point  # update origin to current first node
+        shape = getattr(self.section, "shape", None) if self.section else None
+        if not shape:
             raise ValueError("Section shape is required to create the outer mesh")
-        self._shape_i = self.section.shape.oriented(self._frame, check_planarity=False)
+        self._shape_i = shape.oriented(f, check_planarity=False)
         self._shape_j = self._shape_i.translated(Vector.from_start_end(self.nodes[0].point, self.nodes[-1].point), check_planarity=False)
         p = self._shape_i.points
         n = len(p)
@@ -555,10 +596,6 @@ class _Element1D(_Element):
             self._shape_i.points + self._shape_j.points, [[p.index(v1), p.index(v2), p.index(v2) + n, p.index(v1) + n] for v1, v2 in pairwise(p)] + [[n - 1, 0, n, 2 * n - 1]]
         )
         return self._outermesh
-
-    @property
-    def frame(self) -> Frame:
-        return self._frame
 
     @property
     def shape(self) -> Optional["Shape"]:
@@ -659,6 +696,43 @@ class BeamElement(_Element1D):
     in space, torsion.
 
     """
+    @from_data
+    @classmethod
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
+        if registry is None:
+            registry = Registry()
+        nodes_data = data.get("nodes", [])
+        nodes = [registry.add_from_data(nd, 'compas_fea2.model', duplicate) for nd in nodes_data]
+        if len(nodes) != 2:
+            raise ValueError("BeamElement deserialization requires exactly 2 nodes.")
+        section_data = data.get("section")
+        if not section_data:
+            raise ValueError("BeamElement deserialization requires a section definition.")
+        section = registry.add_from_data(section_data, 'compas_fea2.model.sections', duplicate)
+        frame_data = data.get("frame")
+        orientation_data = data.get("orientation")
+        orientation = None
+        if frame_data and isinstance(frame_data, dict) and frame_data.get("yaxis"):
+            yraw = frame_data["yaxis"]
+            try:
+                if isinstance(yraw, dict):
+                    yx, yy, yz = yraw.get("x"), yraw.get("y"), yraw.get("z")
+                else:
+                    yx, yy, yz = yraw  # assume iterable of 3 floats
+                p0 = nodes[0].point
+                if None not in (yx, yy, yz):
+                    orientation = Point(p0.x + yx, p0.y + yy, p0.z + yz)
+            except Exception:
+                orientation = None
+        if orientation is None and orientation_data:
+            try:
+                orientation = Point.__from_data__(orientation_data)  # type: ignore[arg-type]
+            except Exception:
+                orientation = None
+        exclude = {"class", "name", "uid", "nodes", "section", "frame", "orientation"}
+        kwargs = {k: v for k, v in data.items() if k not in exclude}
+        element = cls(nodes=nodes, section=section, orientation=orientation, **kwargs)
+        return element
 
 
 class TrussElement(_Element1D):
@@ -725,27 +799,25 @@ class Edge(FEAData):
                 "line": self._line.__data__ if self._line else None,
             }
         )
+        return data
 
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None,duplicate = True) -> "Edge": 
-        # Create a registry if not provided
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True) -> "Edge":
         if registry is None:
             registry = Registry()
-        # check if the object already exists in the registry
         uid = data.get("uid")
         if uid and registry.get(uid):
-            return registry.get(uid) #type: ignore
-        # Create a new instance
-        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate = duplicate) for node_data in data.get("nodes", [])]
+            return registry.get(uid)  # type: ignore
+        node_list = []
+        for node_data in data.get("nodes", []):
+            node_list.append(registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate))
+        nodes = node_list
         tag = data.get("tag", "")
         edge = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))
-        # Add specific properties
-        edge._line = Line.__from_data__(data["line"]) if "line" in data else None
-        # Add the object to the registry
+        edge._line = Line.__from_data__(data["line"]) if data.get("line") else None
         if uid:
             registry.add(uid, edge)
         return edge
-
 
     @property
     def nodes(self) -> List["Node"]:
@@ -783,7 +855,8 @@ class Edge(FEAData):
 
     @property
     def line(self) -> Line | None:
-        self._line
+        return self._line
+
 
 class Face(FEAData):
     """Element representing a face.
@@ -842,23 +915,20 @@ class Face(FEAData):
         return data
 
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry]=None, set_uid=False, set_name=False) -> "Face": 
-        # Create a registry if not provided
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True) -> "Face":
         if registry is None:
             registry = Registry()
-        # check if the object already exists in the registry
         uid = data.get("uid")
         if uid and registry.get(uid):
-            return registry.get(uid) #type: ignore
-        # Create a new instance
-        nodes = [registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate = duplicate) for node_data in data.get("nodes", [])]
+            return registry.get(uid)  # type: ignore
+        node_list = []
+        for node_data in data.get("nodes", []):
+            node_list.append(registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate))
+        nodes = node_list
         tag = data.get("tag", "")
         face = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))
-        # Add base properties
         face._name = data.get("name", "")
-        # Add specific properties
-        face._plane = Plane.__from_data__(data["plane"]) if "plane" in data else None
-        # Add the object to the registry
+        face._plane = Plane.__from_data__(data["plane"]) if data.get("plane") else None
         if uid:
             registry.add(uid, face)
         return face
@@ -967,6 +1037,7 @@ class _Element2D(_Element):
             implementation=implementation,
             rigid=rigid,
             heat=heat,
+            frame=frame,
             **kwargs,
         )
 
@@ -1191,10 +1262,6 @@ class _Element3D(_Element):
         return {"s": SolidStressResult}
 
     @property
-    def frame(self) -> Frame:
-        return self._frame
-
-    @property
     def nodes(self) -> List["Node"]:
         return self._nodes
 
@@ -1287,6 +1354,16 @@ class TetrahedronElement(_Element3D):
     ----------
     nodes : List["Node"]
         The list of nodes defining the element.
+
+    Added
+    -----
+    Local frame generation for anisotropic materials:
+    - If no frame provided, a deterministic local material frame is built:
+      x = n0->n1
+      y = (n0->n2) orthogonalized to x
+      z = x x y
+    - Origin at centroid of corner nodes.
+    Pass an explicit `frame` to override.
     """
 
     def __init__(
@@ -1294,71 +1371,100 @@ class TetrahedronElement(_Element3D):
         nodes: List["Node"],
         section: "_Section3D",
         implementation: Optional[str] = None,
+        frame: Frame | None = None,
         **kwargs,
     ):
         if len(nodes) not in {4, 10}:
             raise ValueError("TetrahedronElement must have either 4 (C3D4) or 10 (C3D10) nodes.")
+        self._is_quadratic = len(nodes) == 10
+        # Forward frame (may be None) to base so user override is respected
+        super().__init__(nodes=nodes, section=section, implementation=implementation, frame=frame, **kwargs)
 
-        # self.element_type = "C3D10" if len(nodes) == 10 else "C3D4"
+        # Auto-generate material frame if none supplied (anisotropy support)
+        if not self.has_local_frame:
+            self._frame = self._compute_default_frame()
 
-        super().__init__(
-            nodes=nodes,
-            section=section,
-            implementation=implementation,
-            **kwargs,
-        )
-
-        # Define the face indices for a tetrahedron (first four corner nodes)
-        self._face_indices = {
-            "s1": (0, 1, 2),
-            "s2": (0, 1, 3),
-            "s3": (1, 2, 3),
-            "s4": (0, 2, 3),
-        }
-
+        self._face_indices = {"s1": (0, 1, 2), "s2": (0, 1, 3), "s3": (1, 2, 3), "s4": (0, 2, 3)}
         self._faces = self._construct_faces(self._face_indices)
+        self._edges_indices = {"e1": (0, 1), "e2": (1, 2), "e3": (2, 0), "e4": (0, 3), "e5": (1, 3), "e6": (2, 3)}
+        self._midside_map: Dict[Tuple[int, int], int] | None = None
+        if self._is_quadratic:
+            self._midside_map = {(0, 1): 4, (1, 2): 5, (2, 0): 6, (0, 3): 7, (1, 3): 8, (2, 3): 9}
+        self._edges = []
+        for tag, (i, j) in self._edges_indices.items():
+            edge = Edge(nodes=[self.nodes[i], self.nodes[j]], tag=tag)
+            edge.registration = self
+            self._edges.append(edge)
 
-    # BUG this is not correct!
-    # @property
-    # def edges(self):
-    #     """Yields edges as (start_node, end_node), including midside nodes if present."""
-    #     seen = set()
-    #     edges = [
-    #         (0, 1, 4),
-    #         (1, 2, 5),
-    #         (2, 0, 6),
-    #         (0, 3, 7),
-    #         (1, 3, 8),
-    #         (2, 3, 9),
-    #     ]
+    def _compute_default_frame(self) -> Frame:
+        """Build a stable local material frame for anisotropic behavior."""
+        # Use only corner nodes
+        p0, p1, p2, p3 = [n.point for n in self.nodes[:4]]
+        from compas.geometry import centroid_points as _centroid_points
+        c = Point(*_centroid_points([p0, p1, p2, p3]))
+        x = Vector.from_start_end(p0, p1)
+        v2 = Vector.from_start_end(p0, p2)
+        if x.length < 1e-12 or v2.length < 1e-12:
+            return Frame.worldXY()
+        x.unitize()
+        # Remove x component from v2
+        v2p = v2 - x * v2.dot(x)
+        if v2p.length < 1e-12:
+            # fallback: use p0->p3
+            v3 = Vector.from_start_end(p0, p3)
+            v2p = v3 - x * v3.dot(x)
+            if v2p.length < 1e-12:
+                return Frame.worldXY()
+        y = v2p.unitized()
+        # Complete right-handed
+        z = x.cross(y)
+        if z.length < 1e-14:
+            return Frame.worldXY()
+        z.unitize()
+        # Re-orthogonalize y for numerical safety
+        y = z.cross(x).unitized()
+        return Frame(c, x, y)
 
-    #     for edge in edges:
-    #         if self.element_type == "C3D10":
-    #             u, v, mid = edge
-    #             edge_pairs = [(u, mid), (mid, v)]  # Split each edge into two segments
-    #         else:
-    #             u, v = edge[:2]
-    #             edge_pairs = [(u, v)]
+    @property
+    def material_frame(self) -> Frame:
+        """Frame used for anisotropic material directions."""
+        return self.frame
 
-    #         for u, v in edge_pairs:
-    #             if (u, v) not in seen:
-    #                 seen.add((u, v))
-    #                 seen.add((v, u))
-    #                 yield u, v
+    @property
+    def is_quadratic(self) -> bool:
+        return self._is_quadratic
+
+    @property
+    def midside_nodes(self) -> Dict[str, "Node"] | None:
+        if not self._is_quadratic or not self._midside_map:
+            return None
+        mids = {}
+        for tag, pair in self._edges_indices.items():  # type: ignore[attr-defined]
+            i, j = pair
+            mid_index = self._midside_map.get((i, j)) or self._midside_map.get((j, i))
+            if mid_index is not None:
+                mids[tag] = self.nodes[mid_index]
+        return mids
+
+    @property
+    def corner_nodes(self) -> List["Node"]:
+        return self.nodes[:4]
 
     @property
     def volume(self) -> float:
-        """Calculates the volume using the first four corner nodes (C3D4 basis)."""
-
-        def determinant_3x3(m):
-            return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[1][0] * (m[0][1] * m[2][2] - m[0][2] * m[2][1]) + m[2][0] * (m[0][1] * m[1][2] - m[0][2] * m[1][1])
-
-        def subtract(a, b):
-            return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
-
-        nodes_coord = [node.xyz for node in self.nodes[:4]]  # Use only first 4 nodes
-        a, b, c, d = nodes_coord
-        return abs(determinant_3x3((subtract(a, b), subtract(b, c), subtract(c, d)))) / 6.0
+        # Volume using first four (corner) nodes: V = | (AB . (AC x AD)) | / 6
+        a, b, c, d = [n.xyz for n in self.corner_nodes]
+        def vec(p, q):
+            return (q[0] - p[0], q[1] - p[1], q[2] - p[2])
+        AB = vec(a, b)
+        AC = vec(a, c)
+        AD = vec(a, d)
+        # Cross AC x AD
+        cx = AC[1] * AD[2] - AC[2] * AD[1]
+        cy = AC[2] * AD[0] - AC[0] * AD[2]
+        cz = AC[0] * AD[1] - AC[1] * AD[0]
+        triple = AB[0] * cx + AB[1] * cy + AB[2] * cz
+        return abs(triple) / 6.0
 
 
 class PentahedronElement(_Element3D):

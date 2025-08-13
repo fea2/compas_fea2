@@ -409,14 +409,8 @@ class Frameable:
         return True
 
     def direction_cosines(self) -> tuple[Vector, Vector, Vector]:
-        """Return local axes expressed as global vectors (x,y,z)."""
-        from compas.geometry import Transformation, Vector  # local import
-        import compas_fea2  # type: ignore
-        T = Transformation.from_frame_to_frame(self.frame, compas_fea2.GLOBAL_FRAME)
-        x = Vector(*[T.matrix[i][0] for i in range(3)])
-        y = Vector(*[T.matrix[i][1] for i in range(3)])
-        z = Vector(*[T.matrix[i][2] for i in range(3)])
-        return x, y, z
+        """Return local axes expressed as global vectors (x, y, z)."""
+        return self.frame.xaxis, self.frame.yaxis, self.frame.zaxis
 
     # --- transformations ----------------------------------------------------
     def _T_local_to_global(self) -> Transformation:
