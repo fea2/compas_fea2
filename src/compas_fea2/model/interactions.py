@@ -347,7 +347,7 @@ class ThermalInteraction(_Interaction):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         temperature = data.get("temperature")
         interaction = cls(temperature)
         return interaction
@@ -402,10 +402,10 @@ class Convection(ThermalInteraction):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         temperature = data.get("temperature")
         h = data.get("h")
-        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups", duplicate = duplicate)  # type: ignore[no-any-return]
+        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups", duplicate=duplicate)  # type: ignore[no-any-return]
         interaction = cls(surface, h, temperature)
         return interaction
 
@@ -459,10 +459,10 @@ class Radiation(ThermalInteraction):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         temperature = data.get("temperature")
         eps = data.get("eps")
-        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups", duplicate = duplicate)  # type: ignore[no-any-return]
+        surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups", duplicate=duplicate)  # type: ignore[no-any-return]
         interaction = cls(surface, eps, temperature)
         return interaction
 

@@ -145,8 +145,8 @@ class HeatTransferStep(_Step):
 
         if not isinstance(field, _LoadField):
             raise TypeError("{!r} is not a LoadPattern.".format(field))
-        
-        if not(isinstance(field, (TemperatureField))):
+
+        if not (isinstance(field, (TemperatureField))):
             raise ValueError("A non-thermal load can not be implemented in a heat analysis step.")
 
         self._load_fields.add(field)

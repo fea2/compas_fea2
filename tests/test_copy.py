@@ -11,7 +11,6 @@ from compas_fea2.model.sections import GenericBeamSection  # type: ignore
 
 
 class TestFEADataCopy(unittest.TestCase):
-    
     def test_copy_guid_and_name(self):
         m1 = Model(name="orig")
         m2 = m1.copy()
@@ -38,12 +37,11 @@ class TestFEADataCopy(unittest.TestCase):
         self.assertNotEqual(m1, m2)
         self.assertEqual(m1._uid, m2.uid)
         self.assertEqual(m1.name, m2.name)
-        
 
     def test_duplicate_nested_object(self):
         m = Model(name="test")
         part = m.add_part(Part(name="p1"))
-        
+
         m2 = m.copy(duplicate=True)
         self.assertEqual(m2.parts[0].name, part.name)
         self.assertEqual(m2.parts[0].uid, part.uid)

@@ -93,17 +93,19 @@ class _BeamEndRelease(FEAData):
     @property
     def __data__(self):
         data = super().__data__
-        data.update( {
-            "class": self.__class__.__name__,
-            "element": self._element,
-            "location": self._location,
-            "n": self.n,
-            "v1": self.v1,
-            "v2": self.v2,
-            "m1": self.m1,
-            "m2": self.m2,
-            "t": self.t,
-        })
+        data.update(
+            {
+                "class": self.__class__.__name__,
+                "element": self._element,
+                "location": self._location,
+                "n": self.n,
+                "v1": self.v1,
+                "v2": self.v2,
+                "m1": self.m1,
+                "m2": self.m2,
+                "t": self.t,
+            }
+        )
         return data
 
     @classmethod

@@ -149,41 +149,43 @@ class _Part(FEAData):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "ndm": self._ndm,
-            "ndf": self._ndf,
-            "nodes": self._nodes.__data__,
-            "elements": self._elements.__data__,
-            "groups": [group.__data__ for group in self._groups],
-            "boundary_mesh": self._boundary_mesh.__data__ if self._boundary_mesh else None,
-            "discretized_boundary_mesh": self._discretized_boundary_mesh.__data__ if self._discretized_boundary_mesh else None,
-            "reference_node": self._reference_node.__data__ if self._reference_node else None,
-        })
+        data.update(
+            {
+                "ndm": self._ndm,
+                "ndf": self._ndf,
+                "nodes": self._nodes.__data__,
+                "elements": self._elements.__data__,
+                "groups": [group.__data__ for group in self._groups],
+                "boundary_mesh": self._boundary_mesh.__data__ if self._boundary_mesh else None,
+                "discretized_boundary_mesh": self._discretized_boundary_mesh.__data__ if self._discretized_boundary_mesh else None,
+                "reference_node": self._reference_node.__data__ if self._reference_node else None,
+            }
+        )
         return data
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate = True) -> "_Part":
+    def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate=True) -> "_Part":
         if not registry:
             raise ValueError("A registry is required to create a Part from data.")
         part = cls()
         part._ndm = data.get("ndm")
         part._ndf = data.get("ndf")
-        
-        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry) # type: ignore
-        part.add_nodes(nodes) 
-        part._nodes._uid = data.get("nodes", {}).get("uid", None) # change the uid of the nodes group
-        
+
+        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry)  # type: ignore
+        part.add_nodes(nodes)
+        part._nodes._uid = data.get("nodes", {}).get("uid", None)  # change the uid of the nodes group
+
         elements = ElementsGroup.__from_data__(data["elements"], registry=registry)  # type: ignore
         part.add_elements(elements)  # type: ignore
-        part._elements._uid = data.get("elements", {}).get("uid", None) # change the uid of the nodes group
+        part._elements._uid = data.get("elements", {}).get("uid", None)  # change the uid of the nodes group
 
-        part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups", duplicate = duplicate) for group in data.get("groups", [])])
-        
+        part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups", duplicate=duplicate) for group in data.get("groups", [])])
+
         part._boundary_mesh = Mesh.__from_data__(data["boundary_mesh"]) if data.get("boundary_mesh") else None
         part._discretized_boundary_mesh = Mesh.__from_data__(data["discretized_boundary_mesh"]) if data.get("discretized_boundary_mesh") else None
-        
-        part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes", duplicate = duplicate) if data.get("reference_node") else None
+
+        part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes", duplicate=duplicate) if data.get("reference_node") else None
 
         return part
 
@@ -564,7 +566,7 @@ class _Part(FEAData):
     def graph(self):
         """The directed graph of the part."""
         return self._graph
-    
+
     @property
     def nodes(self) -> NodesGroup:
         """The nodes of the part."""
@@ -866,11 +868,10 @@ class _Part(FEAData):
             raise ValueError(f"Invalid dimension {dimension}. Valid dimensions are {list(dimenstion_map.keys())}.")
         return self.elements.subgroup(condition=lambda x: isinstance(x, dimenstion_map[dimension])).elements
 
-
     # =========================================================================
     #                           Materials methods
     # =========================================================================
-       
+
     def find_materials_by_name(self, name: str) -> Set[_Material]:
         """Find all materials with a given name.
 
@@ -883,7 +884,7 @@ class _Part(FEAData):
         List[_Material]
         """
         return self.materials.subgroup(condition=lambda x: x.name == name).materials
-    
+
     def find_material_by_name(self, name: str) -> Optional[_Material]:
         """Find a material with a given name.
 
@@ -903,7 +904,6 @@ class _Part(FEAData):
             return None
         if len(subset) > 1:
             raise ValueError(f"Multiple materials found with name '{name}' in part '{self.name}'. Please use find_materials_by_name to retrieve all matching materials.")
-        
 
     def find_material_by_uid(self, uid: str) -> Optional[_Material]:
         """Find a material with a given unique identifier.
@@ -934,7 +934,6 @@ class _Part(FEAData):
         """
         return material in self.materials
 
-
     # =========================================================================
     #                        Sections methods
     # =========================================================================
@@ -951,7 +950,7 @@ class _Part(FEAData):
         List[_Section]
         """
         return self.sections.subgroup(condition=lambda x: x.name == name).sections
-    
+
     def find_section_by_name(self, name: str) -> Optional[_Section]:
         """Find a section with a given name.
 
@@ -1653,7 +1652,7 @@ class _Part(FEAData):
 
         """
         group.registration = self
-        
+
         self._groups.add(group)
         return group
 
@@ -1807,7 +1806,6 @@ class Part(_Part):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
     # =========================================================================
     #                       Constructor methods
     # =========================================================================
@@ -1944,7 +1942,6 @@ class RigidPart(_Part):
     def __init__(self, reference_node: Optional[Node] = None, **kwargs):
         super().__init__(**kwargs)
         self._reference_node = reference_node
-
 
     @classmethod
     def from_gmsh(cls, gmshModel: object, name: Optional[str] = None, **kwargs) -> "_Part":

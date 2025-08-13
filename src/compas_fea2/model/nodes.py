@@ -141,7 +141,7 @@ class Node(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         node = cls(
             xyz=data["xyz"],
             mass=data.get("mass"),
@@ -149,7 +149,7 @@ class Node(FEAData):
         )
         node._on_boundary = data.get("on_boundary")
         node._is_reference = data.get("is_reference")
-        node._connected_elements = set(registry.add_from_data(elem_data, "compas_fea2.model.elements", duplicate = duplicate) for elem_data in data.get("connected_elements", []))  # type: ignore
+        node._connected_elements = set(registry.add_from_data(elem_data, "compas_fea2.model.elements", duplicate=duplicate) for elem_data in data.get("connected_elements", []))  # type: ignore
         return node
 
     @classmethod
@@ -260,7 +260,7 @@ class Node(FEAData):
     # @property
     # def dof(self) -> Dict[str, bool]:
     #     """Dictionary with the active degrees of freedom."""
-        
+
     #     bcs
     #     gen_bc = GeneralBC()
     #     for bc in self._bcs:
@@ -276,7 +276,7 @@ class Node(FEAData):
     #             if self in bc_field.distribution:
     #                 bc_fields.append(bc_field)
     #         return bc_fields
-    
+
     # @property
     # def bcs(self) -> List["_BoundaryCondition"]:
     #     """List of boundary conditions applied to the node."""
@@ -284,7 +284,6 @@ class Node(FEAData):
     #     if self.bc_fields:
     #         for bc_field in self.bc_fields:
     #             bcs.append(bc_field.condition)
-                
 
     @property
     def on_boundary(self) -> Optional[bool]:
@@ -328,7 +327,6 @@ class Node(FEAData):
         node = self.copy()
         node.transform(transformation)
         return node
-
 
     # # ==============================================================================
     # # Results

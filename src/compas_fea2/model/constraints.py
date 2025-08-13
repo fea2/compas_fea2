@@ -8,6 +8,7 @@ from compas_fea2.base import from_data
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model
 
+
 class _Constraint(FEAData):
     """Base class for constraints.
 
@@ -35,8 +36,9 @@ class _Constraint(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
+
 
 # ------------------------------------------------------------------------------
 # MPC
@@ -81,16 +83,19 @@ class _MultiPointConstraint(_Constraint):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "constraint_type": self.constraint_type,
-            # Add other attributes as needed
-        })
+        data.update(
+            {
+                "constraint_type": self.constraint_type,
+                # Add other attributes as needed
+            }
+        )
         return data
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
+
 
 class TieMPC(_MultiPointConstraint):
     """Tie MPC that constraints axial translations."""
@@ -132,7 +137,7 @@ class _SurfaceConstraint(_Constraint):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
 
 

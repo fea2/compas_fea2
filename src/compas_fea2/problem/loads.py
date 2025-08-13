@@ -175,4 +175,4 @@ class VectorLoad(_Load):
     @components.setter
     def components(self, value):
         for k, v in value:
-            setattr(self, k, v)    
+            setattr(self, k, v)

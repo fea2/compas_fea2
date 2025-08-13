@@ -64,9 +64,9 @@ class Shape(Polygon, FEAData):
     @property
     def __data__(self) -> dict:
         data = super().__data__
-        data.update( 
+        data.update(
             {
-                "points": [point.__data__ for point in self.points], # type: ignore
+                "points": [point.__data__ for point in self.points],  # type: ignore
                 "frame": self.frame.__data__ if self.frame else None,
             }
         )
@@ -75,11 +75,10 @@ class Shape(Polygon, FEAData):
     @from_data
     @classmethod
     def __from_data__(cls, data: dict, registry: Optional[Registry] = None, set_uid: Optional[bool] = False, set_name: Optional[bool] = True) -> "Shape":
-
         points = [Point.__from_data__(pt) for pt in data["points"]]
         frame_data = data.get("frame")
         frame = Frame.__from_data__(frame_data) if isinstance(frame_data, dict) else None
-        shape = cls(points, frame) # type: ignore
+        shape = cls(points, frame)  # type: ignore
         return shape
 
     # --------------------------------------------------------------------------

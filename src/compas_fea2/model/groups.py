@@ -111,9 +111,9 @@ class _Group(FEAData, Generic[_MemberType]):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional["Registry"] = None,duplicate = True) -> Union["_Group[Any]", "NodesGroup", "ElementsGroup", "EdgesGroup", "FacesGroup"]:
+    def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate=True) -> Union["_Group[Any]", "NodesGroup", "ElementsGroup", "EdgesGroup", "FacesGroup"]:
         member_class_name = data.get("member_class")
-        members = [registry.add_from_data(member, "compas_fea2.model", duplicate = duplicate) for member in data["members"]]  # type: ignore
+        members = [registry.add_from_data(member, "compas_fea2.model", duplicate=duplicate) for member in data["members"]]  # type: ignore
         if "member_class" in cls.__dict__:
             member_class = import_module("compas_fea2.model").__dict__.get(member_class_name) if member_class_name else None
             group = cls(member_class=member_class, members=members)  # type: ignore
@@ -147,7 +147,7 @@ class _Group(FEAData, Generic[_MemberType]):
         if not isinstance(other, type(self)):
             raise TypeError("Can only subtract same group types from each other.")
         return self.__class__(members=self._members - other._members)  # type: ignore
-    
+
     def __getitem__(self, key: int) -> _MemberType:
         """
         Get a member by index.
@@ -692,11 +692,12 @@ class ReleasesGroup(_Group["_BeamEndRelease"]):
     @property
     def releases(self) -> Set["_BeamEndRelease"]:
         return self._members
-    
+
 
 class FieldsGroup(_Group["_ConditionsField"]):
     def __init__(self, members: Iterable["_ConditionsField"], **kwargs) -> None:
         from compas_fea2.model.fields import _ConditionsField
+
         super().__init__(members=members, member_class=_ConditionsField, **kwargs)
 
     @property

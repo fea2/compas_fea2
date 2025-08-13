@@ -132,5 +132,6 @@ class TestTetrahedronElement(unittest.TestCase):
         # Default global frame used
         self.assertEqual(element.frame, GLOBAL_FRAME)
 
+
 if __name__ == "__main__":
     unittest.main()

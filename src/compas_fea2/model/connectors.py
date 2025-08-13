@@ -50,7 +50,7 @@ class _Connector(FEAData):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data: dict, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate=True):
         # Create a new instance
         nodes_data = data.get("nodes", [])
         nodes = []
@@ -59,7 +59,7 @@ class _Connector(FEAData):
             if not node_uid:
                 raise ValueError("Node data must contain a 'uid' field.")
             if node_uid not in registry:
-                node = registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate = duplicate)  # type: ignore[no-any-return]
+                node = registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate=duplicate)  # type: ignore[no-any-return]
             else:
                 node = registry.get(node_uid)  # type: ignore[no-any-return]
             nodes.append(node)
@@ -128,7 +128,7 @@ class LinearConnector(_Connector):
     @classmethod
     def __from_data__(cls, data):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
-    
+
     @property
     def nodes(self) -> List["Node"]:
         return self._nodes
@@ -266,7 +266,7 @@ class ZeroLengthConnector(_Connector):
     @classmethod
     def __from_data__(cls, data):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
-    
+
     @property
     def direction(self):
         return self._direction

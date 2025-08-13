@@ -41,7 +41,7 @@ class TestBCFields(unittest.TestCase):
         self.assertFalse(bcf.condition.yy)
         self.assertFalse(bcf.condition.zz)
 
-    #TODO  complete
+    # TODO  complete
     def test_node_removal(self):
         node1 = Node(xyz=[0, 0, 0])
         node2 = Node(xyz=[1, 0, 0])

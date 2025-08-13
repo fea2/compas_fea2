@@ -63,11 +63,11 @@ class InitialTemperature(_InitialCondition):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         T0 = data.get("T0")
         ic = cls(T0)
         return ic
-        
+
     @classmethod
     def from_file(cls, path, **kwargs):
         return NotImplementedError("InitialTemperatureField is not implemented for the current backend. ")
@@ -97,7 +97,6 @@ class InitialStressField(_InitialCondition):
         raise NotImplementedError("InitialStressField is not implemented for the current backend. ")
         super().__init__(**kwargs)
         self._s = stress
-        
 
     @property
     def stress(self):
@@ -117,7 +116,7 @@ class InitialStressField(_InitialCondition):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         stress = data.get("stress")
         ic = cls(stress)
         return ic

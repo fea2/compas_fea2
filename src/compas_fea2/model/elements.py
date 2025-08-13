@@ -130,7 +130,7 @@ class _Element(FEAData, Frameable):
         self._results_format = {}
         self._rigid = rigid
         self._heat = heat
-        self._reference_point = None # TODO: should be Node or Point?
+        self._reference_point = None  # TODO: should be Node or Point?
         self._shape = None
         self._ndim = 0
         self._faces = []
@@ -142,7 +142,8 @@ class _Element(FEAData, Frameable):
     def __data__(self):
         """Return a dictionary representation of the element's data."""
         data = super().__data__
-        data.update({
+        data.update(
+            {
                 "nodes": [node.__data__ for node in self.nodes],
                 "section": self.section.__data__ if self.section else None,
                 "implementation": self.implementation,
@@ -159,8 +160,9 @@ class _Element(FEAData, Frameable):
                 "faces": [face.__data__ for face in self._faces],
                 "edges": [edge.__data__ for edge in self._edges],
                 "face_indices": {face.__data__: indices for face, indices in self._face_indices.items()},
-            "length": self._length
-        })
+                "length": self._length,
+            }
+        )
         return data
 
     @from_data
@@ -214,7 +216,6 @@ class _Element(FEAData, Frameable):
                 raise ValueError("All nodes of the elements must be registered to the same part")
             node.registration = value  # type: ignore
         self._registration = value
-
 
     @property
     def part(self) -> "_Part | None":
@@ -428,6 +429,7 @@ class _Element(FEAData, Frameable):
         base_f = self.frame
         if not self.has_local_frame:
             from compas.geometry import Frame as _F
+
             f = _F(base_f.point, base_f.xaxis, base_f.yaxis)
         else:
             f = base_f
@@ -455,7 +457,7 @@ class MassElement(_Element):
         return data
 
     @classmethod
-    def __from_data__(cls, data,duplicate = True):
+    def __from_data__(cls, data, duplicate=True):
         raise NotImplementedError("MassElement does not support from_data method yet.")
         element = super().__from_data__(data)
         return element
@@ -504,7 +506,7 @@ class LinkElement(_Element0D):
 
 class _Element1D(_Element):
     """Element with 1 dimension.
-    
+
     Notes
     -----
     1D elements are used to model beams, bars, and trusses. They connect two nodes and have a section assigned.
@@ -695,19 +697,20 @@ class BeamElement(_Element1D):
     in space, torsion.
 
     """
+
     @from_data
     @classmethod
     def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
         nodes_data = data.get("nodes", [])
-        nodes = [registry.add_from_data(nd, 'compas_fea2.model', duplicate) for nd in nodes_data]
+        nodes = [registry.add_from_data(nd, "compas_fea2.model", duplicate) for nd in nodes_data]
         if len(nodes) != 2:
             raise ValueError("BeamElement deserialization requires exactly 2 nodes.")
         section_data = data.get("section")
         if not section_data:
             raise ValueError("BeamElement deserialization requires a section definition.")
-        section = registry.add_from_data(section_data, 'compas_fea2.model.sections', duplicate)
+        section = registry.add_from_data(section_data, "compas_fea2.model.sections", duplicate)
         frame_data = data.get("frame")
         orientation_data = data.get("orientation")
         orientation = None
@@ -782,6 +785,7 @@ class Edge(FEAData):
     line : :class:`compas.geometry.Line`
         The line of the edge.
     """
+
     def __init__(self, nodes: List["Node"], tag: str, **kwargs):
         super().__init__(**kwargs)
         self._nodes = nodes
@@ -905,12 +909,14 @@ class Face(FEAData):
     @property
     def __data__(self):
         data = super().__data__
-        data.update( {
+        data.update(
+            {
                 "nodes": [node.__data__ for node in self.nodes],
                 "tag": self.tag,
                 "element": self.element.__data__ if self.element else None,
                 "plane": self.plane.__data__ if self.plane else None,
-        })
+            }
+        )
         return data
 
     @classmethod
@@ -1371,6 +1377,7 @@ class TetrahedronElement(_Element3D):
     similar to *ORIENTATION in Abaqus / CalculiX by providing a primary and an
     optional secondary direction.
     """
+
     def __init__(
         self,
         nodes: List["Node"],
@@ -1404,6 +1411,7 @@ class TetrahedronElement(_Element3D):
         """Build a stable local material frame for anisotropic behavior."""
         p0, p1, p2, p3 = [n.point for n in self.nodes[:4]]
         from compas.geometry import centroid_points as _centroid_points
+
         c = Point(*_centroid_points([p0, p1, p2, p3]))
         x = Vector.from_start_end(p0, p1)
         v2 = Vector.from_start_end(p0, p2)
@@ -1464,8 +1472,10 @@ class TetrahedronElement(_Element3D):
     def volume(self) -> float:
         """Calculate the volume of the tetrahedron element."""
         a, b, c, d = [n.xyz for n in self.corner_nodes]
+
         def vec(p, q):
             return (q[0] - p[0], q[1] - p[1], q[2] - p[2])
+
         AB = vec(a, b)
         AC = vec(a, c)
         AD = vec(a, d)
@@ -1501,10 +1511,12 @@ class TetrahedronElement(_Element3D):
         Frame
             The resulting local material frame.
         """
+
         def _as_vector(v) -> Vector:
             if isinstance(v, Vector):
                 return v.copy()
             return Vector(*v)  # type: ignore[arg-type]
+
         try:
             p = _as_vector(primary)
         except Exception:
@@ -1525,7 +1537,7 @@ class TetrahedronElement(_Element3D):
             s = Vector(0, 1, 0)
         s_ortho = s - p * s.dot(p)
         if s_ortho.length < 1e-10:
-            for alt in (Vector(1,0,0), Vector(0,1,0), Vector(0,0,1)):
+            for alt in (Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1)):
                 if abs(alt.dot(p)) < 0.95:
                     s_ortho = alt - p * alt.dot(p)
                     if s_ortho.length > 1e-10:
@@ -1562,12 +1574,11 @@ class TetrahedronElement(_Element3D):
             p_i = self.nodes[i].point
             p_j = self.nodes[j].point
             p_m = self.nodes[mid_idx].point
-            midpoint = Point((p_i.x + p_j.x)/2.0, (p_i.y + p_j.y)/2.0, (p_i.z + p_j.z)/2.0)
+            midpoint = Point((p_i.x + p_j.x) / 2.0, (p_i.y + p_j.y) / 2.0, (p_i.z + p_j.z) / 2.0)
             edge_len = Vector.from_start_end(p_i, p_j).length
             dev = Vector.from_start_end(midpoint, p_m).length
             if edge_len > 0 and dev / edge_len > tol:
-                raise ValueError(
-                    f"Midside node {mid_idx} not at midpoint of edge ({i},{j}); rel dev={dev/edge_len:.2e} > tol={tol:.1e}")
+                raise ValueError(f"Midside node {mid_idx} not at midpoint of edge ({i},{j}); rel dev={dev / edge_len:.2e} > tol={tol:.1e}")
 
 
 class HexahedronElement(_Element3D):

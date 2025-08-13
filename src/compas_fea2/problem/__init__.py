@@ -1,9 +1,6 @@
 from .problem import Problem
 from .displacements import GeneralDisplacement
-from .loads import (
-    VectorLoad,
-    ScalarLoad
-)
+from .loads import VectorLoad, ScalarLoad
 
 from .fields import (
     _LoadField,

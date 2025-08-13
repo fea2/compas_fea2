@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from compas_fea2.model.ics import _InitialCondition
     from compas_fea2.model.model import Model
 
+
 class _ConditionsField(FEAData):
     """A Field is the spatial distribution of a specific set of conditions (initial or boundary conditions).
 
@@ -47,12 +48,12 @@ class _ConditionsField(FEAData):
     ):
         super().__init__(**kwargs)
         if not isinstance(distribution, NodesGroup):
-                self._distribution = NodesGroup(distribution)
+            self._distribution = NodesGroup(distribution)
         else:
             self._distribution = distribution
         self._condition = condition
         self._check_registration()
-        
+
     def _check_registration(self):
         registrations = set([n.registration for n in self._distribution])
         if len(registrations) != 1:
@@ -67,12 +68,11 @@ class _ConditionsField(FEAData):
     @property
     def distribution(self) -> "NodesGroup":
         return self._distribution
-    
+
     @property
     def node_condition(self):
         """Return a list of tuples with the nodes and their assigned condition."""
         return zip(self.distribution, [self.condition] * len(self.distribution))
-    
 
     @property
     def model(self) -> "Model":
@@ -93,7 +93,7 @@ class BoundaryConditionsField(_ConditionsField):
 
     def __init__(self, distribution: "NodesGroup" | Iterable["Node"] | Node, condition: "_BoundaryCondition", **kwargs):
         super().__init__(distribution, condition, **kwargs)
-    
+
     @property
     def __data__(self):
         super_data = super().__data__
@@ -103,26 +103,25 @@ class BoundaryConditionsField(_ConditionsField):
         }
         data.update(super_data)
         return data
-    
+
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         """Create a BoundaryConditionsField from data."""
         distribution_data = data.get("distribution")
         condition_data = data.get("condition")
         field = cls(
-            distribution=[registry.add_from_data(n, "compas_fea2.model.nodes", duplicate = duplicate) for n in distribution_data],
-            condition=registry.add_from_data(condition_data, "compas_fea2.model.bcs", duplicate = duplicate),
+            distribution=[registry.add_from_data(n, "compas_fea2.model.nodes", duplicate=duplicate) for n in distribution_data],
+            condition=registry.add_from_data(condition_data, "compas_fea2.model.bcs", duplicate=duplicate),
         )
         return field
-        
+
     @property
     def bc(self) -> "_BoundaryCondition":
         """Return the boundary condition assigned to the field."""
         if isinstance(self.condition, _BoundaryCondition):
             return self.condition
         raise ValueError("Condition is not a _BoundaryCondition.")
-
 
     @property
     def node_bc(self):
@@ -135,6 +134,7 @@ class _InitialConditionField(_ConditionsField):
 
     def __init__(self, distribution, conditions, **kwargs):
         super().__init__(distribution=distribution, condition=conditions, **kwargs)
+
 
 class InitialTemperatureField(_InitialConditionField):
     """Field class for fields implementing mechanical boundary conditions.

@@ -277,7 +277,7 @@ class PrescribedTemperatureField(_PrescribedField):
 
 
 class TemperatureField(NodeLoadField):
-    """ A distribution of a set of temperature over a set of nodes.
+    """A distribution of a set of temperature over a set of nodes.
 
     Parameters
     ----------
@@ -290,8 +290,8 @@ class TemperatureField(NodeLoadField):
 
 
     """
+
     def __init__(self, temperature: float, nodes: Iterable["Node"], **kwargs):
         nodes = list(nodes) if not isinstance(nodes, list) else nodes
         loads = temperature if isinstance(temperature, Iterable) else [temperature] * len(nodes)
         super().__init__(loads=loads, nodes=nodes, **kwargs)
-

@@ -53,10 +53,12 @@ class _Material(FEAData):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "density": self.density,
-            "expansion": self.expansion,
-        })
+        data.update(
+            {
+                "density": self.density,
+                "expansion": self.expansion,
+            }
+        )
         return data
 
     @from_data
@@ -203,10 +205,17 @@ class ElasticOrthotropic(_Material):
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
         material = cls(
-            Ex=data.get("Ex"), Ey=data.get("Ey"), Ez=data.get("Ez"),
-            vxy=data.get("vxy"), vyz=data.get("vyz"), vzx=data.get("vzx"),
-            Gxy=data.get("Gxy"), Gyz=data.get("Gyz"), Gzx=data.get("Gzx"),
-            density=data.get("density", 0.0), expansion=data.get("expansion", None),
+            Ex=data.get("Ex"),
+            Ey=data.get("Ey"),
+            Ez=data.get("Ez"),
+            vxy=data.get("vxy"),
+            vyz=data.get("vyz"),
+            vzx=data.get("vzx"),
+            Gxy=data.get("Gxy"),
+            Gyz=data.get("Gyz"),
+            Gzx=data.get("Gzx"),
+            density=data.get("density", 0.0),
+            expansion=data.get("expansion", None),
         )
         return material
 
@@ -289,8 +298,6 @@ class ElasticIsotropic(_Material):
         material = cls(E=data.get("E"), v=data.get("v"), density=data.get("density", 0.0), expansion=data.get("expansion", None))
         return material
 
-    
-    
     def __str__(self) -> str:
         return """
 ElasticIsotropic Material
@@ -354,18 +361,17 @@ class ElasticPlastic(ElasticIsotropic):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "strain_stress": self.strain_stress,
-        })
+        data.update(
+            {
+                "strain_stress": self.strain_stress,
+            }
+        )
         return data
 
     @from_data
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
-        material = cls(
-            E=data.get("E"), v=data.get("v"), density=data.get("density", 0.0),
-            strain_stress=data.get("strain_stress"), expansion=data.get("expansion", None)
-        )
+        material = cls(E=data.get("E"), v=data.get("v"), density=data.get("density", 0.0), strain_stress=data.get("strain_stress"), expansion=data.get("expansion", None))
         return material
 
     def __str__(self) -> str:
@@ -445,10 +451,7 @@ class ThermalElasticIsotropic(ElasticIsotropic):
     @from_data
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
-        material = cls(
-            k=data.get("k"), c=data.get("c"), E=data.get("E"), v=data.get("v"),
-            density=data.get("density", 0.0), expansion=data.get("expansion", None)
-        )
+        material = cls(k=data.get("k"), c=data.get("c"), E=data.get("E"), v=data.get("v"), density=data.get("density", 0.0), expansion=data.get("expansion", None))
         return material
 
     def __str__(self) -> str:
