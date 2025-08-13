@@ -1,7 +1,8 @@
 import os
 from collections import defaultdict
 from dotenv import load_dotenv
-from compas.tolerance import Tolerance  # noqa: F401
+from compas.tolerance import Tolerance
+from compas.geometry import Frame
 
 
 __author__ = ["Francesco Ranaudo"]
@@ -98,6 +99,7 @@ if not load_dotenv():
 VERBOSE = os.getenv("VERBOSE").lower() == "true"
 POINT_OVERLAP = os.getenv("POINT_OVERLAP").lower() == "true"
 GLOBAL_TOLERANCE = float(os.getenv("GLOBAL_TOLERANCE"))
+GLOBAL_FRAME = Frame.worldXY()
 PRECISION = int(os.getenv("PRECISION"))
 BACKEND = None
 BACKENDS = defaultdict(dict)

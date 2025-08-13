@@ -15,6 +15,7 @@ from typing import Union
 
 import compas
 from compas.data import Data
+from compas.geometry import Frame, Transformation, Point, Vector
 
 import compas_fea2
 
@@ -353,3 +354,94 @@ class Registry:
     def clear(self):
         """Clear the registry."""
         self._registry.clear()
+
+
+### -------------------------------------------------------------------
+# Mixins
+### -------------------------------------------------------------------
+
+
+class Frameable:
+    """Opt-in mixin giving an object an optional local reference frame.
+
+    If no local frame is set, GLOBAL_FRAME is used transparently.
+
+    Provides helpers to convert points/vectors between global and local,
+    plus geometric utilities (axis alignment and direction cosines).
+    """
+
+    __slots__ = ("_frame",)
+
+    def __init__(self, frame: Frame | None = None):
+        self._frame: Frame | None = frame
+
+    @property
+    def frame(self) -> Frame:
+        # Local import to avoid circular import at module load.
+        import compas_fea2  # type: ignore
+        return self._frame or compas_fea2.GLOBAL_FRAME
+
+    @frame.setter
+    def frame(self, value: Frame | None):
+        self._frame = value
+
+    @property
+    def has_local_frame(self) -> bool:
+        return self._frame is not None
+
+    def clear_frame(self):
+        self._frame = None
+
+    # --- geometric helpers -------------------------------------------------
+    def is_axis_aligned(self, tol: float = 1e-9) -> bool:
+        """Return True if local frame coincides with GLOBAL frame within tolerance."""
+        if not self.has_local_frame:
+            return True
+        from compas.geometry import Transformation  # local import
+        import compas_fea2  # type: ignore
+        T = Transformation.from_frame_to_frame(self.frame, compas_fea2.GLOBAL_FRAME)
+        # Extract rotation part and compare to identity.
+        for i in range(3):
+            for j in range(3):
+                target = 1.0 if i == j else 0.0
+                if abs(T.matrix[i][j] - target) > tol:
+                    return False
+        return True
+
+    def direction_cosines(self) -> tuple[Vector, Vector, Vector]:
+        """Return local axes expressed as global vectors (x,y,z)."""
+        from compas.geometry import Transformation, Vector  # local import
+        import compas_fea2  # type: ignore
+        T = Transformation.from_frame_to_frame(self.frame, compas_fea2.GLOBAL_FRAME)
+        x = Vector(*[T.matrix[i][0] for i in range(3)])
+        y = Vector(*[T.matrix[i][1] for i in range(3)])
+        z = Vector(*[T.matrix[i][2] for i in range(3)])
+        return x, y, z
+
+    # --- transformations ----------------------------------------------------
+    def _T_local_to_global(self) -> Transformation:
+        import compas_fea2  # type: ignore
+        return Transformation.from_frame_to_frame(self.frame, compas_fea2.GLOBAL_FRAME)
+
+    def _T_global_to_local(self) -> Transformation:
+        import compas_fea2  # type: ignore
+        return Transformation.from_frame_to_frame(compas_fea2.GLOBAL_FRAME, self.frame)
+
+    def to_local_point(self, pt: Point) -> Point:
+        return pt.transformed(self._T_global_to_local())
+
+    def to_global_point(self, pt: Point) -> Point:
+        return pt.transformed(self._T_local_to_global())
+
+    def to_local_vector(self, vec: Vector) -> Vector:
+        return vec.transformed(self._T_global_to_local())
+
+    def to_global_vector(self, vec: Vector) -> Vector:
+        return vec.transformed(self._T_local_to_global())
+
+    def transform_to(self, other: Frame) -> Transformation:
+        return Transformation.from_frame_to_frame(self.frame, other)
+
+    # --- serialization helper (optional usage) ------------------------------
+    def _frame_data(self):
+        return self._frame.__data__ if self._frame else None
