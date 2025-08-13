@@ -4,6 +4,7 @@ from uuid import UUID
 
 from matplotlib import pyplot as plt
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 
 from .material import _Material
 
@@ -188,25 +189,24 @@ fr  : {}
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
         uid = data.get("uid")
         if uid and registry.get(uid):
             return registry.get(uid)
-
+        fck_pa = data.get("fck")
+        fck = fck_pa / 1e6 if fck_pa is not None else None  # stored in Pa, ctor expects MPa
         material = cls(
-            fck=data.get("fck"),
+            fck=fck,
             density=data.get("density"),
             name=data.get("name"),
         )
         material._uid = UUID(uid) if uid else None
-
         if uid:
             registry.add(uid, material)
-
         return material
 
     @classmethod
@@ -318,9 +318,15 @@ fr : {}
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data):
-        return cls(
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
+        if registry is None:
+            registry = Registry()
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        material = cls(
             E=data["E"],
             v=data["v"],
             density=data["density"],
@@ -328,9 +334,13 @@ fr : {}
             ec=data["ec"],
             ft=data["ft"],
             et=data["et"],
-            fr=data["fr"],
-            name=data["name"],
+            fr=data.get("fr", [1.16, 0.0836]),
+            name=data.get("name"),
         )
+        material._uid = UUID(uid) if uid else None
+        if uid:
+            registry.add(uid, material)
+        return material
 
 
 class ConcreteDamagedPlasticity(_Material):
@@ -399,14 +409,24 @@ class ConcreteDamagedPlasticity(_Material):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data):
-        return cls(
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
+        if registry is None:
+            registry = Registry()
+        uid = data.get("uid")
+        if uid and registry.get(uid):
+            return registry.get(uid)
+        material = cls(
             E=data["E"],
             v=data["v"],
             density=data["density"],
             damage=data["damage"],
             hardening=data["hardening"],
             stiffening=data["stiffening"],
-            name=data["name"],
+            name=data.get("name"),
         )
+        material._uid = UUID(uid) if uid else None
+        if uid:
+            registry.add(uid, material)
+        return material

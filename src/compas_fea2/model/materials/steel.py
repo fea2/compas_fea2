@@ -1,6 +1,7 @@
 from typing import Optional
 
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 from compas_fea2.units import UnitRegistry
 from compas_fea2.units import units as u
 
@@ -115,17 +116,9 @@ ep : {:.2f}
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-        from uuid import UUID
-
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
         material = cls(
             E=data.get("E"),
             v=data.get("v"),
@@ -134,11 +127,6 @@ ep : {:.2f}
             fu=data.get("fu"),
             eu=data.get("eu"),
         )
-        material._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, material)
-
         return material
 
     # TODO check values and make unit independent

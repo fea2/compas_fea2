@@ -1,6 +1,7 @@
 from typing import Optional
 
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 from compas_fea2.units import UnitRegistry
 from compas_fea2.units import units as u
 from typing import Optional
@@ -119,17 +120,9 @@ class Timber(ElasticOrthotropic):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-        from uuid import UUID
-
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
         material = cls(
             fmk=data.get("fmk"),
             ft0k=data.get("ft0k"),
@@ -146,11 +139,6 @@ class Timber(ElasticOrthotropic):
             density=data.get("density"),
             name=data.get("name"),
         )
-        material._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, material)
-
         return material
 
     # --- Softwood Classes (C-classes) ---

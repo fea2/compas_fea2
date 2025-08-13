@@ -4,6 +4,7 @@ from uuid import UUID
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 
 
 
@@ -61,28 +62,12 @@ class _Material(FEAData):
         })
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
         density = data.get("density", 0.0)
         expansion = data.get("expansion", None)
-        
-        material = cls(
-            density=density,
-            expansion=expansion,
-        )
-        material._uid = UUID(uid) if uid else None
-        
-        if uid:
-            registry.add(uid, material)
-
+        material = cls(density=density, expansion=expansion)
         return material
 
     def __str__(self) -> str:
@@ -217,34 +202,15 @@ class ElasticOrthotropic(_Material):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
         material = cls(
-            Ex=data.get("Ex"),
-            Ey=data.get("Ey"),
-            Ez=data.get("Ez"),
-            vxy=data.get("vxy"),
-            vyz=data.get("vyz"),
-            vzx=data.get("vzx"),
-            Gxy=data.get("Gxy"),
-            Gyz=data.get("Gyz"),
-            Gzx=data.get("Gzx"),
-            density=data.get("density", 0.0),
-            expansion=data.get("expansion", None),
+            Ex=data.get("Ex"), Ey=data.get("Ey"), Ez=data.get("Ez"),
+            vxy=data.get("vxy"), vyz=data.get("vyz"), vzx=data.get("vzx"),
+            Gxy=data.get("Gxy"), Gyz=data.get("Gyz"), Gzx=data.get("Gzx"),
+            density=data.get("density", 0.0), expansion=data.get("expansion", None),
         )
-        material._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, material)
-
         return material
 
     def __str__(self) -> str:
@@ -320,27 +286,10 @@ class ElasticIsotropic(_Material):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = cls(
-            E=data.get("E"),
-            v=data.get("v"),
-            density=data.get("density", 0.0),
-            expansion=data.get("expansion", None),
-        )
-        material._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, material)
-
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
+        material = cls(E=data.get("E"), v=data.get("v"), density=data.get("density", 0.0), expansion=data.get("expansion", None))
         return material
 
     
@@ -413,28 +362,13 @@ class ElasticPlastic(ElasticIsotropic):
         })
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
         material = cls(
-            E=data.get("E"),
-            v=data.get("v"),
-            density=data.get("density", 0.0),
-            strain_stress=data.get("strain_stress"),
-            expansion=data.get("expansion", None),
+            E=data.get("E"), v=data.get("v"), density=data.get("density", 0.0),
+            strain_stress=data.get("strain_stress"), expansion=data.get("expansion", None)
         )
-        material._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, material)
-
         return material
 
     def __str__(self) -> str:
@@ -511,9 +445,14 @@ class ThermalElasticIsotropic(ElasticIsotropic):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data):
-        return cls(data["k"], data["c"], data["E"], data["v"], data["density"], data["expansion"])
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
+        material = cls(
+            k=data.get("k"), c=data.get("c"), E=data.get("E"), v=data.get("v"),
+            density=data.get("density", 0.0), expansion=data.get("expansion", None)
+        )
+        return material
 
     def __str__(self) -> str:
         return """

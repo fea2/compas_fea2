@@ -1,17 +1,16 @@
-from math import pi
-from math import sqrt
-from uuid import UUID
-
 from typing import TYPE_CHECKING
 from typing import Optional
 
+from math import pi
+from math import sqrt
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.patches import Polygon as mplPolygon
 from matplotlib.path import Path
+import numpy as np
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 from compas_fea2.model.shapes import Circle
 from compas_fea2.model.shapes import IShape
 from compas_fea2.model.shapes import LShape
@@ -81,25 +80,15 @@ class _Section(FEAData):
         })
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
-
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         section = cls(
             material=material
         )
-        section._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, section)
-
         return section
 
     def __str__(self) -> str:
@@ -183,27 +172,16 @@ class SpringSection(FEAData):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
         section = cls(
             axial=data.get("axial"),
             lateral=data.get("lateral"),
             rotational=data.get("rotational"),
         )
-        section._uid = UUID(uid) if uid else None
-        if "name" in data:
-            section.name = data["name"]
-
-        if uid:
-            registry.add(uid, section)
-
         return section
 
     def __str__(self) -> str:
@@ -337,25 +315,15 @@ class _Section1D(_Section):
                 data["shape"] = shape_data
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
-        shape = data.get("shape", None)
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
+        shape = registry.add_from_data(data.get("shape", None), 'compas_fea2.model.shapes', duplicate)
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "shape")}
         obj = cls(material=material, shape=shape, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
         return obj
 
     def __str__(self) -> str:
@@ -806,24 +774,14 @@ class GenericBeamSection(_Section1D):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid")}
         obj = cls(material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
         return obj
 
 
@@ -902,29 +860,19 @@ class AngleSection(_Section1D):
             )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         a = data.get("a")
         b = data.get("b")
         t1 = data.get("t1")
         t2 = data.get("t2")
         direction = data.get("direction")
-        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "a", "b", "t1", "t2", "direction")}
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "a", "b", "t1", "t2", "direction", "shape")}
         obj = cls(a=a, b=b, t1=t1, t2=t2, direction=direction, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
         return obj
 
 
@@ -1034,28 +982,18 @@ class BoxSection(_Section1D):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         w = data.get("w")
         h = data.get("h")
         tw = data.get("tw")
         tf = data.get("tf")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h", "tw", "tf")}
         obj = cls(w=w, h=h, tw=tw, tf=tf, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
         return obj
 
 
@@ -1110,25 +1048,15 @@ class CircularSection(_Section1D):
             data["r"] = getattr(shape, "radius", None)
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         r = data.get("r")
-        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "r")}
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "r", "shape")}
         obj = cls(r=r, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
         return obj
 
 
@@ -1270,28 +1198,19 @@ class ISection(_Section1D):
             )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         w = data.get("w")
         h = data.get("h")
         tw = data.get("tw")
         tbf = data.get("tbf")
         ttf = data.get("ttf")
-        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h", "tw", "tbf", "ttf")}
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h", "tw", "tbf", "ttf", "shape")}
         obj = cls(w=w, h=h, tw=tw, tbf=tbf, ttf=ttf, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
 
         return obj
 
@@ -1726,25 +1645,16 @@ class PipeSection(_Section1D):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         r = data.get("r")
         t = data.get("t")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "r", "t")}
         obj = cls(r=r, t=t, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
 
         return obj
 
@@ -1806,26 +1716,16 @@ class RectangularSection(_Section1D):
             data["h"] = getattr(shape, "h", None)
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         w = data.get("w")
         h = data.get("h")
-        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h")}
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w", "h", "shape")}
         obj = cls(w=w, h=h, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
         return obj
 
 
@@ -1923,26 +1823,17 @@ class TrapezoidalSection(_Section1D):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         w1 = data.get("w1")
         w2 = data.get("w2")
         h = data.get("h")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "w1", "w2", "h")}
         obj = cls(w1=w1, w2=w2, h=h, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
 
         return obj
 
@@ -2023,25 +1914,15 @@ class TrussSection(_Section1D):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         A = data.get("A")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "A")}
         obj = cls(A=A, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
         return obj
 
 
@@ -2085,9 +1966,20 @@ class StrutSection(TrussSection):
     def __init__(self, A, material, **kwargs):
         super(StrutSection, self).__init__(A=A, material=material, **kwargs)
 
+    @property
+    def __data__(self):
+        # identical to TrussSection; keep explicit for clarity
+        return super().__data__
+
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-        return super().__from_data__(data, registry)
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
+        if registry is None:
+            registry = Registry()
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
+        A = data.get("A")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "A")}
+        return cls(A=A, material=material, **kwargs)
 
 
 class TieSection(TrussSection):
@@ -2130,9 +2022,17 @@ class TieSection(TrussSection):
     def __init__(self, A, material, **kwargs):
         super(TieSection, self).__init__(A=A, material=material, **kwargs)
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-        return super().__from_data__(data, registry)
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
+        if registry is None:
+            registry = Registry()
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
+        A = data.get("A")
+        if A is None:
+            raise ValueError("Missing required area 'A' for TieSection data.")
+        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "A")}
+        return cls(A=A, material=material, **kwargs)
 
 
 # ==============================================================================
@@ -2156,33 +2056,22 @@ class _Section2D(_Section):
     @property
     def __data__(self):
         data = super().__data__
-        data.update(
-            {
-                "t": self.t,
-            }
-        )
+        data.update({
+            "t": self.t,
+        })
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
         t = data.get("t")
+        if t is None:
+            raise ValueError("Missing required thickness 't' in 2D section data.")
         kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid", "t")}
-        obj = cls(t=t, material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
-        return obj
+        return cls(t=t, material=material, **kwargs)
 
 
 class ShellSection(_Section2D):
@@ -2210,7 +2099,7 @@ class ShellSection(_Section2D):
         super(ShellSection, self).__init__(t=t, material=material, **kwargs)
 
     @property
-    def __data__(self):
+    def __data(self):
         data = super().__data__
         data.update(
             {
@@ -2219,9 +2108,16 @@ class ShellSection(_Section2D):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-        return super().__from_data__(data, registry)
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
+        if registry is None:
+            registry = Registry()
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
+        t = data.get("t")
+        if t is None:
+            raise ValueError("Missing required thickness 't' for ShellSection data.")
+        return cls(t=t, material=material)
 
 
 class MembraneSection(_Section2D):
@@ -2249,7 +2145,7 @@ class MembraneSection(_Section2D):
         super(MembraneSection, self).__init__(t=t, material=material, **kwargs)
 
     @property
-    def __data__(self):
+    def __data(self):
         data = super().__data__
         data.update(
             {
@@ -2258,9 +2154,16 @@ class MembraneSection(_Section2D):
         )
         return data
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-        return super().__from_data__(data, registry)
+    def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
+        if registry is None:
+            registry = Registry()
+        material = registry.add_from_data(data.get('material'), 'compas_fea2.model.materials', duplicate)
+        t = data.get("t")
+        if t is None:
+            raise ValueError("Missing required thickness 't' for MembraneSection data.")
+        return cls(t=t, material=material)
 
 
 # ==============================================================================
@@ -2278,30 +2181,6 @@ class _Section3D(_Section):
 
     def __init__(self, material: "_Material", **kwargs):
         super().__init__(material=material, **kwargs)
-
-    @property
-    def __data__(self):
-        return super().__data__
-
-    @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-        if registry is None:
-            registry = Registry()
-
-        uid = data.get("uid")
-        if uid and registry.get(uid):
-            return registry.get(uid)
-
-        material = registry.get(data.get("material"))
-        kwargs = {k: v for k, v in data.items() if k not in ("class", "material", "name", "uid")}
-        obj = cls(material=material, **kwargs)
-        obj.name = data.get("name", None)
-        obj._uid = UUID(uid) if uid else None
-
-        if uid:
-            registry.add(uid, obj)
-
-        return obj
 
 
 class SolidSection(_Section3D):
@@ -2323,11 +2202,3 @@ class SolidSection(_Section3D):
 
     def __init__(self, material, **kwargs):
         super(SolidSection, self).__init__(material=material, **kwargs)
-
-    @property
-    def __data__(self):
-        return super().__data__
-
-    @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None,duplicate = True):
-        return super().__from_data__(data, registry)
