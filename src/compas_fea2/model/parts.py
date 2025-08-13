@@ -193,9 +193,7 @@ class _Part(FEAData):
     #                       Constructors
     # =========================================================================
     @classmethod
-    def from_compas_lines_discretized(
-        cls, lines: List["Line"], targetlength: float, element_cls: type, section: "_Section2D", frame: "Union[Frame, List[float], Vector]", **kwargs
-    ):
+    def from_compas_lines_discretized(cls, lines: List["Line"], targetlength: float, element_cls: type, section: "_Section2D", frame: "Union[Frame, List[float], Vector]", **kwargs):
         """Generate a discretized model from a list of :class:`compas.geometry.Line`.
 
         Parameters
@@ -628,10 +626,7 @@ class _Part(FEAData):
     @property
     def elements_faces_grouped(self) -> Dict[int, List[List["Face"]]]:
         """The faces of the part's elements grouped by element key."""
-        return {
-            key.__name__.__hash__(): [element.faces for element in elements if hasattr(element, "faces") and element.faces is not None]
-            for key, elements in self.elements_grouped.items()
-        }
+        return {key.__name__.__hash__(): [element.faces for element in elements if hasattr(element, "faces") and element.faces is not None] for key, elements in self.elements_grouped.items()}
 
     @property
     def elements_faces_indices(self) -> List[List[List[float]]]:
@@ -641,10 +636,7 @@ class _Part(FEAData):
     @property
     def elements_faces_indices_grouped(self) -> Dict[int, List[List[float]]]:
         """The indices of the faces of the part's elements grouped by element key."""
-        return {
-            hash(key): [face.nodes_key for elem in element for face in getattr(elem, "faces", []) if getattr(elem, "faces", None) is not None]
-            for key, element in self.elements_grouped.items()
-        }
+        return {hash(key): [face.nodes_key for elem in element for face in getattr(elem, "faces", []) if getattr(elem, "faces", None) is not None] for key, element in self.elements_grouped.items()}
 
     @property
     def elements_connectivity(self) -> List[List[int]]:
@@ -1074,9 +1066,7 @@ class _Part(FEAData):
         """
         return self.nodes.subgroup(condition=lambda x: is_point_on_plane(x.point, plane, tol))
 
-    def find_closest_nodes_to_point(
-        self, point: List[float], number_of_nodes: int = 1, report: Optional[bool] = False, single: bool = False
-    ) -> "NodesGroup | None | Dict[Node, float]":
+    def find_closest_nodes_to_point(self, point: List[float], number_of_nodes: int = 1, report: Optional[bool] = False, single: bool = False) -> "NodesGroup | None | Dict[Node, float]":
         """
         Find the closest number_of_nodes nodes to a given point.
 

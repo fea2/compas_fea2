@@ -593,9 +593,7 @@ class _Element1D(_Element):
         self._shape_j = self._shape_i.translated(Vector.from_start_end(self.nodes[0].point, self.nodes[-1].point), check_planarity=False)
         p = self._shape_i.points
         n = len(p)
-        self._outermesh = Mesh.from_vertices_and_faces(
-            self._shape_i.points + self._shape_j.points, [[p.index(v1), p.index(v2), p.index(v2) + n, p.index(v1) + n] for v1, v2 in pairwise(p)] + [[n - 1, 0, n, 2 * n - 1]]
-        )
+        self._outermesh = Mesh.from_vertices_and_faces(self._shape_i.points + self._shape_j.points, [[p.index(v1), p.index(v2), p.index(v2) + n, p.index(v1) + n] for v1, v2 in pairwise(p)] + [[n - 1, 0, n, 2 * n - 1]])
         return self._outermesh
 
     @property

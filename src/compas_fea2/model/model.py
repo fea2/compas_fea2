@@ -1469,9 +1469,7 @@ class Model(FEAData):
         """
         parts_info = []
         for part in self.parts:
-            parts_info.append(
-                "{:<15} - #nodes: {:<5} #elements: {:<5} #mat: {:<5} #sect: {:<5}".format(part.name, len(part.nodes), len(part.elements), len(part.materials), len(part.sections))
-            )
+            parts_info.append("{:<15} - #nodes: {:<5} #elements: {:<5} #mat: {:<5} #sect: {:<5}".format(part.name, len(part.nodes), len(part.elements), len(part.materials), len(part.sections)))
 
         bcs_info = []
         for field in self.bcs:

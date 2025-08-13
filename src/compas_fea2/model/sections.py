@@ -265,9 +265,7 @@ class _Section1D(_Section):
         Warping constant.
     """
 
-    def __init__(
-        self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", shape: "Shape | None" = None, **kwargs
-    ):
+    def __init__(self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", shape: "Shape | None" = None, **kwargs):
         super().__init__(material=material, **kwargs)
         self.A = A
         self.Ixx = Ixx
@@ -486,9 +484,7 @@ gw  : {self.gw}
 
         return slope, intercept
 
-    def plot_stress_distribution(
-        self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, nx: int = 50, ny: int = 50, cmap: str = "coolwarm", show_tau: bool = True
-    ):
+    def plot_stress_distribution(self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, nx: int = 50, ny: int = 50, cmap: str = "coolwarm", show_tau: bool = True):
         """
         Visualize normal stress (\u03c3) and optionally shear stresses (\u03c4_x, \u03c4_y) with the neutral axis.
 
@@ -611,9 +607,7 @@ gw  : {self.gw}
             plt.tight_layout()
             plt.show()
 
-    def plot_section_with_stress(
-        self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, direction: tuple = (1, 0), point: tuple | None = None, nx: int = 50, ny: int = 50
-    ):
+    def plot_section_with_stress(self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, direction: tuple = (1, 0), point: tuple | None = None, nx: int = 50, ny: int = 50):
         """
         Plot the section and overlay the stress distribution along a general direction.
 

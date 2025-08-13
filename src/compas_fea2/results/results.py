@@ -1106,9 +1106,8 @@ class StressResult(ElementResult):
         mohr_circle_image = self.draw_mohr_circle_2d(show=False)
 
         # Generate Yield Criteria Placeholder (for simplicity, add descriptions)
-        yield_criteria_description = (
-            "Yield criteria such as Tresca and von Mises are used to assess material failure under combined stresses. "
-            "The von Mises stress for this result is {:.4f}, and the Tresca stress is {:.4f}.".format(self.von_mises_stress, self.tresca_stress)
+        yield_criteria_description = "Yield criteria such as Tresca and von Mises are used to assess material failure under combined stresses. The von Mises stress for this result is {:.4f}, and the Tresca stress is {:.4f}.".format(
+            self.von_mises_stress, self.tresca_stress
         )
 
         # HTML Content

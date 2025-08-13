@@ -420,11 +420,7 @@ Analysis folder path : {self.path or "N/A"}
                 if erase_data and erase_data == "armageddon":
                     _delete_folder_contents(self.path)
                 else:
-                    user_input = (
-                        input(f"ATTENTION! The directory {self.path} already exists and might NOT be a FEA2 results folder. Do you want to DELETE its contents? (y/N): ")
-                        .strip()
-                        .lower()
-                    )
+                    user_input = input(f"ATTENTION! The directory {self.path} already exists and might NOT be a FEA2 results folder. Do you want to DELETE its contents? (y/N): ").strip().lower()
                     if user_input in ["y", "yes"]:
                         _delete_folder_contents(self.path)
                         print(f"All contents of {self.path} have been deleted.")

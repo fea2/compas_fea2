@@ -55,8 +55,8 @@ class TestGroupBase(unittest.TestCase):
         self.assertEqual(len(self.group), 0)
 
     def test_to_list_sorted_sorted_by(self):
-        l = self.group.to_list()
-        self.assertEqual(set(l), set(self.members))
+        members_list = self.group.to_list()
+        self.assertEqual(set(members_list), set(self.members))
         s = sorted(self.members, key=lambda x: x.key)
         self.assertEqual(self.group.sorted, s)
         s2 = sorted(self.members, key=lambda x: -x.key)

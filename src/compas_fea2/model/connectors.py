@@ -275,9 +275,7 @@ class ZeroLengthConnector(_Connector):
 class ZeroLengthSpringConnector(ZeroLengthConnector):
     """Spring connector connecting overlapping nodes."""
 
-    def __init__(
-        self, nodes: Union[List["Node"], "NodesGroup"], direction, section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs
-    ):
+    def __init__(self, nodes: Union[List["Node"], "NodesGroup"], direction, section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs):
         # SpringConnector.__init__(self, nodes=nodes, section=section, yielding=yielding, failure=failure)
         super().__init__(nodes, direction, **kwargs)
         self._section = section
