@@ -1,10 +1,12 @@
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
+from compas_fea2.base import from_data
 
 
 class Amplitude(FEAData):
-    """Amplitude object for creating a time-varying fonction that defines
-     how the magnitude of a load, boundary condition, or predifined field
-     changes throughout a step or the analysis.
+    """Amplitude object for creating a time-varying function that defines
+    how the magnitude of a load, boundary condition, or predifined field
+    changes throughout a step or the analysis.
 
     Parameters
     ----------
@@ -22,12 +24,30 @@ class Amplitude(FEAData):
     amplitude :  :class:`compas_fea2.problem.Amplitude`
         Amplitude associated to the load, optionnal."""
 
-    def __init__(self, multipliers, times, name=None, **kwargs):
-        super().__init__(name, **kwargs)
+    def __init__(self, multipliers, times, **kwargs):
+        super().__init__(**kwargs)
         self._multipliers = multipliers
         self._times = times
         if len(self._multipliers) != len(self._times):
             raise ValueError("The lists of values and times must have the same length.")
+
+    @property
+    def __data__(self) -> dict:
+        data = super().__data__
+        data.update(
+            {
+                "multipliers": self._multipliers,
+                "times": self._times,
+            }
+        )
+        return data
+
+    @from_data
+    @classmethod
+    def __from_data__(cls, data: dict, registry=None, duplicate=True):
+        multipliers = data.get("multipliers", [])
+        times = data.get("times", [])
+        return cls(multipliers=multipliers, times=times)
 
     @property
     def multipliers(self):

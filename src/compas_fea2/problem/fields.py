@@ -1,8 +1,13 @@
 from typing import TYPE_CHECKING
 from typing import Iterable
 from typing import Optional
+from typing import Any
+from typing import List
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Registry
+from compas_fea2.base import from_data
+from compas_fea2.model.groups import NodesGroup
 from compas_fea2.problem.loads import ScalarLoad
 from compas_fea2.problem.loads import VectorLoad
 
@@ -20,120 +25,266 @@ if TYPE_CHECKING:
 # TODO implement __*__ magic method for combination
 
 
-class _LoadField(FEAData):
-    """A Field is the spatial distribution of a specific set of forces,
-    displacements, temperatures, and other effects which act on a structure.
+# --- Base Field classes----------------------------------------------
+class _BaseLoadField(FEAData):
+    """Abstract base class for load / boundary condition fields.
+
+    Provides common storage and (de)serialisation logic for all concrete field
+    types. Subclasses normalise *loads* into their distribution containers.
 
     Parameters
     ----------
-    load : list[:class:`compas_fea2.problem._Load`] | list[:class:`compas_fea2.problem.GeneralDisplacement`]
-        The load/displacement assigned to the pattern.
-    distribution : list
-        List of :class:`compas_fea2.model.Node` or :class:`compas_fea2.model._Element`. The
-        application in space of the load/displacement.
     load_case : str, optional
-        The load case to which this pattern belongs.
-    axes : str, optional
-        Coordinate system for the load components. Default is "global".
-    name : str, optional
-        Unique identifier for the pattern.
+        Identifier of the load case this field belongs to.
+    **kwargs : dict, optional
+        Additional keyword arguments forwarded to :class:`FEAData` (e.g. name).
 
     Attributes
     ----------
-    load : :class:`compas_fea2.problem._Load`
-        The load of the pattern.
-    distribution : list
-        List of :class:`compas_fea2.model.Node` or :class:`compas_fea2.model._Element`.
-    name : str
-        Unique identifier.
-
-    Notes
-    -----
-    Patterns are registered to a :class:`compas_fea2.problem._Step`.
+    _load_case : str | None
+        Associated load case.
+    _distribution : Any
+        The normalised distribution object (nodes, elements, faces, ...).
+    _loads : list[Any]
+        List of load objects / numerical values aligned with the distribution.
     """
 
-    def __init__(
-        self,
-        loads: Iterable["_Load"] | Iterable["GeneralDisplacement"],
-        distribution: "Node | Iterable[Node]",
-        load_case: Optional[str] = None,
-        **kwargs,
-    ):
-        super(_LoadField, self).__init__(**kwargs)
-        self._distribution: list["Node"] = list(distribution) if isinstance(distribution, Iterable) else [distribution]
-        self._loads = loads if isinstance(loads, Iterable) else [loads * (1 / len(self._distribution))] * len(self._distribution)
+    def __init__(self, *, load_case: str | None = None, **kwargs):
+        super().__init__(**kwargs)
         self._load_case = load_case
         self._registration: "_Step | None" = None
+        self._distribution = None
+        self._loads: list[Any] = []
+
+    # Removed value_kind & domain (now inferred downstream if needed)
 
     @property
-    def loads(self) -> Iterable["_Load"] | Iterable["GeneralDisplacement"] | list[float]:
-        return self._loads
-
-    @property
-    def distribution(self) -> list["Node"]:
-        return self._distribution
-
-    @property
-    def step(self) -> "_Step":
-        if self._registration:
-            return self._registration
-        else:
-            raise ValueError("Register the LoadField to a Step first.")
-
-    @property
-    def problem(self) -> "Problem":
-        return self.step.problem
-
-    @property
-    def model(self) -> "Model":
-        return self.problem.model
-
-    @property
-    def load_case(self) -> str | None:
-        """Return the load case to which this pattern belongs."""
+    def load_case(self):
+        """str | None: Load case identifier to which this field belongs."""
         return self._load_case
 
     @load_case.setter
-    def load_case(self, value: str) -> None:
-        if not isinstance(value, str):
-            raise TypeError("Load case must be a string.")
-        self._load_case = value
+    def load_case(self, v):
+        if v is not None and not isinstance(v, str):
+            raise TypeError("load_case must be str or None")
+        self._load_case = v
+
+    @property
+    def loads(self):
+        """list: Sequence of loads / numeric values mapped one‑to‑one to the distribution."""
+        return self._loads
+
+    @property
+    def distribution(self):
+        """Any: Normalised distribution object (e.g. NodesGroup or list of elements)."""
+        return self._distribution
+
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update(
+            {
+                "dtype": self.__class__.__name__,
+                "load_case": self._load_case,
+                "distribution": getattr(self._distribution, "__data__", None),
+                "loads": [L.__data__ if hasattr(L, "__data__") else L for L in self._loads],
+            }
+        )
+        return data
 
 
-class _PrescribedField(FEAData):
-    """Base class for all predefined initial conditions.
+# def _rebuild_loads(loads_data, registry):  # helper
+#     rebuilt = []
+#     for Ld in loads_data:
+#         if isinstance(Ld, dict) and "dtype" in Ld:
+#             cls_name = Ld.get("dtype")
+#             if isinstance(cls_name, str):
+#                 load_cls = globals().get(cls_name)
+#                 if load_cls and hasattr(load_cls, "__from_data__"):
+#                     try:
+#                         rebuilt.append(load_cls.__from_data__(Ld, registry=registry))  # type: ignore
+#                         continue
+#                     except Exception:
+#                         pass
+#         rebuilt.append(Ld)
+#     return rebuilt
 
-    Notes
-    -----
-    Fields are registered to a :class:`compas_fea2.problem.Step`.
 
-    """
-
-    def __init__(self, **kwargs):
-        super(_PrescribedField, self).__init__(**kwargs)
-
-
-class DisplacementField(_LoadField):
-    """A distribution of a set of displacements over a set of nodes.
+class _NodesLoadField(_BaseLoadField):
+    """Field with a node-based distribution.
 
     Parameters
     ----------
-    displacement : object
-        The displacement to be applied.
-    nodes : list
-        List of nodes where the displacement is applied.
-    load_case : object, optional
-        The load case to which this pattern belongs.
+    loads : Iterable | Any
+        Iterable of load objects / numeric values or a single value to broadcast.
+    distribution : Node | Iterable[Node] | NodesGroup
+        Node(s) over which the loads are distributed (auto-wrapped in NodesGroup).
+    load_case : str, optional
+        Load case identifier.
+    **kwargs : dict
+        Extra keyword arguments forwarded to :class:`FEAData`.
+
+    Raises
+    ------
+    ValueError
+        If the number of provided loads is not 1 and does not match the number
+        of nodes in the distribution.
     """
 
-    def __init__(self, displacements: Iterable["GeneralDisplacement"], nodes: Iterable["Node"], load_case=None, **kwargs):
-        nodes = nodes if isinstance(nodes, Iterable) else [nodes]
-        displacements = displacements if isinstance(displacements, Iterable) else [displacements] * len(nodes)
-        super().__init__(loads=displacements, distribution=nodes, load_case=load_case, **kwargs)
+    def __init__(self, loads, nodes: "Node | Iterable[Node] | NodesGroup", *, load_case: str | None = None, **kwargs):
+        super().__init__(load_case=load_case, **kwargs)
+        if not isinstance(nodes, NodesGroup):
+            nodes = NodesGroup(nodes)
+        self._distribution = nodes
+
+        if isinstance(loads, Iterable):
+            loads_list = list(loads)
+        else:
+            loads_list = [loads] * len(nodes)
+        if len(loads_list) != len(nodes):
+            raise ValueError("Loads length must be 1 or match number of nodes.")
+        self._loads = loads_list
 
     @property
     def nodes(self):
+        """NodesGroup: The nodes over which the loads are distributed."""
         return self._distribution
+
+
+class _ElementsLoadField(_BaseLoadField):
+    """Field with an element-based distribution.
+
+    Parameters
+    ----------
+    loads : Iterable | Any
+        Iterable of load objects / numeric values or a single value to broadcast.
+    elements : Iterable | Any
+        Elements over which the loads are applied.
+    load_case : str, optional
+        Load case identifier.
+    **kwargs : dict
+        Extra keyword arguments forwarded to :class:`FEAData`.
+
+    Raises
+    ------
+    ValueError
+        If the distribution is empty or if the number of provided loads is not
+        1 and does not match the number of elements.
+    """
+
+    def __init__(self, loads, elements, *, load_case: str | None = None, **kwargs):
+        super().__init__(load_case=load_case, **kwargs)
+        if not isinstance(elements, NodesGroup):
+            distribution = NodesGroup(elements)
+        self._distribution = distribution
+
+        if isinstance(loads, Iterable):
+            loads_list = list(loads)
+        else:
+            loads_list = [loads] * len(distribution)
+        if len(loads_list) != len(distribution):
+            raise ValueError("Loads length must be 1 or match number of nodes.")
+        self._loads = loads_list
+
+    @property
+    def elements(self):
+        """NodesGroup: The elements over which the loads are distributed."""
+        return self._distribution
+
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(_ElementsLoadField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     if registry:
+    #         elements = [registry.get(uid) for uid in data.get("element_uids", []) if registry.get(uid)]  # type: ignore
+    #         obj._distribution = elements
+    #     obj._loads = _rebuild_loads(data.get("loads", []), registry)
+    #     return obj
+
+
+# --- Node Scalar / Vector -----------------------------------------------------
+class _NodeScalarField(_NodesLoadField):
+    """Scalar load field over nodes."""
+
+    def __init__(self, scalars, nodes, load_case: str | None = None, *, wrap: bool = False, amplitude=None, **kwargs):
+        if not isinstance(scalars, Iterable):
+            scalars = [scalars]
+        scalars_list = list(scalars)
+        if wrap:
+            wrapped = []
+            for s in scalars_list:
+                if isinstance(s, ScalarLoad):
+                    wrapped.append(s)
+                else:
+                    wrapped.append(ScalarLoad(scalar_load=s, amplitude=amplitude))
+            scalars_list = wrapped
+        super().__init__(loads=scalars_list, nodes=nodes, load_case=load_case, **kwargs)
+
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(_NodeScalarField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     return obj
+
+
+class _NodeVectorField(_NodesLoadField):
+    """Vector load field over nodes."""
+
+    def __init__(self, vectors, distribution, load_case: str | None = None, **kwargs):
+        if not isinstance(vectors, Iterable):
+            vectors = [vectors]
+        super().__init__(loads=list(vectors), nodes=distribution, load_case=load_case, **kwargs)
+
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(_NodeVectorField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     return obj
+
+
+# --- Element Scalar / Vector --------------------------------------------------
+class _ElementScalarField(_ElementsLoadField):
+    """Scalar load field over elements."""
+
+    def __init__(self, scalars, elements, load_case: str | None = None, **kwargs):
+        if not isinstance(scalars, Iterable):
+            scalars = [scalars]
+        super().__init__(loads=list(scalars), elements=elements, load_case=load_case, **kwargs)
+
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(_ElementScalarField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     return obj
+
+
+class _ElementVectorField(_ElementsLoadField):
+    """Vector load field over elements."""
+
+    def __init__(self, vectors, elements, load_case: str | None = None, **kwargs):
+        if not isinstance(vectors, Iterable) or isinstance(vectors, (str, bytes)):
+            vectors = [vectors]
+        super().__init__(loads=list(vectors), elements=elements, load_case=load_case, **kwargs)
+
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(_ElementVectorField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     return obj
+
+
+# --- Users Fields -------------------------------------------------
+class DisplacementField(_NodeVectorField):
+    """Distribution of displacement boundary conditions over nodes."""
+
+    def __init__(self, displacements: Iterable["GeneralDisplacement"], nodes: Iterable["Node"], load_case=None, **kwargs):
+        super().__init__(vectors=displacements, distribution=nodes, load_case=load_case, **kwargs)
+
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(DisplacementField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     return obj
 
     @property
     def displacements(self):
@@ -141,157 +292,146 @@ class DisplacementField(_LoadField):
 
     @property
     def node_displacement(self):
-        """Return a list of tuples with the nodes and the assigned displacement."""
-        return zip(self.nodes, self.displacements)
+        return zip(self._distribution, self._loads)
 
 
-class NodeLoadField(_LoadField):
-    """A distribution of a set of concentrated loads over a set of nodes.
+class ForceField(_NodeVectorField):
+    """Distribution of concentrated (nodal) vector loads."""
 
-    Parameters
-    ----------
-    load : object
-        The load to be applied.
-    nodes : list
-        List of nodes where the load is applied.
-    load_case : object, optional
-        The load case to which this pattern belongs.
-    """
+    def __init__(self, loads: Iterable["VectorLoad"], nodes: Iterable["Node"], load_case: str | None = None, **kwargs):
+        super().__init__(vectors=loads, distribution=nodes, load_case=load_case, **kwargs)
 
-    def __init__(self, loads: Iterable["VectorLoad"] | Iterable["ScalarLoad"], nodes: Iterable["Node"], load_case: str | None = None, **kwargs):
-        super().__init__(loads=loads, distribution=nodes, load_case=load_case, **kwargs)
-
-    @property
-    def nodes(self) -> Iterable["Node"]:
-        return self._distribution
-
-    @property
-    def loads(self):
-        return self._loads
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(ForceField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     return obj
 
     @property
     def node_load(self):
-        """Return a list of tuples with the nodes and the assigned load."""
-        return zip(self.nodes, self.loads)
+        return zip(self._distribution, self._loads)
+
+    @classmethod
+    def from_points_field(cls, loads: Iterable["VectorLoad"], points: Iterable["Point"], model, load_case: str | None = None, **kwargs):
+        nodes = []
+        for pt in points:
+            n = model.find_closest_node_to_point(pt, single=True)
+            nodes.append(n)
+        return cls(loads=loads, nodes=nodes, load_case=load_case, **kwargs)
 
 
-class PointLoadField(NodeLoadField):
-    """A distribution of a set of concentrated loads over a set of points.
-    The loads are applied to the closest nodes to the points.
-
-    Parameters
-    ----------
-    load : object
-        The load to be applied.
-    points : list
-        List of points where the load is applied.
-    load_case : object, optional
-        The load case to which this pattern belongs.
-    tolerance : float, optional
-        Tolerance for finding the closest nodes to the points.
-    """
-
-    def __init__(self, loads: Iterable["_Load"], points: Iterable["Point"], load_case: str | None = None, **kwargs):
-        self._points = points
-        distribution = [self.model.find_closest_nodes_to_point(point) for point in self.points]
-        super().__init__(loads, distribution, load_case, **kwargs)
-
-    @property
-    def points(self):
-        return self._points
-
-    @property
-    def nodes(self):
-        return self._distribution
-
-
-class UniformSurfaceLoadField(NodeLoadField):
+class UniformSurfaceLoadField(_NodeVectorField):
     def __init__(self, load: float, surface: "FacesGroup", direction: list[float] | None = None, **kwargs):
-        """A distribution of a set of loads over a set of surface elements.
-
-        Parameters
-        ----------
-        loads : Iterable[_Load]
-            The loads to be applied in Force/area units."""
         from compas_fea2.problem.loads import VectorLoad
 
         distribution = surface.nodes
         area = surface.area
         direction = direction or surface.normal
         amplitude = kwargs.pop("amplitude", None)
-
-        components = [i * load * area for i in direction] if isinstance(load, (int, float)) else [l * area for l in load]
-        vector_load = VectorLoad(*components, amplitude=amplitude)
-
-        super().__init__(loads=[vector_load], distribution=distribution, **kwargs)
+        share = area / len(distribution) if distribution else 0.0
+        components = [i * load * share for i in direction]
+        loads = [VectorLoad(*components, amplitude=amplitude) for _ in distribution]
+        super().__init__(loads=loads, nodes=distribution, **kwargs)
         self._surface = surface
+        self._direction = direction
+        self._load_value = load
+
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update(
+            {
+                "surface": self.surface.__data__,
+                "direction": list(self._direction) if self._direction else None,
+                "load_value": self._load_value,
+            }
+        )
+        return data
+
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+
+    #     return obj
 
     @property
     def surface(self):
         return self._surface
 
-
-class GravityLoadField(NodeLoadField):
-    """Volume distribution of a gravity load case.
-
-    Parameters
-    ----------
-    g : float
-        Value of gravitational acceleration.
-    parts : list
-        List of parts where the load is applied.
-    load_case : object, optional
-        The load case to which this pattern belongs.
-    """
-
-    def __init__(self, g=9.81, direction=[0, 0, -1], parts=None, load_case=None, **kwargs):
-        load = VectorLoad([g * v for v in direction], name="gravity_load", load_case=load_case)
-        nodes = []
-        if parts:
-            for part in parts:
-                nodes.extend(part.nodes)
-        else:
-            nodes = self.model.nodes
-        super().__init__(loads=[load] * len(nodes), distribution=nodes, load_case=load_case, **kwargs)
-
-
-class PrescribedTemperatureField(_PrescribedField):
-    """Temperature field."""
-
-    def __init__(self, temperature=None, **kwargs):
-        super(PrescribedTemperatureField, self).__init__(**kwargs)
-        self._t = temperature
+    @property
+    def direction(self):
+        return self._direction
 
     @property
-    def temperature(self):
-        return self._t
-
-    @temperature.setter
-    def temperature(self, value):
-        self._t = value
+    def load_value(self):
+        return self._load_value
 
 
-# =====================================================================
-# HEAT ANALYSIS
-# =====================================================================
+class GravityLoadField(_NodeVectorField):
+    """Field distributing self‑weight (gravity) to nodes."""
+
+    def __init__(self, g=9.81, direction=(0, 0, -1), parts=None, nodes=None, load_case=None, **kwargs):
+        from compas_fea2.problem.loads import VectorLoad
+
+        self._g = g
+        self._direction = direction
+        if parts:
+            nodes_list = []
+            for part in parts:
+                nodes_list.extend(part.nodes)
+        else:
+            if nodes is None:
+                raise ValueError("Provide either parts or nodes for GravityLoadField.")
+            nodes_list = list(nodes)
+        components: List[float] = [g * v for v in direction]
+        loads = []
+        for n in nodes_list:
+            force_components = [n.mass[i] * components[i] for i in range(len(components))]
+            loads.append(VectorLoad(*force_components, name="gravity_load", load_case=load_case))
+        super().__init__(loads=loads, nodes=nodes_list, load_case=load_case, **kwargs)
+
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update({"g": self._g, "direction": list(self._direction)})
+        return data
+
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(GravityLoadField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     obj._g = data.get("g", 9.81)
+    #     obj._direction = tuple(data.get("direction", (0, 0, -1)))
+    #     # Recompute loads if distribution present & nodes available
+    #     if obj._distribution and all(hasattr(n, 'mass') for n in obj._distribution):
+    #         components = [obj._g * v for v in obj._direction]
+    #         new_loads = []
+    #         for n in obj._distribution:
+    #             try:
+    #                 force_components = [n.mass[i] * components[i] for i in range(len(components))]
+    #                 new_loads.append(VectorLoad(*force_components, name='gravity_load', load_case=obj._load_case))
+    #             except Exception:
+    #                 new_loads.append(0.0)
+    #         obj._loads = new_loads
+    #     return obj
 
 
-class TemperatureField(NodeLoadField):
-    """A distribution of a set of temperature over a set of nodes.
+class TemperatureField(_NodeScalarField):
+    """Thermal (nodal) temperature field."""
 
-    Parameters
-    ----------
-    temperature : float
-        Value of temperature.
-    nodes : list[Node] | compas_fea2.model.groups.NodeGroup
-        List of parts where the load is applied.
-    load_case : object, optional
-        The load case to which this pattern belongs.
+    def __init__(self, temperature: float | Iterable[float], nodes: Iterable["Node"], **kwargs):
+        super().__init__(scalars=temperature, nodes=nodes, wrap=False, **kwargs)
 
+    # @from_data
+    # @classmethod
+    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+    #     obj = super(TemperatureField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
+    #     return obj
 
-    """
+    @property
+    def temperatures(self):
+        return self._loads
 
-    def __init__(self, temperature: float, nodes: Iterable["Node"], **kwargs):
-        nodes = list(nodes) if not isinstance(nodes, list) else nodes
-        loads = temperature if isinstance(temperature, Iterable) else [temperature] * len(nodes)
-        super().__init__(loads=loads, nodes=nodes, **kwargs)
+    @property
+    def node_temperature(self):
+        return zip(self._distribution, self._loads)

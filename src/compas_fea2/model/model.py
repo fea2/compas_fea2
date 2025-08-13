@@ -43,7 +43,6 @@ from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import Part
 from compas_fea2.model.parts import RigidPart
 from compas_fea2.model.parts import _Part
-from compas_fea2.problem import Problem
 from compas_fea2.utilities._utils import get_docstring
 from compas_fea2.utilities._utils import part_method
 
@@ -76,6 +75,8 @@ if TYPE_CHECKING:
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.sections import _Section
     from compas_fea2.units import UnitRegistry
+    
+    from compas_fea2.problem import Problem
 
 
 class Model(FEAData):

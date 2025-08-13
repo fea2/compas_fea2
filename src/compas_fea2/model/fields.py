@@ -108,6 +108,8 @@ class BoundaryConditionsField(_ConditionsField):
     @classmethod
     def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         """Create a BoundaryConditionsField from data."""
+        if registry is None:
+            raise ValueError("A registry must be provided to create a BoundaryConditionsField from data.")
         distribution_data = data.get("distribution")
         condition_data = data.get("condition")
         field = cls(

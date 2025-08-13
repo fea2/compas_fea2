@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 import compas_fea2
-from compas_fea2.base import FEAData
+from compas_fea2.base import FEAData, from_data
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
@@ -56,14 +56,17 @@ class LoadCombination(FEAData):
 
     @property
     def __data__(self):
-        return {
+        base = super().__data__
+        base.update({
             "factors": self.factors,
-            "name": self.name,
-        }
+        })
+        return base
 
+
+    @from_data
     @classmethod
-    def __from_data__(cls, data):
-        return cls(factors=data["factors"], name=data.get("name"))
+    def __from_data__(cls, data, registry=None, duplicate=True):
+        return cls(factors=data["factors"])
 
     # BUG: Rewrite. this is not general and does not account for different loads types
     @property

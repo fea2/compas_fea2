@@ -212,8 +212,8 @@ class FEAData(Data, metaclass=DimensionlessMeta):
     def __setstate__(self, state: Dict[str, Any]) -> None:
         self.__dict__.update(state)
 
-    @abstractmethod
-    def jobdata(self, *args: Any, **kwargs: Any) -> Any:
+    @property
+    def jobdata(self) -> Any:
         """Generate the job data for the backend-specific input file."""
         raise NotImplementedError("This function is not available in the selected plugin.")
 

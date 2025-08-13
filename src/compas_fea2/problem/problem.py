@@ -7,6 +7,7 @@ from typing import Optional
 from typing import Union
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import from_data
 from compas_fea2.job.input_file import InputFile
 from compas_fea2.problem.steps import StaticStep
 from compas_fea2.problem.steps import _Step
@@ -14,6 +15,7 @@ from compas_fea2.results.database import ResultsDatabase
 from compas_fea2.results.database import SQLiteResultsDatabase
 
 if TYPE_CHECKING:
+    from compas_fea2.base import Registry
     from compas_fea2.model.model import Model
     from compas_fea2.problem.steps import _Step
     from compas_fea2.problem.steps.perturbations import LinearStaticPerturbation
@@ -76,28 +78,34 @@ class Problem(FEAData):
         self.description = description
         self._path = None
         self._path_db = None
-        self._steps = set()
-        self._steps_order = []  # TODO make steps a list
+        self._steps = []
         self._rdb = None
 
     @property
     def __data__(self) -> dict:
-        """Returns a dictionary representation of the Problem object."""
-        return {
-            "description": self.description,
-            "steps": [step.__data__() for step in self.steps],
-            "path": str(self.path),
-            "path_db": str(self.path_db),
-        }
+        base = super().__data__
+        base.update(
+            {
+                "description": self.description,
+                "path": str(self.path) if self.path else None,
+                "path_db": str(self.path_db) if self.path else None,
+                "steps": [s.__data__ for s in self._steps],
+            }
+        )
+        return base
 
+    @from_data
     @classmethod
-    def __from_data__(cls, data: dict) -> "Problem":
-        """Creates a Problem object from a dictionary representation."""
-        problem = cls(description=data.get("description"))
-        problem.path = data.get("path")
-        problem._path_db = data.get("path_db")
-        problem._steps = set(_Step.__from_data__(step_data) for step_data in data.get("steps", []))
-        problem._steps_order = list(problem._steps)
+    def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate=True) -> "Problem":
+        if not registry:
+            raise ValueError("A registry is required to create a Part from data.")
+        description = data.get("description", "")
+        problem = cls(description=description)
+        problem._path = data.get("path", None)
+        problem._path_db = data.get("path_db", None)
+        for step_data in data.get("steps", []):
+            problem.add_step(registry.add_from_data(step_data, module_name="compas_fea2.problem.steps", duplicate=duplicate))
+        problem._rdb = registry.add_from_data(data, module_name="compas_fea2.results.database", duplicate=duplicate)
         return problem
 
     @property
@@ -105,7 +113,7 @@ class Problem(FEAData):
         return self._registration
 
     @property
-    def steps(self) -> set:
+    def steps(self) -> list:
         return self._steps
 
     @property
@@ -130,17 +138,6 @@ class Problem(FEAData):
         if not hasattr(ResultsDatabase, value):
             raise ValueError("Invalid ResultsDatabase option")
         self._rdb = getattr(ResultsDatabase, value)(self)
-
-    @property
-    def steps_order(self) -> List[_Step]:
-        return self._steps_order
-
-    @steps_order.setter
-    def steps_order(self, value: List[_Step]):
-        for step in value:
-            if not self.is_step_in_problem(step, add=False):
-                raise ValueError("{!r} must be previously added to {!r}".format(step, self))
-        self._steps_order = value
 
     @property
     def input_file(self) -> InputFile:
@@ -215,39 +212,13 @@ class Problem(FEAData):
         """
         if not isinstance(step, _Step):
             raise TypeError("You must provide a valid compas_fea2 Step object")
-
+        if step in self.steps:
+            raise ValueError("The step is already in the problem.")
         if self.find_step_by_name(step.name):
             raise ValueError("There is already a step with the same name in the model.")
-
         step._key = len(self._steps)
-        self._steps.add(step)
+        self._steps.append(step)
         step._registration = self
-        self._steps_order.append(step)
-        return step
-
-    def add_static_step(self, **kwargs) -> StaticStep:
-        # # type: (_Step) -> Step
-        """Adds a :class:`compas_fea2.problem._Step` to the problem. The name of
-        the Step must be unique
-
-        Parameters
-        ----------
-        Step : :class:`compas_fea2.problem.StaticStep`, optional
-            The analysis step to add to the problem, by default None.
-            If not provided, a :class:`compas_fea2.problem.StaticStep` with default
-            attributes is created.
-
-        Returns
-        -------
-        :class:`compas_fea2.problem._Step`
-        """
-
-        step = StaticStep(**kwargs)
-
-        step._key = len(self._steps)
-        self._steps.add(step)
-        step._registration = self
-        self._steps_order.append(step)
         return step
 
     def add_steps(self, steps: List[_Step]) -> List[_Step]:
@@ -284,8 +255,28 @@ class Problem(FEAData):
         for step in order:
             if not isinstance(step, _Step):
                 raise TypeError("{} is not a step".format(step))
-        self._steps_order = order
+        self._steps = order
 
+
+    def add_static_step(self, **kwargs) -> StaticStep:
+        # # type: (_Step) -> Step
+        """Adds a :class:`compas_fea2.problem._Step` to the problem. The name of
+        the Step must be unique
+
+        Parameters
+        ----------
+        Step : :class:`compas_fea2.problem.StaticStep`, optional
+            The analysis step to add to the problem, by default None.
+            If not provided, a :class:`compas_fea2.problem.StaticStep` with default
+            attributes is created.
+
+        Returns
+        -------
+        :class:`compas_fea2.problem._Step`
+        """
+        step = StaticStep(**kwargs)
+        return self.add_step(step)
+    
     def add_linear_static_perturbation_step(self, lp_step: "LinearStaticPerturbation", base_step: str):
         """Add a linear perturbation step to a previously defined step.
 
@@ -344,7 +335,7 @@ Analysis folder path : {self.path or "N/A"}
     # =========================================================================
     #                         Analysis methods
     # =========================================================================
-    def write_input_file(self, path: Optional[Union[Path, str]] = None) -> InputFile:
+    def write_input_file(self, path: Optional[Union[Path, str]] = None) -> str:
         """Writes the input file.
 
         Parameters
@@ -359,6 +350,8 @@ Analysis folder path : {self.path or "N/A"}
             The InputFile objects that generates the input file.
         """
         path = path or self.path
+        if not path:
+            raise ValueError("A path to the folder for the input file must be provided")
         if not isinstance(path, Path):
             path = Path(path)
         if not path.exists():

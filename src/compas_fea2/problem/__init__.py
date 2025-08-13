@@ -3,12 +3,8 @@ from .displacements import GeneralDisplacement
 from .loads import VectorLoad, ScalarLoad
 
 from .fields import (
-    _LoadField,
     DisplacementField,
-    NodeLoadField,
-    PointLoadField,
-    _PrescribedField,
-    PrescribedTemperatureField,
+    ForceField,
     TemperatureField,
     UniformSurfaceLoadField,
 )

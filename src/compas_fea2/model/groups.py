@@ -169,18 +169,6 @@ class _Group(FEAData, Generic[_MemberType]):
         return list(self._members)
 
     @property
-    def registration(self) -> Optional[Union["_Part", "Part", "RigidPart"]]:
-        """Get the object where this object is registered to."""
-        return self._registration
-
-    @registration.setter
-    def registration(self, value: Union["_Part", "Part", "RigidPart"]) -> None:
-        """Set the object where this object is registered to."""
-        for member in self._members:
-            member.registration = value  # type: ignore
-        self._registration = value
-
-    @property
     def part(self) -> Union["_Part", "Part", "RigidPart", None]:
         if isinstance(self._registration, _Part):
             return self._part
@@ -343,12 +331,14 @@ class _Group(FEAData, Generic[_MemberType]):
         return self.__class__(member_class=self._members_class, members=unique_members)
 
     def add_member(self, member: _MemberType) -> _MemberType:
+        """Add a single member to the group."""
         if self._members_class and not isinstance(member, self._members_class):
             raise TypeError(f"Member must be of type {self._members_class.__name__}.")
         self._members.add(member)
         return member
 
     def add_members(self, members: Iterable[_MemberType]) -> List[_MemberType]:
+        """Add multiple members to the group."""
         added = []
         for member in members:
             added.append(self.add_member(member))
@@ -480,14 +470,6 @@ class ElementsGroup(_Group[Union["_Element", "_Element1D", "_Element2D", "_Eleme
         super().__init__(members=members, member_class=_Element, **kwargs)
 
     @property
-    def part(self) -> Any:
-        return self._registration
-
-    @property
-    def model(self) -> Any:
-        return self.part._registration
-
-    @property
     def elements(self) -> Set[Union["_Element", "_Element1D", "_Element2D", "_Element3D"]]:
         return self._members
 
@@ -499,10 +481,6 @@ class EdgesGroup(_Group["Edge"]):
         from compas_fea2.model.elements import Edge
 
         super().__init__(members=members, member_class=Edge, **kwargs)
-
-    @property
-    def model(self) -> "Model | None":
-        return self._registration
 
     @property
     def edges(self) -> Set["Edge"]:

@@ -7,12 +7,12 @@ from compas.geometry import centroid_points_weighted
 from compas.geometry import sum_vectors
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import from_data
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.nodes import Node
 from compas_fea2.problem.displacements import GeneralDisplacement
 from compas_fea2.problem.fields import DisplacementField
-from compas_fea2.problem.fields import NodeLoadField
-from compas_fea2.problem.fields import _PrescribedField
+from compas_fea2.problem.fields import _NodeVectorField
 from compas_fea2.results import TemperatureFieldResults
 
 if TYPE_CHECKING:
@@ -126,9 +126,6 @@ class _Step(FEAData):
         """
         combination._registration = self
         self._combination = combination
-        # for case in combination.load_cases:
-        #     if case not in self._load_cases:
-        #         raise ValueError(f"{case} is not a valid load case.")
         for field in self.load_fields:
             if field.load_case in combination.load_cases:
                 factor = combination.factors[field.load_case]
@@ -184,7 +181,7 @@ class _Step(FEAData):
 
         Returns
         -------
-        list(:class:`compas_fea2.problem._Output`)
+        list(:class=`compas_fea2.problem._Output`)
             The requested outputs.
 
         Raises
@@ -229,29 +226,16 @@ class _Step(FEAData):
 
     @property
     def __data__(self):
-        return {
-            "name": self.name,
-            "field_outputs": list(self._field_outputs),
-            "history_outputs": list(self._history_outputs),
-            "results": self._results,
-            "key": self._key,
-            "patterns": list(self._load_fields),
-            "load_cases": list(self._load_cases),
-            "combination": self._combination,
-        }
+        base = super().__data__
+        base.update({
+            "replace": self.replace,
+            # NOTE: load_fields, outputs, etc. intentionally omitted or to be added later.
+        })
+        return base
 
-    @classmethod
-    def __from_data__(cls, data):
-        obj = cls()
-        obj.name = data["name"]
-        obj._field_outputs = set(data["field_outputs"])
-        obj._history_outputs = set(data["history_outputs"])
-        obj._results = data["results"]
-        obj._key = data["key"]
-        obj._load_fields = set(data["load_fields"])
-        obj._load_cases = set(data["load_cases"])
-        obj._combination = data["combination"]
-        return obj
+    @from_data
+    def __from_data__(cls, data, registry=None, duplicate=True):  # type: ignore[override]
+        return cls(replace=data.get("replace", False), name=data.get("name"))
 
 
 # ==============================================================================
@@ -384,7 +368,7 @@ class GeneralStep(_Step):
     #                               Load Fields
     # ==============================================================================
 
-    def add_load_field(self, field: NodeLoadField | DisplacementField):
+    def add_load_field(self, field: _NodeVectorField | DisplacementField):
         """Add a general :class:`compas_fea2.problem.patterns.Pattern` to the Step.
 
         Parameters
@@ -459,7 +443,7 @@ class GeneralStep(_Step):
             raise TypeError("nodes must be a list, tuple or NodesGroup, not {}".format(type(nodes)))
         nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
         load = VectorLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, amplitude=amplitude)
-        field = NodeLoadField(loads=[load], nodes=nodes, load_case=load_case, **kwargs)
+        field = _NodeVectorField(loads=[load], nodes=nodes, load_case=load_case, **kwargs)
 
         return self.add_load_field(field)
 
@@ -468,7 +452,7 @@ class GeneralStep(_Step):
         have the same scalar load.
         Parameters
         ----------
-        nodes : list[:class:`compas_fea2.model.Node`] | :class:`compas_fea2.model.NodesGroup`
+        nodes : list[:class=`compas_fea2.model.Node`] | :class=`compas_fea2.model.NodesGroup`
             Nodes where the load is applied.
         load_case : str, optional
             Load case name, by default None
@@ -489,7 +473,7 @@ class GeneralStep(_Step):
             raise TypeError("nodes must be a list, tuple or NodesGroup, not {}".format(type(nodes)))
         nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
         load = ScalarLoad(scalar_load=value, amplitude=amplitude)
-        field = NodeLoadField(loads=[load], nodes=nodes, load_case=load_case, **kwargs)
+        field = _NodeVectorField(loads=[load], nodes=nodes, load_case=load_case, **kwargs)
 
         return self.add_load_field(field)
 
@@ -599,7 +583,7 @@ class GeneralStep(_Step):
         ----------
         field : :class:`compas_fea2.problem.fields.PrescribedTemperatureField`
             The temperature field to add.
-        node : :class:`compas_fea2.model.Node`
+        node : :class=`compas_fea2.model.Node`
             The node to which the temperature field is applied.
 
         Returns
@@ -674,16 +658,16 @@ class GeneralStep(_Step):
         return prescribed_field
 
     def add_nodes_prescribed_field(self, prescribed_field, nodes):
-        """Add a :class:`compas_fea2.model._InitialCondition` to the model.
+        """Add a :class=`compas_fea2.model._InitialCondition` to the model.
 
         Parameters
         ----------
-        ic : :class:`compas_fea2.model._InitialCondition`
-        nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
+        ic : :class=`compas_fea2.model._InitialCondition`
+        nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
 
         Returns
         -------
-        :class:`compas_fea2.model._InitialCondition`
+        :class=`compas_fea2.model._InitialCondition`
 
         """
         if not isinstance(nodes, NodesGroup):
@@ -692,14 +676,14 @@ class GeneralStep(_Step):
         return prescribed_field
 
     def add_prescribed_field(self, field, *kwargs):
-        """Add a general :class:`compas_fea2.problem.patterns.Pattern` to the Step.
+        """Add a general :class=`compas_fea2.problem.patterns.Pattern` to the Step.
 
         Parameters
         ----------
 
         Returns
         -------
-        :class:`compas_fea2.problem.patterns.Pattern`
+        :class=`compas_fea2.problem.patterns.Pattern`
 
         """
 
@@ -929,19 +913,32 @@ Z : {applied_load[2]}
 
     @property
     def __data__(self):
-        data = super().__data__
-        data.update(
-            {
-                "max_increments": self._max_increments,
-                "initial_inc_size": self._initial_inc_size,
-                "min_inc_size": self._min_inc_size,
-                "time": self._time,
-                "nlgeom": self._nlgeom,
-                "modify": self._modify,
-                "restart": self._restart,
-            }
+        base = super().__data__
+        base.update({
+            "max_increments": self._max_increments,
+            "initial_inc_size": self._initial_inc_size,
+            "min_inc_size": self._min_inc_size,
+            "max_inc_size": self._max_inc_size,
+            "time": self._time,
+            "nlgeom": self._nlgeom,
+            "modify": self._modify,
+            "restart": self._restart,
+        })
+        return base
+
+    @from_data
+    def __from_data__(cls, data, registry=None, duplicate=True):  # type: ignore[override]
+        return cls(
+            max_increments=data.get("max_increments"),
+            initial_inc_size=data.get("initial_inc_size"),
+            min_inc_size=data.get("min_inc_size"),
+            max_inc_size=data.get("max_inc_size"),
+            time=data.get("time"),
+            nlgeom=data.get("nlgeom", False),
+            modify=data.get("modify", False),
+            restart=data.get("restart", False),
+            name=data.get("name"),
         )
-        return data
 
     def plot_deflection_along_line(self, line, n_divide=1000):
         """Plot the deflection along a compas line given as an input. This method can only be used on shell models.
