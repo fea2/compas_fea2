@@ -1,9 +1,5 @@
-import math
 from typing import Optional
 from uuid import UUID
-
-from matplotlib import pyplot as plt
-from compas_fea2.base import Registry
 
 from .material import _Material
 

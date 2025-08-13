@@ -1,12 +1,12 @@
+from math import pi
+from math import sqrt
 from typing import TYPE_CHECKING
 from typing import Optional
 
-from math import pi
-from math import sqrt
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import Polygon as mplPolygon
 from matplotlib.path import Path
-import numpy as np
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry

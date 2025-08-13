@@ -1,11 +1,8 @@
 from typing import Optional
 
-from uuid import UUID
-
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-
 
 
 class _Material(FEAData):

@@ -4,8 +4,6 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-from uuid import UUID
-
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
@@ -14,7 +12,6 @@ from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import RigidPart
 
 if TYPE_CHECKING:
-    from compas_fea2.model.model import Model
     from compas_fea2.model.groups import NodesGroup
     from compas_fea2.model.nodes import Node
     from compas_fea2.model.parts import RigidPart

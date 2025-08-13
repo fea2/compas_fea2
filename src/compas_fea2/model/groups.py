@@ -1,3 +1,6 @@
+import logging
+from importlib import import_module
+from itertools import groupby
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -6,15 +9,11 @@ from typing import Generic
 from typing import Iterable
 from typing import Iterator
 from typing import List
+from typing import Optional
 from typing import Set
 from typing import TypeVar
 from typing import Union
-from typing import Optional
 from typing import cast
-
-import logging
-from importlib import import_module
-from itertools import groupby
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
@@ -31,18 +30,18 @@ if TYPE_CHECKING:
     from compas_fea2.model.elements import _Element1D
     from compas_fea2.model.elements import _Element2D
     from compas_fea2.model.elements import _Element3D
+    from compas_fea2.model.fields import _ConditionsField
     from compas_fea2.model.ics import _InitialCondition
     from compas_fea2.model.interactions import _Interaction
     from compas_fea2.model.interfaces import _Interface
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.model import Model
     from compas_fea2.model.nodes import Node
-    from compas_fea2.model.parts import _Part
     from compas_fea2.model.parts import Part
     from compas_fea2.model.parts import RigidPart
+    from compas_fea2.model.parts import _Part
     from compas_fea2.model.releases import _BeamEndRelease
     from compas_fea2.model.sections import _Section
-    from compas_fea2.model.fields import _ConditionsField
 
 
 # Define a generic type for members of _Group

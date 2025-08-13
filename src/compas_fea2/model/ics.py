@@ -1,8 +1,9 @@
-from typing import Optional, List
+from typing import Optional
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+
 
 class _InitialCondition(FEAData):
     """Base class for all predefined initial conditions.

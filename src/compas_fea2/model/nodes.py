@@ -1,12 +1,8 @@
 from typing import TYPE_CHECKING
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
-from typing import Any
-
-from importlib import import_module
 
 from compas.geometry import Point
 from compas.geometry import transform_points
@@ -16,16 +12,10 @@ import compas_fea2
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-from compas_fea2.model.bcs import GeneralBC
-from compas_fea2.model.bcs import _BoundaryCondition
-from compas_fea2.model.groups import BCsGroup
 
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model
     from compas_fea2.model.parts import _Part
-    from compas_fea2.model.parts import Part
-    from compas_fea2.model.parts import RigidPart
-    from compas_fea2.model.groups import FieldsGroup
     from compas_fea2.results import DisplacementResult
     from compas_fea2.results import ReactionResult
     from compas_fea2.results import TemperatureResult

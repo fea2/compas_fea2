@@ -1,17 +1,17 @@
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import Optional
-from typing import TYPE_CHECKING
 
 from compas.geometry import Frame
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Frameable
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-from compas_fea2.base import Frameable
 
 if TYPE_CHECKING:
-    from compas_fea2.model.model import Model
+    pass
 
 docs = """
 Note

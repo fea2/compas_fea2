@@ -42,16 +42,14 @@ from .elements import _Element
 from .elements import _Element1D
 from .elements import _Element2D
 from .elements import _Element3D
-from .groups import NodesGroup
 from .groups import EdgesGroup
 from .groups import ElementsGroup
-from .groups import EdgesGroup
 from .groups import FacesGroup
-from .groups import MaterialsGroup
-from .groups import SectionsGroup
 from .groups import InteractionsGroup
 from .groups import InterfacesGroup
-from .groups import ReleasesGroup
+from .groups import MaterialsGroup
+from .groups import NodesGroup
+from .groups import SectionsGroup
 from .materials.material import _Material
 from .nodes import Node
 from .releases import _BeamEndRelease
@@ -65,7 +63,6 @@ from .sections import _Section3D
 if TYPE_CHECKING:
     from compas.geometry import Polygon
 
-    from compas_fea2.model.bcs import _BoundaryCondition
     from compas_fea2.model.elements import Face
     from compas_fea2.model.elements import _Element
     from compas_fea2.model.elements import _Element1D
@@ -79,14 +76,14 @@ if TYPE_CHECKING:
     from compas_fea2.model.groups import MaterialsGroup
     from compas_fea2.model.groups import NodesGroup
     from compas_fea2.model.groups import SectionsGroup
-    from compas_fea2.model.groups import ReleasesGroup
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.model import Model
     from compas_fea2.model.nodes import Node
+    from compas_fea2.model.parts import RigidPart
+    from compas_fea2.model.parts import _Part
     from compas_fea2.model.sections import _Section
     from compas_fea2.model.sections import _Section2D
     from compas_fea2.model.sections import _Section3D
-    from compas_fea2.model.parts import _Part, Parts, RigidPart
 
 
 GroupType = Union["NodesGroup", "ElementsGroup", "FacesGroup", "MaterialsGroup", "SectionsGroup", "InterfacesGroup", "InteractionsGroup"]

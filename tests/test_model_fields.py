@@ -2,10 +2,8 @@ import unittest
 from compas_fea2.model import Model
 from compas_fea2.model import Part
 from compas_fea2.model import FixedBC, PinnedBC, RollerBCX
-from compas_fea2.model import ImposedTemperature
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.fields import BoundaryConditionsField
-from compas_fea2.model.fields import InitialStressField
 
 
 class TestBCFields(unittest.TestCase):

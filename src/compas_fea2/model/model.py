@@ -19,28 +19,27 @@ from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
 from compas_fea2.model.bcs import _BoundaryCondition
-from compas_fea2.model.bcs import _ThermalBoundaryCondition
 from compas_fea2.model.connectors import _Connector
 from compas_fea2.model.constraints import _Constraint
+from compas_fea2.model.elements import _Element
+from compas_fea2.model.fields import BoundaryConditionsField
+from compas_fea2.model.fields import InitialTemperatureField
+from compas_fea2.model.fields import _InitialConditionField
 from compas_fea2.model.groups import ConnectorsGroup
 from compas_fea2.model.groups import ConstraintsGroup
 from compas_fea2.model.groups import ElementsGroup
+from compas_fea2.model.groups import FieldsGroup
 from compas_fea2.model.groups import InteractionsGroup
 from compas_fea2.model.groups import InterfacesGroup
 from compas_fea2.model.groups import MaterialsGroup
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.groups import PartsGroup
 from compas_fea2.model.groups import SectionsGroup
-from compas_fea2.model.groups import FieldsGroup
 from compas_fea2.model.groups import _Group
-from compas_fea2.model.ics import _InitialCondition
 from compas_fea2.model.ics import InitialTemperature
-from compas_fea2.model.fields import BoundaryConditionsField
-from compas_fea2.model.fields import _InitialConditionField
-from compas_fea2.model.fields import InitialTemperatureField
+from compas_fea2.model.ics import _InitialCondition
 from compas_fea2.model.interactions import _Interaction
 from compas_fea2.model.nodes import Node
-from compas_fea2.model.elements import _Element
 from compas_fea2.model.parts import Part
 from compas_fea2.model.parts import RigidPart
 from compas_fea2.model.parts import _Part
@@ -59,7 +58,6 @@ if TYPE_CHECKING:
     from compas.geometry import Polygon
 
     from compas_fea2.model.bcs import _BoundaryCondition
-    from compas_fea2.model.bcs import _ThermalBoundaryCondition
     from compas_fea2.model.connectors import _Connector
     from compas_fea2.model.constraints import _Constraint
     from compas_fea2.model.fields import BoundaryConditionsField
@@ -67,11 +65,11 @@ if TYPE_CHECKING:
     from compas_fea2.model.groups import ConnectorsGroup
     from compas_fea2.model.groups import ConstraintsGroup
     from compas_fea2.model.groups import ElementsGroup
+    from compas_fea2.model.groups import FieldsGroup
     from compas_fea2.model.groups import InteractionsGroup
     from compas_fea2.model.groups import InterfacesGroup
     from compas_fea2.model.groups import MaterialsGroup
     from compas_fea2.model.groups import SectionsGroup
-    from compas_fea2.model.groups import FieldsGroup
     from compas_fea2.model.ics import InitialTemperature
     from compas_fea2.model.interactions import _Interaction
     from compas_fea2.model.interfaces import _Interface

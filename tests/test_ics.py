@@ -1,5 +1,5 @@
 import unittest
-from compas_fea2.model.ics import InitialTemperature, InitialStressField
+from compas_fea2.model.ics import InitialTemperature
 
 
 class TestInitialTemperature(unittest.TestCase):

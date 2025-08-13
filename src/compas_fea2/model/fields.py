@@ -5,12 +5,8 @@ from typing import Optional
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-
-from compas_fea2.model.bcs import ImposedTemperature
 from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.groups import NodesGroup
-from compas_fea2.model.groups import ElementsGroup
-from compas_fea2.model.ics import InitialTemperature
 from compas_fea2.model.ics import _InitialCondition
 from compas_fea2.model.nodes import Node
 

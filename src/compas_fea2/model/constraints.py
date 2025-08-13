@@ -1,7 +1,5 @@
-from typing import Optional
 from typing import TYPE_CHECKING
-
-from uuid import UUID
+from typing import Optional
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry

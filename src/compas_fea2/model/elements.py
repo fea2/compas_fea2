@@ -1,6 +1,4 @@
 from operator import itemgetter
-from uuid import UUID
-
 from typing import TYPE_CHECKING
 from typing import Dict
 from typing import Iterator
@@ -8,6 +6,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+from uuid import UUID
 
 from compas.datastructures import Mesh
 from compas.geometry import Frame
@@ -22,9 +21,9 @@ from compas.geometry import distance_point_point
 from compas.itertools import pairwise
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Frameable
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-from compas_fea2.base import Frameable
 
 if TYPE_CHECKING:
     from compas_fea2.model.sections import SpringSection
@@ -40,9 +39,9 @@ if TYPE_CHECKING:
 
     from .model import Model
     from .nodes import Node
-    from .parts import _Part
     from .parts import Part
     from .parts import RigidPart
+    from .parts import _Part
     from .shapes import Shape
 
 
@@ -1238,13 +1237,14 @@ class _Element3D(_Element):
 
     """
 
-    def __init__(self, nodes: List["Node"], section: "_Section3D", implementation: Optional[str] = None, frame: Optional[List] = None, rigid=False, heat: bool = False, **kwargs):
+    def __init__(self, nodes: List["Node"], section: "_Section3D", implementation: Optional[str] = None, frame: Optional[Frame] = None, rigid=False, heat: bool = False, **kwargs):
         super().__init__(
             nodes=nodes,
             section=section,
             implementation=implementation,
             rigid=rigid,
             heat=heat,
+            frame=frame,
             **kwargs,
         )
         self._faces: Optional[List[Face]] = None
@@ -1353,19 +1353,24 @@ class TetrahedronElement(_Element3D):
     Attributes
     ----------
     nodes : List["Node"]
-        The list of nodes defining the element.
+        Corner (and optional midside) nodes defining the element.
+    is_quadratic : bool
+        True if the element is a 10-node (quadratic) tetrahedron.
+    midside_nodes : dict | None
+        Mapping "e#" -> midside node (only for C3D10), else None.
+    material_frame : Frame
+        Local material frame controlling anisotropic material directions.
 
-    Added
-    -----
-    Local frame generation for anisotropic materials:
-    - If no frame provided, a deterministic local material frame is built:
-      x = n0->n1
-      y = (n0->n2) orthogonalized to x
-      z = x x y
-    - Origin at centroid of corner nodes.
-    Pass an explicit `frame` to override.
+    Material Orientation
+    --------------------
+    If no explicit frame is passed, a deterministic geometric frame is built:
+    - x = n0 -> n1 (normalized)
+    - y = (n0 -> n2) orthogonalized to x
+    - z = x × y (right–handed); origin = centroid of corner nodes.
+    Use :meth:`set_material_orientation` to define a custom anisotropic frame
+    similar to *ORIENTATION in Abaqus / CalculiX by providing a primary and an
+    optional secondary direction.
     """
-
     def __init__(
         self,
         nodes: List["Node"],
@@ -1377,10 +1382,8 @@ class TetrahedronElement(_Element3D):
         if len(nodes) not in {4, 10}:
             raise ValueError("TetrahedronElement must have either 4 (C3D4) or 10 (C3D10) nodes.")
         self._is_quadratic = len(nodes) == 10
-        # Forward frame (may be None) to base so user override is respected
         super().__init__(nodes=nodes, section=section, implementation=implementation, frame=frame, **kwargs)
 
-        # Auto-generate material frame if none supplied (anisotropy support)
         if not self.has_local_frame:
             self._frame = self._compute_default_frame()
 
@@ -1390,6 +1393,7 @@ class TetrahedronElement(_Element3D):
         self._midside_map: Dict[Tuple[int, int], int] | None = None
         if self._is_quadratic:
             self._midside_map = {(0, 1): 4, (1, 2): 5, (2, 0): 6, (0, 3): 7, (1, 3): 8, (2, 3): 9}
+            self._validate_quadratic_midside_nodes()
         self._edges = []
         for tag, (i, j) in self._edges_indices.items():
             edge = Edge(nodes=[self.nodes[i], self.nodes[j]], tag=tag)
@@ -1398,7 +1402,6 @@ class TetrahedronElement(_Element3D):
 
     def _compute_default_frame(self) -> Frame:
         """Build a stable local material frame for anisotropic behavior."""
-        # Use only corner nodes
         p0, p1, p2, p3 = [n.point for n in self.nodes[:4]]
         from compas.geometry import centroid_points as _centroid_points
         c = Point(*_centroid_points([p0, p1, p2, p3]))
@@ -1407,21 +1410,17 @@ class TetrahedronElement(_Element3D):
         if x.length < 1e-12 or v2.length < 1e-12:
             return Frame.worldXY()
         x.unitize()
-        # Remove x component from v2
         v2p = v2 - x * v2.dot(x)
         if v2p.length < 1e-12:
-            # fallback: use p0->p3
             v3 = Vector.from_start_end(p0, p3)
             v2p = v3 - x * v3.dot(x)
             if v2p.length < 1e-12:
                 return Frame.worldXY()
         y = v2p.unitized()
-        # Complete right-handed
         z = x.cross(y)
         if z.length < 1e-14:
             return Frame.worldXY()
         z.unitize()
-        # Re-orthogonalize y for numerical safety
         y = z.cross(x).unitized()
         return Frame(c, x, y)
 
@@ -1432,43 +1431,143 @@ class TetrahedronElement(_Element3D):
 
     @property
     def is_quadratic(self) -> bool:
+        """Check if the element is quadratic (C3D10) or linear (C3D4)."""
         return self._is_quadratic
 
     @property
     def midside_nodes(self) -> Dict[str, "Node"] | None:
+        """Mapping edge tag -> midside Node (only for C3D10); otherwise None.
+
+        Returns
+        -------
+        dict | None
+            Dictionary of edge tags to midside nodes if quadratic and data available; else None.
+        """
         if not self._is_quadratic or not self._midside_map:
             return None
-        mids = {}
-        for tag, pair in self._edges_indices.items():  # type: ignore[attr-defined]
+        if getattr(self, "_edges_indices", None) is None:
+            return None
+        mids: Dict[str, "Node"] = {}
+        for tag, pair in self._edges_indices.items():  # type: ignore[union-attr]
             i, j = pair
-            mid_index = self._midside_map.get((i, j)) or self._midside_map.get((j, i))
-            if mid_index is not None:
-                mids[tag] = self.nodes[mid_index]
+            mid_idx = self._midside_map.get((i, j)) or self._midside_map.get((j, i))
+            if mid_idx is not None:
+                mids[tag] = self.nodes[mid_idx]
         return mids
 
     @property
     def corner_nodes(self) -> List["Node"]:
+        """Return the corner nodes of the tetrahedron element."""
         return self.nodes[:4]
 
     @property
     def volume(self) -> float:
-        # Volume using first four (corner) nodes: V = | (AB . (AC x AD)) | / 6
+        """Calculate the volume of the tetrahedron element."""
         a, b, c, d = [n.xyz for n in self.corner_nodes]
         def vec(p, q):
             return (q[0] - p[0], q[1] - p[1], q[2] - p[2])
         AB = vec(a, b)
         AC = vec(a, c)
         AD = vec(a, d)
-        # Cross AC x AD
         cx = AC[1] * AD[2] - AC[2] * AD[1]
         cy = AC[2] * AD[0] - AC[0] * AD[2]
         cz = AC[0] * AD[1] - AC[1] * AD[0]
         triple = AB[0] * cx + AB[1] * cy + AB[2] * cz
         return abs(triple) / 6.0
 
+    def set_material_orientation(
+        self,
+        primary: Union[Vector, Tuple[float, float, float], List[float]],
+        secondary: Union[Vector, Tuple[float, float, float], List[float], None] = None,
+        origin: Optional[Point] = None,
+        enforce: bool = True,
+    ) -> Frame:
+        """Define or override the local material orientation frame.
 
-class PentahedronElement(_Element3D):
-    """A Solid element with 5 faces (extruded triangle)."""
+        Parameters
+        ----------
+        primary : Vector | (float,float,float)
+            Desired local 1-direction (must be non-zero).
+        secondary : Vector | (float,float,float) | None, optional
+            Helper direction for local 2-direction (not necessarily orthogonal).
+            If omitted or nearly colinear with ``primary`` an automatic axis is chosen.
+        origin : Point | None, optional
+            Origin of the frame. Defaults to centroid of the 4 corner nodes.
+        enforce : bool, optional
+            If True raise errors on degeneracy; otherwise fall back to default frame.
+
+        Returns
+        -------
+        Frame
+            The resulting local material frame.
+        """
+        def _as_vector(v) -> Vector:
+            if isinstance(v, Vector):
+                return v.copy()
+            return Vector(*v)  # type: ignore[arg-type]
+        try:
+            p = _as_vector(primary)
+        except Exception:
+            raise ValueError("primary must be a 3-vector or Vector instance.")
+        if p.length < 1e-14:
+            if enforce:
+                raise ValueError("Primary direction has zero length.")
+            return self._compute_default_frame()
+        p.unitize()
+        if secondary is None:
+            candidates = [Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1)]
+            secondary = min(candidates, key=lambda v: abs(v.dot(p)))
+        try:
+            s = _as_vector(secondary)
+        except Exception:
+            if enforce:
+                raise ValueError("secondary must be a 3-vector or Vector instance.")
+            s = Vector(0, 1, 0)
+        s_ortho = s - p * s.dot(p)
+        if s_ortho.length < 1e-10:
+            for alt in (Vector(1,0,0), Vector(0,1,0), Vector(0,0,1)):
+                if abs(alt.dot(p)) < 0.95:
+                    s_ortho = alt - p * alt.dot(p)
+                    if s_ortho.length > 1e-10:
+                        break
+        if s_ortho.length < 1e-12:
+            if enforce:
+                raise ValueError("Cannot construct secondary direction (degenerate).")
+            return self._compute_default_frame()
+        y = s_ortho.unitized()
+        z = p.cross(y)
+        if z.length < 1e-14:
+            if enforce:
+                raise ValueError("Degenerate triad: cross product near zero.")
+            return self._compute_default_frame()
+        z.unitize()
+        y = z.cross(p).unitized()
+        o = origin or Point(*centroid_points([n.point for n in self.nodes[:4]]))
+        self._frame = Frame(o, p, y)
+        return self._frame
+
+    def _validate_quadratic_midside_nodes(self, tol: float = 1e-6) -> None:
+        """Validate C3D10 midside nodes lie close to their edge midpoints.
+
+        Raises
+        ------
+        ValueError
+            If a midside node deviates from the edge midpoint by more than ``tol`` (relative).
+        """
+        if not self._is_quadratic or not self._midside_map:
+            return
+        for (i, j), mid_idx in self._midside_map.items():
+            if mid_idx >= len(self.nodes):
+                raise ValueError(f"Midside node index {mid_idx} out of range for quadratic tetrahedron.")
+            p_i = self.nodes[i].point
+            p_j = self.nodes[j].point
+            p_m = self.nodes[mid_idx].point
+            midpoint = Point((p_i.x + p_j.x)/2.0, (p_i.y + p_j.y)/2.0, (p_i.z + p_j.z)/2.0)
+            edge_len = Vector.from_start_end(p_i, p_j).length
+            dev = Vector.from_start_end(midpoint, p_m).length
+            if edge_len > 0 and dev / edge_len > tol:
+                raise ValueError(
+                    f"Midside node {mid_idx} not at midpoint of edge ({i},{j}); rel dev={dev/edge_len:.2e} > tol={tol:.1e}")
 
 
 class HexahedronElement(_Element3D):

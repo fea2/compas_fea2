@@ -3,6 +3,7 @@ import json
 import uuid
 from abc import abstractmethod
 from copy import deepcopy
+from functools import wraps
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
@@ -15,12 +16,14 @@ from typing import Union
 
 import compas
 from compas.data import Data
-from compas.geometry import Frame, Transformation, Point, Vector
+from compas.geometry import Frame
+from compas.geometry import Point
+from compas.geometry import Transformation
+from compas.geometry import Vector
 
 import compas_fea2
 
 from .utilities._utils import to_dimensionless
-from functools import wraps
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -377,6 +380,7 @@ class Frameable:
 
     @property
     def frame(self) -> Frame:
+        """Get the local frame of the object."""
         # Local import to avoid circular import at module load.
         import compas_fea2  # type: ignore
         return self._frame or compas_fea2.GLOBAL_FRAME
@@ -387,9 +391,11 @@ class Frameable:
 
     @property
     def has_local_frame(self) -> bool:
+        """Check if the object has a local frame set."""
         return self._frame is not None
 
     def clear_frame(self):
+        """Clear the local frame, reverting to GLOBAL_FRAME."""
         self._frame = None
 
     # --- geometric helpers -------------------------------------------------
@@ -398,6 +404,7 @@ class Frameable:
         if not self.has_local_frame:
             return True
         from compas.geometry import Transformation  # local import
+
         import compas_fea2  # type: ignore
         T = Transformation.from_frame_to_frame(self.frame, compas_fea2.GLOBAL_FRAME)
         # Extract rotation part and compare to identity.
@@ -414,28 +421,36 @@ class Frameable:
 
     # --- transformations ----------------------------------------------------
     def _T_local_to_global(self) -> Transformation:
+        """Get the transformation from local frame to global frame."""
         import compas_fea2  # type: ignore
         return Transformation.from_frame_to_frame(self.frame, compas_fea2.GLOBAL_FRAME)
 
     def _T_global_to_local(self) -> Transformation:
+        """Get the transformation from global frame to local frame."""
         import compas_fea2  # type: ignore
         return Transformation.from_frame_to_frame(compas_fea2.GLOBAL_FRAME, self.frame)
 
     def to_local_point(self, pt: Point) -> Point:
+        """Convert a global point to the local frame."""
         return pt.transformed(self._T_global_to_local())
 
     def to_global_point(self, pt: Point) -> Point:
+        """Convert a local point to the global frame."""
         return pt.transformed(self._T_local_to_global())
 
     def to_local_vector(self, vec: Vector) -> Vector:
+        """Convert a global vector to the local frame."""
         return vec.transformed(self._T_global_to_local())
 
     def to_global_vector(self, vec: Vector) -> Vector:
+        """Convert a local vector to the global frame."""
         return vec.transformed(self._T_local_to_global())
 
     def transform_to(self, other: Frame) -> Transformation:
+        """Get the transformation from this object's local frame to another frame."""
         return Transformation.from_frame_to_frame(self.frame, other)
 
     # --- serialization helper (optional usage) ------------------------------
     def _frame_data(self):
+        """Return the frame data for serialization."""
         return self._frame.__data__ if self._frame else None
