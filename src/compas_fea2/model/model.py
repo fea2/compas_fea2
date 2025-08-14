@@ -168,7 +168,7 @@ class Model(FEAData):
                 "fields": [field.__data__ for field in self._fields],
                 "connectors": [connector.__data__ for connector in self._connectors],
                 "problems": [problem.__data__ for problem in self._problems],
-                "path": str(self.path) if self._path else None,
+                "path": self.path if self._path else None,
             }
         )
         return data
@@ -180,7 +180,7 @@ class Model(FEAData):
             raise ValueError("Registry is required to create a Model from data.")
 
         model = cls(description=data.get("description"), author=data.get("author"))
-        model._path = Path(data.get("path"))
+        model._path = Path(data.get("path")) if data.get("path") else None
         model._constants = data.get("constants", {})
 
         for part_data in data.get("parts", []):
@@ -1438,6 +1438,7 @@ class Model(FEAData):
         :class=`compas_fea2.problem.Problem`
             The added problem.
         """
+        from compas_fea2.problem import Problem
         if not isinstance(problem, Problem):
             raise TypeError("{!r} is not a problem.".format(problem))
         problem._registration = self
