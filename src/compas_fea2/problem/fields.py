@@ -3,6 +3,7 @@ from typing import Iterable
 from typing import Optional
 from typing import Any
 from typing import List
+from numbers import Number
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
@@ -92,22 +93,79 @@ class _BaseLoadField(FEAData):
         )
         return data
 
+    # Helper to combine two load-like values into a new value (no in-place mutation)
+    @staticmethod
+    def _combine_values(a: Any, b: Any) -> Any:
+        if a is None:
+            return b
+        if b is None:
+            return a
 
-# def _rebuild_loads(loads_data, registry):  # helper
-#     rebuilt = []
-#     for Ld in loads_data:
-#         if isinstance(Ld, dict) and "dtype" in Ld:
-#             cls_name = Ld.get("dtype")
-#             if isinstance(cls_name, str):
-#                 load_cls = globals().get(cls_name)
-#                 if load_cls and hasattr(load_cls, "__from_data__"):
-#                     try:
-#                         rebuilt.append(load_cls.__from_data__(Ld, registry=registry))  # type: ignore
-#                         continue
-#                     except Exception:
-#                         pass
-#         rebuilt.append(Ld)
-#     return rebuilt
+        # Numbers
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+            return float(a) + float(b)
+
+        # ScalarLoad with number or ScalarLoad
+        if isinstance(a, ScalarLoad) and isinstance(b, (int, float)):
+            return ScalarLoad(a.scalar_load + float(b), amplitude=a.amplitude)
+        if isinstance(b, ScalarLoad) and isinstance(a, (int, float)):
+            return ScalarLoad(b.scalar_load + float(a), amplitude=b.amplitude)
+        if isinstance(a, ScalarLoad) and isinstance(b, ScalarLoad):
+            amp = a.amplitude if a.amplitude == b.amplitude else (a.amplitude or b.amplitude)
+            return ScalarLoad(a.scalar_load + b.scalar_load, amplitude=amp)
+
+        # VectorLoad: leverage in-place __add__ on a clone
+        if isinstance(a, VectorLoad) and isinstance(b, VectorLoad):
+            # Frames must be compatible
+            a_frame = a._frame if getattr(a, "has_local_frame", False) and a.has_local_frame else None
+            b_frame = b._frame if getattr(b, "has_local_frame", False) and b.has_local_frame else None
+            if (a_frame is not None) and (b_frame is not None) and (a_frame != b_frame):
+                raise ValueError("Cannot combine VectorLoads with different local frames.")
+            # Clone 'a' with desired amplitude, then use __add__
+            clone = _BaseLoadField._clone_vectorload(a, amplitude_override=a.amplitude or b.amplitude)
+            clone += b
+            return clone
+
+        # GeneralDisplacement (or similar with __add__ semantics creating a new instance)
+        try:
+            res = a + b  # type: ignore
+        except Exception:
+            raise TypeError(f"Unsupported combination for values {type(a)} and {type(b)}")
+        return res
+
+    # Helper to scale a single load-like value by a numeric factor, returning a new value
+    @staticmethod
+    def _scale_value(v: Any, factor: float | int) -> Any:
+        if v is None:
+            return None
+        f = float(factor)
+        # Numbers
+        if isinstance(v, (int, float)):
+            return float(v) * f
+        # ScalarLoad
+        if isinstance(v, ScalarLoad):
+            return ScalarLoad(v.scalar_load * f, amplitude=v.amplitude)
+        # VectorLoad: leverage in-place __mul__ on a clone
+        if isinstance(v, VectorLoad):
+            clone = _BaseLoadField._clone_vectorload(v)
+            clone *= f
+            return clone
+        # Fallback: try object's own __mul__
+        try:
+            return v * f  # type: ignore
+        except Exception:
+            raise TypeError(f"Unsupported scaling for value of type {type(v)}")
+
+    @staticmethod
+    def _clone_vectorload(src: VectorLoad, *, amplitude_override=None) -> VectorLoad:
+        """Create a non-mutated copy of a VectorLoad, preserving local components/frame."""
+        frame = src._frame if getattr(src, "has_local_frame", False) and src.has_local_frame else None
+        return VectorLoad(
+            x=src.x, y=src.y, z=src.z,
+            xx=src.xx, yy=src.yy, zz=src.zz,
+            frame=frame,
+            amplitude=src.amplitude if amplitude_override is None else amplitude_override,
+        )
 
 
 class _NodesLoadField(_BaseLoadField):
@@ -150,6 +208,57 @@ class _NodesLoadField(_BaseLoadField):
         """NodesGroup: The nodes over which the loads are distributed."""
         return self._distribution
 
+    def __add__(self, other: "_NodesLoadField") -> "_NodesLoadField":
+        if type(self) is not type(other):
+            return NotImplemented
+        # Build mapping node -> load
+        self_map = {n: L for n, L in zip(self._distribution, self._loads)}
+        other_map = {n: L for n, L in zip(other._distribution, other._loads)}
+        seen = set()
+        combined_nodes = []
+        # preserve order: self nodes first, then other's new ones
+        for n in self._distribution:
+            combined_nodes.append(n)
+            seen.add(n)
+        for n in other._distribution:
+            if n not in seen:
+                combined_nodes.append(n)
+                seen.add(n)
+        # combine loads per node
+        combined_loads: list[Any] = []
+        for n in combined_nodes:
+            a = self_map.get(n)
+            b = other_map.get(n)
+            if a is None:
+                combined_loads.append(b)
+            elif b is None:
+                combined_loads.append(a)
+            else:
+                combined_loads.append(self._combine_values(a, b))
+        # resolve load_case: keep if identical, else None
+        lc = self._load_case if self._load_case == other._load_case else None
+        # instantiate same subclass with positional args (loads, nodes)
+        return self.__class__(combined_loads, combined_nodes, load_case=lc)
+
+    def __mul__(self, factor: float | int):
+        if not isinstance(factor, (int, float)):
+            return NotImplemented
+        scaled = [self._scale_value(L, factor) for L in self._loads]
+        return self.__class__(scaled, self._distribution, load_case=self._load_case)
+
+    def __rmul__(self, factor: float | int):
+        return self.__mul__(factor)
+
+    def __sub__(self, other: "_NodesLoadField") -> "_NodesLoadField":
+        if type(self) is not type(other):
+            return NotImplemented
+        return self.__add__(other * -1)
+
+    def __rsub__(self, other: "_NodesLoadField") -> "_NodesLoadField":
+        if type(self) is not type(other):
+            return NotImplemented
+        return other.__add__(self * -1)
+
 
 class _ElementsLoadField(_BaseLoadField):
     """Field with an element-based distribution.
@@ -174,7 +283,9 @@ class _ElementsLoadField(_BaseLoadField):
 
     def __init__(self, loads, elements, *, load_case: str | None = None, **kwargs):
         super().__init__(load_case=load_case, **kwargs)
-        if not isinstance(elements, NodesGroup):
+        if isinstance(elements, NodesGroup):
+            distribution = elements
+        else:
             distribution = NodesGroup(elements)
         self._distribution = distribution
 
@@ -183,13 +294,59 @@ class _ElementsLoadField(_BaseLoadField):
         else:
             loads_list = [loads] * len(distribution)
         if len(loads_list) != len(distribution):
-            raise ValueError("Loads length must be 1 or match number of nodes.")
+            raise ValueError("Loads length must be 1 or match number of elements.")
         self._loads = loads_list
 
     @property
     def elements(self):
         """NodesGroup: The elements over which the loads are distributed."""
         return self._distribution
+
+    def __add__(self, other: "_ElementsLoadField") -> "_ElementsLoadField":
+        if type(self) is not type(other):
+            return NotImplemented
+        self_map = {e: L for e, L in zip(self._distribution, self._loads)}
+        other_map = {e: L for e, L in zip(other._distribution, other._loads)}
+        seen = set()
+        combined_elems = []
+        for e in self._distribution:
+            combined_elems.append(e)
+            seen.add(e)
+        for e in other._distribution:
+            if e not in seen:
+                combined_elems.append(e)
+                seen.add(e)
+        combined_loads: list[Any] = []
+        for e in combined_elems:
+            a = self_map.get(e)
+            b = other_map.get(e)
+            if a is None:
+                combined_loads.append(b)
+            elif b is None:
+                combined_loads.append(a)
+            else:
+                combined_loads.append(self._combine_values(a, b))
+        lc = self._load_case if self._load_case == other._load_case else None
+        return self.__class__(combined_loads, combined_elems, load_case=lc)
+
+    def __mul__(self, factor: float | int):
+        if not isinstance(factor, (int, float)):
+            return NotImplemented
+        scaled = [self._scale_value(L, factor) for L in self._loads]
+        return self.__class__(scaled, self._distribution, load_case=self._load_case)
+
+    def __rmul__(self, factor: float | int):
+        return self.__mul__(factor)
+
+    def __sub__(self, other: "_ElementsLoadField") -> "_ElementsLoadField":
+        if type(self) is not type(other):
+            return NotImplemented
+        return self.__add__(other * -1)
+
+    def __rsub__(self, other: "_ElementsLoadField") -> "_ElementsLoadField":
+        if type(self) is not type(other):
+            return NotImplemented
+        return other.__add__(self * -1)
 
     # @from_data
     # @classmethod

@@ -111,6 +111,40 @@ class ScalarLoad(_Load):
     def scalar_load(self):
         return self._scalar_load
 
+    def __mul__(self, scalar):
+        return ScalarLoad(self.scalar_load * float(scalar), amplitude=self.amplitude)
+
+    __rmul__ = __mul__
+
+    def __add__(self, other):
+        if isinstance(other, (int, float)):
+            return ScalarLoad(self.scalar_load + float(other), amplitude=self.amplitude)
+        if isinstance(other, ScalarLoad):
+            amp = self.amplitude if self.amplitude == other.amplitude else (self.amplitude or other.amplitude)
+            return ScalarLoad(self.scalar_load + other.scalar_load, amplitude=amp)
+        return NotImplemented
+
+    __radd__ = __add__
+
+    def __neg__(self):
+        return ScalarLoad(-self.scalar_load, amplitude=self.amplitude)
+
+    def __sub__(self, other):
+        if isinstance(other, (int, float)):
+            return ScalarLoad(self.scalar_load - float(other), amplitude=self.amplitude)
+        if isinstance(other, ScalarLoad):
+            amp = self.amplitude if self.amplitude == other.amplitude else (self.amplitude or other.amplitude)
+            return ScalarLoad(self.scalar_load - other.scalar_load, amplitude=amp)
+        return NotImplemented
+
+    def __rsub__(self, other):
+        if isinstance(other, (int, float)):
+            return ScalarLoad(float(other) - self.scalar_load, amplitude=self.amplitude)
+        if isinstance(other, ScalarLoad):
+            amp = self.amplitude if self.amplitude == other.amplitude else (self.amplitude or other.amplitude)
+            return ScalarLoad(other.scalar_load - self.scalar_load, amplitude=amp)
+        return NotImplemented
+
 
 class VectorLoad(_Load, Frameable):
     """Vector load object.
@@ -205,6 +239,31 @@ class VectorLoad(_Load, Frameable):
             if a is not None and b is not None:
                 setattr(self, attr, a + b)
         return self
+
+    def __neg__(self):
+        # Mutates, consistent with __mul__
+        return self.__mul__(-1)
+
+    def __sub__(self, other):
+        if not isinstance(other, VectorLoad):
+            raise TypeError("Can only subtract VectorLoad objects.")
+        for attr in ["x", "y", "z", "xx", "yy", "zz"]:
+            a = getattr(self, attr)
+            b = getattr(other, attr)
+            if a is not None and b is not None:
+                setattr(self, attr, a - b)
+        return self
+
+    def __rsub__(self, other):
+        if not isinstance(other, VectorLoad):
+            return NotImplemented
+        clone = VectorLoad(
+            x=other.x, y=other.y, z=other.z,
+            xx=other.xx, yy=other.yy, zz=other.zz,
+            frame=other._frame,
+            amplitude=other.amplitude,
+        )
+        return clone.__sub__(self)
 
     # --- local components dict -----------------------------------------
     @property
