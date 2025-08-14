@@ -37,25 +37,19 @@ class _BaseLoadField(FEAData):
     ----------
     load_case : str, optional
         Identifier of the load case this field belongs to.
+    combination_rank : int, optional
+        Rank of this field in a combination. 0 means unspecified, 1=primary (leading),
+        2=secondary (accompanying), 3=tertiary, etc.
     **kwargs : dict, optional
         Additional keyword arguments forwarded to :class:`FEAData` (e.g. name).
-
-    Attributes
-    ----------
-    _load_case : str | None
-        Associated load case.
-    _distribution : Any
-        The normalised distribution object (nodes, elements, faces, ...).
-    _loads : list[Any]
-        List of load objects / numerical values aligned with the distribution.
     """
-
-    def __init__(self, *, load_case: str | None = None, **kwargs):
+    def __init__(self, *, load_case: str | None = None, combination_rank: int = 0, **kwargs):
         super().__init__(**kwargs)
         self._load_case = load_case
         self._registration: "_Step | None" = None
         self._distribution = None
         self._loads: list[Any] = []
+        self.combination_rank = combination_rank  # validates via setter
 
     # Removed value_kind & domain (now inferred downstream if needed)
 
@@ -87,11 +81,23 @@ class _BaseLoadField(FEAData):
             {
                 "dtype": self.__class__.__name__,
                 "load_case": self._load_case,
+                "combination_rank": self._combination_rank,
                 "distribution": getattr(self._distribution, "__data__", None),
                 "loads": [L.__data__ if hasattr(L, "__data__") else L for L in self._loads],
             }
         )
         return data
+
+    @property
+    def combination_rank(self) -> int:
+        """int: Rank in combinations (0=unspecified, 1=primary, 2=secondary, 3=tertiary...)."""
+        return self._combination_rank
+
+    @combination_rank.setter
+    def combination_rank(self, v: int) -> None:
+        if not isinstance(v, int) or v < 0:
+            raise TypeError("combination_rank must be a non-negative int")
+        self._combination_rank = v
 
     # Helper to combine two load-like values into a new value (no in-place mutation)
     @staticmethod
@@ -179,6 +185,8 @@ class _NodesLoadField(_BaseLoadField):
         Node(s) over which the loads are distributed (auto-wrapped in NodesGroup).
     load_case : str, optional
         Load case identifier.
+    combination_rank : int, optional
+        0=unspecified, 1=primary, 2=secondary, 3=tertiary...
     **kwargs : dict
         Extra keyword arguments forwarded to :class:`FEAData`.
 
@@ -432,8 +440,16 @@ class _ElementVectorField(_ElementsLoadField):
 
 # --- Users Fields -------------------------------------------------
 class DisplacementField(_NodeVectorField):
-    """Distribution of displacement boundary conditions over nodes."""
+    """Distribution of displacement boundary conditions over nodes.
 
+    Parameters
+    ----------
+    displacements : Iterable[GeneralDisplacement]
+    nodes : Iterable[Node]
+    load_case : str | None, optional
+    combination_rank : int, optional
+        0=unspecified, 1=primary, 2=secondary, 3=tertiary...
+    """
     def __init__(self, displacements: Iterable["GeneralDisplacement"], nodes: Iterable["Node"], load_case=None, **kwargs):
         super().__init__(vectors=displacements, distribution=nodes, load_case=load_case, **kwargs)
 
@@ -453,8 +469,16 @@ class DisplacementField(_NodeVectorField):
 
 
 class ForceField(_NodeVectorField):
-    """Distribution of concentrated (nodal) vector loads."""
+    """Distribution of concentrated (nodal) vector loads.
 
+    Parameters
+    ----------
+    loads : Iterable[VectorLoad]
+    nodes : Iterable[Node]
+    load_case : str | None, optional
+    combination_rank : int, optional
+        0=unspecified, 1=primary, 2=secondary, 3=tertiary...
+    """
     def __init__(self, loads: Iterable["VectorLoad"], nodes: Iterable["Node"], load_case: str | None = None, **kwargs):
         super().__init__(vectors=loads, distribution=nodes, load_case=load_case, **kwargs)
 
@@ -525,8 +549,18 @@ class UniformSurfaceLoadField(_NodeVectorField):
 
 
 class GravityLoadField(_NodeVectorField):
-    """Field distributing self‑weight (gravity) to nodes."""
+    """Field distributing self‑weight (gravity) to nodes.
 
+    Parameters
+    ----------
+    g : float
+    direction : tuple[float, float, float]
+    parts : Iterable[Any] | None
+    nodes : Iterable[Node] | None
+    load_case : str | None
+    combination_rank : int, optional
+        Typically 0 for permanent (unspecified rank), unless you want to force it.
+    """
     def __init__(self, g=9.81, direction=(0, 0, -1), parts=None, nodes=None, load_case=None, **kwargs):
         from compas_fea2.problem.loads import VectorLoad
 
@@ -574,8 +608,16 @@ class GravityLoadField(_NodeVectorField):
 
 
 class TemperatureField(_NodeScalarField):
-    """Thermal (nodal) temperature field."""
+    """Thermal (nodal) temperature field.
 
+    Parameters
+    ----------
+    temperature : float | Iterable[float]
+    nodes : Iterable[Node]
+    load_case : str | None
+    combination_rank : int, optional
+        0=unspecified, 1=primary, 2=secondary, 3=tertiary...
+    """
     def __init__(self, temperature: float | Iterable[float], nodes: Iterable["Node"], **kwargs):
         super().__init__(scalars=temperature, nodes=nodes, wrap=False, **kwargs)
 
