@@ -60,7 +60,7 @@ class _BaseLoadField(FEAData):
     # Removed value_kind & domain (now inferred downstream if needed)
 
     @property
-    def load_case(self):
+    def load_case(self) -> str | None:
         """str | None: Load case identifier to which this field belongs."""
         return self._load_case
 

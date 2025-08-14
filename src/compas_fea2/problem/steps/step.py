@@ -18,6 +18,7 @@ from compas_fea2.model.nodes import Node
 from compas_fea2.problem.fields import DisplacementField
 from compas_fea2.problem.fields import ForceField
 from compas_fea2.problem.groups import LoadsGroup, LoadsFieldGroup
+from compas_fea2.problem.combinations import LoadFieldsCombination, StepsCombination
 
 from compas_fea2.results import TemperatureFieldResults
 
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
     from compas_fea2.model import Model
     from compas_fea2.model import NodesGroup
     from compas_fea2.problem import Problem
-    from compas_fea2.problem import DisplacementField, ForceField
+    from compas_fea2.problem import DisplacementField, ForceField, TemperatureField
     from compas_fea2.problem.groups import LoadsFieldGroup
     from compas_fea2.problem import LoadFieldsCombination, StepsCombination
 
@@ -243,7 +244,7 @@ class GeneralStep(_Step):
             name=data.get("name"),
         )
         for field_data in data.get("load_fields", []):
-            step.add_load_field(registry.add_from_data(field_data, duplicate=duplicate))
+            step.add_field(registry.add_from_data(field_data, duplicate=duplicate))
         step._combination = registry.add_from_data(data.get("combination"), duplicate=duplicate) if data.get("combination") else None
         return step
 
@@ -256,6 +257,28 @@ class GeneralStep(_Step):
     def fields(self):
         """Return the fields associated with the step."""
         return self._fields
+
+    @property
+    def effective_fields(self) -> "LoadsFieldGroup | None":
+        """Return the fields to use for analysis/export (combined if a combination is set)."""
+        if not self._fields:
+            return None
+        if not self._combination:
+            return self._fields
+        if isinstance(self._combination, LoadFieldsCombination):
+            return self._combination.combine_for_step(self)
+        # For StepsCombination or other types, just return the fields
+        return self._fields
+
+    @property
+    def combined_fields(self) -> dict | None:
+        if not self.effective_fields:
+            raise ValueError("No effective fields to combine.")
+        subgroups = self.effective_fields.group_by(key=lambda f: type(f))
+        combined_fields = {}
+        for kind, group in subgroups.items():
+            combined_fields[kind] = sum([field for field in group.fields], start=ForceField(name="combined_field", loads=[], nodes=[]))
+        return combined_fields
 
     @property
     def load_cases(self) -> Set[str] | None:
@@ -329,11 +352,12 @@ class GeneralStep(_Step):
     def restart(self, value):
         self._restart = value
 
+
     # ==============================================================================
     #                               Load Fields
     # ==============================================================================
 
-    def add_load_field(self, field: "ForceField | DisplacementField"):
+    def add_field(self, field: "ForceField | DisplacementField | TemperatureField") -> "ForceField | DisplacementField | TemperatureField":
         """Add a general :class:`compas_fea2.problem.patterns.Pattern` to the Step.
 
         Parameters
@@ -370,7 +394,7 @@ class GeneralStep(_Step):
         """
         fields = fields if isinstance(fields, Iterable) else [fields]
         for field in fields:
-            self.add_load_field(field)
+            self.add_field(field)
 
     def add_uniform_forcefield(self, nodes, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, amplitude=None, **kwargs):
         """Add a :class:`compas_fea2.problem.fields.NodeLoadField` where all the nodes
@@ -410,7 +434,7 @@ class GeneralStep(_Step):
         load = VectorLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, amplitude=amplitude)
         field = ForceField(loads=[load], nodes=nodes, load_case=load_case, **kwargs)
 
-        return self.add_load_field(field)
+        return self.add_field(field)
 
     def add_uniform_line_field(self, polyline, load_case=None, discretization=10, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", tolerance=None, **kwargs):
         """Add a :class:`compas_fea2.problem.field.NodeLoadField` subclass object to the
@@ -431,7 +455,7 @@ class GeneralStep(_Step):
 
         # field = UniformSurfaceLoadField(load=[load], surface=surface, load_case=load_case, **kwargs)
 
-        return self.add_load_field(field)
+        return self.add_field(field)
 
     def add_surface_field(self, surface, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
         """Add a :class:`compas_fea2.problem.PointLoad` subclass object to the
@@ -478,7 +502,7 @@ class GeneralStep(_Step):
         # load = VectorLoad(**components, axes=axes)
         # field = UniformSurfaceLoadField(load=load, surface=surface, load_case=load_case, **kwargs)
 
-        return self.add_load_field(field)
+        return self.add_field(field)
 
     def add_gravity_fied(self, parts=None, g=9.81, x=0.0, y=0.0, z=-1.0, load_case=None, **kwargs):
         """Add a :class:`compas_fea2.problem.GravityLoad` load to the ``Step``
@@ -511,7 +535,7 @@ class GeneralStep(_Step):
         from compas_fea2.problem.fields import GravityLoadField
 
         gravity = GravityLoadField(g=g, parts=parts, direction=[x, y, z], load_case=load_case, **kwargs)
-        self.add_load_field(gravity)
+        self.add_field(gravity)
 
     def add_temperature_field(self, field, node):
         """Add a temperature field to the Step object.
@@ -562,11 +586,35 @@ class GeneralStep(_Step):
         nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
 
         displacement = GeneralDisplacement(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes, **kwargs)
-        return self.add_load_field(DisplacementField(displacement, nodes))
+        return self.add_field(DisplacementField(displacement, nodes))
 
     # ==============================================================================
     #                             Combinations
     # ==============================================================================
+
+    def add_combination(self, combination: ComboType):
+        """Add a combination to the Step.
+        
+        Parameters
+        ----------
+        combination : :class:`compas_fea2.problem.combinations.ComboType`
+            The combination to add to the Step.
+        Returns
+        -------
+        :class:`compas_fea2.problem.combinations.ComboType`
+        """
+        if not isinstance(combination, (LoadFieldsCombination, StepsCombination)):
+            raise TypeError(f"{combination} is not a valid combination type.")
+        if not self._combination:
+            self._combination = combination
+        else:
+            raise ValueError("A combination is already assigned to this step.")
+        combination._registration = self
+        return combination
+
+
+    # ==========================================================================
+    #                         Results methods - fields
 
     # =========================================================================
     #                         Results methods - reactions

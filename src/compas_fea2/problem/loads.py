@@ -1,6 +1,6 @@
 from typing import Optional
 
-from compas.geometry import Frame
+from compas.geometry import Frame, Vector
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
@@ -326,3 +326,42 @@ class VectorLoad(_Load, Frameable):
             "YY": self.YY,
             "ZZ": self.ZZ,
         }
+
+    # --- convenience vectors and magnitudes (GLOBAL) -------------------
+    @property
+    def force_vector(self) -> Optional[Vector]:
+        """Global force vector (X, Y, Z) or None if all force components are None."""
+        gx, gy, gz = self._locals_to_global((self.x, self.y, self.z))
+        if gx is None and gy is None and gz is None:
+            return None
+        return Vector(gx if gx is not None else 0.0, gy if gy is not None else 0.0, gz if gz is not None else 0.0)
+
+    @property
+    def moment_vector(self) -> Optional[Vector]:
+        """Global moment vector (XX, YY, ZZ) or None if all moment components are None."""
+        mx, my, mz = self._locals_to_global((self.xx, self.yy, self.zz))
+        if mx is None and my is None and mz is None:
+            return None
+        return Vector(mx if mx is not None else 0.0, my if my is not None else 0.0, mz if mz is not None else 0.0)
+
+    @property
+    def force_magnitude(self) -> Optional[float]:
+        """Euclidean norm of the global force components."""
+        v = self.force_vector
+        return None if v is None else v.length
+
+    @property
+    def moment_magnitude(self) -> Optional[float]:
+        """Euclidean norm of the global moment components."""
+        v = self.moment_vector
+        return None if v is None else v.length
+
+    @property
+    def magnitude(self):
+        """Convenience accessor returning both magnitudes."""
+        return {
+            "force": self.force_magnitude,
+            "moment": self.moment_magnitude,
+        }
+
+

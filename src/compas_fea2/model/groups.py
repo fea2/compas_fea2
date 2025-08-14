@@ -247,7 +247,10 @@ class _Group(FEAData, Generic[_MemberType]):
         """
         if type(self) is _Group:
             raise TypeError("Cannot group base _Group, use a specific group type.")
-        sorted_members = sorted(self._members, key=key)
+        try:
+            sorted_members = sorted(self._members, key=key)
+        except TypeError as e:
+            sorted_members = self._members
         grouped_members = {k: set(v) for k, v in groupby(sorted_members, key=key)}
         return {k: self.__class__(members=v, name=getattr(self, "name", None)) for k, v in grouped_members.items()}  # type: ignore
 
