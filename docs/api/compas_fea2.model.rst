@@ -99,7 +99,6 @@ Sections
     CircularSection
     HexSection
     ISection
-    MassSection
     MembraneSection
     PipeSection
     RectangularSection

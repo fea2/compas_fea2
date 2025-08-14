@@ -3,6 +3,13 @@ from collections import defaultdict
 from dotenv import load_dotenv
 from compas.tolerance import Tolerance
 from compas.geometry import Frame
+from contextlib import contextmanager
+from contextvars import ContextVar
+from importlib import import_module
+try:
+    from importlib.metadata import entry_points
+except Exception:
+    entry_points = None  # Python <3.8 fallback
 
 
 __author__ = ["Francesco Ranaudo"]
@@ -57,32 +64,75 @@ def _register_backend():
     raise NotImplementedError
 
 
-def set_backend(plugin):
-    """Set the backend plugin to be used.
+def register_backend(name: str):
+    """Return the registry dict for a backend name, creating it if needed."""
+    reg = BACKENDS.get(name)
+    if reg is None:
+        reg = {}
+        BACKENDS[name] = reg
+    return reg
 
-    Parameters
-    ----------
-    plugin : str
-        Name of the plugin library. You can find some backend plugins on the
-        official ``compas_fea2`` website.
 
-    Raises
-    ------
-    ImportError
-        If the plugin library is not found.
+def set_backend(plugin: str):
+    """Set the active backend by plugin name.
+
+    Keeps compatibility with plugins exposing _register_backend().
     """
-    import importlib
-
     global BACKEND
     BACKEND = plugin
+    CURRENT_BACKEND.set(plugin)
+
+    # Try to import plugin and call its registration hook (legacy mode).
     try:
-        importlib.import_module(plugin)._register_backend()
+        mod = import_module(plugin)
+        if hasattr(mod, "_register_backend"):
+            mod._register_backend()
     except ImportError:
         print("backend plugin not found. Make sure that you have installed it before.")
 
 
+@contextmanager
+def use_backend(plugin: str):
+    """Temporarily activate a backend within a 'with' block."""
+    token = CURRENT_BACKEND.set(plugin)
+    try:
+        # lazy import/registration for legacy plugins
+        try:
+            mod = import_module(plugin)
+            if hasattr(mod, "_register_backend"):
+                mod._register_backend()
+        except ImportError:
+            print("backend plugin not found. Make sure that you have installed it before.")
+        yield
+    finally:
+        CURRENT_BACKEND.reset(token)
+
+
+def discover_backends():
+    """Load plugins registered via entry points: group 'compas_fea2.backends'."""
+    if not entry_points:
+        return
+    eps = entry_points()
+    group = getattr(eps, "select", None)
+    if group:
+        eps = group(group="compas_fea2.backends")
+    else:
+        eps = eps.get("compas_fea2.backends", [])
+    for ep in eps:
+        try:
+            # Expect callable that registers itself when invoked
+            loader = ep.load()
+            if callable(loader):
+                loader()
+        except Exception as e:
+            print(f"Failed to load backend entry point {ep.name}: {e}")
+
+
 def _get_backend_implementation(cls):
-    return BACKENDS[BACKEND].get(cls)
+    """Resolve implementation from the active backend, falling back to BACKEND."""
+    active = CURRENT_BACKEND.get() or BACKEND
+    registry = BACKENDS.get(active, {})
+    return registry.get(cls)
 
 
 HERE = os.path.dirname(__file__)
@@ -101,7 +151,18 @@ POINT_OVERLAP = os.getenv("POINT_OVERLAP").lower() == "true"
 GLOBAL_TOLERANCE = float(os.getenv("GLOBAL_TOLERANCE"))
 GLOBAL_FRAME = Frame.worldXY()
 PRECISION = int(os.getenv("PRECISION"))
-BACKEND = None
-BACKENDS = defaultdict(dict)
+
+# ensure these exist
+try:
+    BACKENDS  # type: ignore
+except NameError:
+    BACKENDS = {}  # type: ignore
+
+try:
+    BACKEND  # type: ignore
+except NameError:
+    BACKEND = None  # default backend name (optional)
+
+CURRENT_BACKEND: ContextVar[str] = ContextVar("CURRENT_BACKEND", default=BACKEND)
 
 __all__ = ["HOME", "DATA", "DOCS", "TEMP"]
