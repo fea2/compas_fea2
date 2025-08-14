@@ -5,6 +5,8 @@ from itertools import chain
 from typing import TYPE_CHECKING
 from typing import Any
 
+from pathlib import Path
+
 from compas.datastructures import Graph
 from compas.geometry import Box
 from compas.geometry import Plane
@@ -178,7 +180,7 @@ class Model(FEAData):
             raise ValueError("Registry is required to create a Model from data.")
 
         model = cls(description=data.get("description"), author=data.get("author"))
-        model._path = data.get("path")
+        model._path = Path(data.get("path"))
         model._constants = data.get("constants", {})
 
         for part_data in data.get("parts", []):

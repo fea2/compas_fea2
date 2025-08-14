@@ -9,7 +9,7 @@ from .fields import (
     UniformSurfaceLoadField,
 )
 
-from .combinations import LoadCombination
+from .combinations import LoadFieldsCombination, StepsCombination
 
 from .amplitudes import Amplitude
 
@@ -26,6 +26,12 @@ from .steps import (
     QuasiStaticStep,
     DirectCyclicStep,
     HeatTransferStep,
+)
+
+from .groups import (
+    LoadsGroup,
+    DisplacementsGroup,
+    LoadsFieldGroup,
 )
 
 

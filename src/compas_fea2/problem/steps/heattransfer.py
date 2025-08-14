@@ -2,7 +2,7 @@ from compas_fea2.problem.fields import TemperatureField
 
 from .step import _Step
 
-
+# TODO: Change to inherit from GeneralStep
 class HeatTransferStep(_Step):
     """HeatTransfer for use in a heat transfer analysis.
     Specific for now to a transient heat transfer analysis as defined in Abaqus.
@@ -149,7 +149,7 @@ class HeatTransferStep(_Step):
         if not (isinstance(field, (TemperatureField))):
             raise ValueError("A non-thermal load can not be implemented in a heat analysis step.")
 
-        self._load_fields.add(field)
+        self._fields.add(field)
         self._load_cases.add(field.load_case)
         field._registration = self
         self.model.add_group(field.distribution)

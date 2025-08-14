@@ -496,7 +496,28 @@ class EdgesGroup(_Group["Edge"]):
 
 
 class FacesGroup(_Group["Face"]):
-    """Base class elements faces groups."""
+    """Base class elements faces groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.Face`]
+        The faces belonging to the group.
+
+    Attributes
+    ----------
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    faces : Set[:class:`compas_fea2.model.Face`]
+        The faces belonging to the group.
+    nodes : Set[:class:`compas_fea2.model.Node`]
+        The nodes belonging to the faces in the group.
+    area : float
+        The total area of the faces in the group.
+    normal : List[float]
+        The average normal vector of the faces in the group.
+    """
 
     def __init__(self, members: Iterable["Face"], **kwargs) -> None:
         from compas_fea2.model.elements import Face
@@ -543,7 +564,22 @@ class FacesGroup(_Group["Face"]):
 
 
 class PartsGroup(_Group["_Part"]):
-    """Base class for parts groups."""
+    """Base class for parts groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.Part`]
+        The parts belonging to the group.
+
+    Attributes
+    ----------
+    parts : Set[:class:`compas_fea2.model.Part`]
+        The parts belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.  
+    """
 
     def __init__(self, members: Iterable["_Part"], **kwargs) -> None:
         from compas_fea2.model.parts import _Part
@@ -556,7 +592,22 @@ class PartsGroup(_Group["_Part"]):
 
 
 class SectionsGroup(_Group["_Section"]):
-    """Base class for sections groups."""
+    """Base class for sections groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.Section`]
+        The sections belonging to the group.
+        
+    Attributes
+    ----------
+    sections : Set[:class:`compas_fea2.model.Section`]
+        The sections belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_Section"], **kwargs) -> None:
         from compas_fea2.model.sections import _Section
@@ -569,7 +620,22 @@ class SectionsGroup(_Group["_Section"]):
 
 
 class MaterialsGroup(_Group["_Material"]):
-    """Base class for materials groups."""
+    """Base class for materials groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.Material`]
+        The materials belonging to the group.
+        
+    Attributes
+    ----------
+    materials : Set[:class:`compas_fea2.model.Material`]
+        The materials belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_Material"], **kwargs) -> None:
         from compas_fea2.model.materials.material import _Material
@@ -582,7 +648,22 @@ class MaterialsGroup(_Group["_Material"]):
 
 
 class InterfacesGroup(_Group["_Interface"]):
-    """Base class for interfaces groups."""
+    """Base class for interfaces groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.Interface`]
+        The interfaces belonging to the group.
+        
+    Attributes
+    ----------
+    interfaces : Set[:class:`compas_fea2.model.Interface`]
+        The interfaces belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_Interface"], **kwargs) -> None:
         from compas_fea2.model.interfaces import _Interface
@@ -595,7 +676,22 @@ class InterfacesGroup(_Group["_Interface"]):
 
 
 class InteractionsGroup(_Group["_Interaction"]):
-    """Base class for interactions groups."""
+    """Base class for interactions groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.Interaction`]
+        The interactions belonging to the group.
+        
+    Attributes
+    ----------
+    interactions : Set[:class:`compas_fea2.model.Interaction`]
+        The interactions belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_Interaction"], **kwargs) -> None:
         from compas_fea2.model.interactions import _Interaction
@@ -608,7 +704,22 @@ class InteractionsGroup(_Group["_Interaction"]):
 
 
 class BCsGroup(_Group["_BoundaryCondition"]):
-    """Base class for boundary conditions groups."""
+    """Base class for boundary conditions groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.BoundaryCondition`]
+        The boundary conditions belonging to the group.
+        
+    Attributes
+    ----------
+    bcs : Set[:class:`compas_fea2.model.BoundaryCondition`]
+        The boundary conditions belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_BoundaryCondition"], **kwargs) -> None:
         from compas_fea2.model.bcs import _BoundaryCondition
@@ -621,7 +732,22 @@ class BCsGroup(_Group["_BoundaryCondition"]):
 
 
 class ConnectorsGroup(_Group["_Connector"]):
-    """Base class for connectors groups."""
+    """Base class for connectors groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.Connector`]
+        The connectors belonging to the group.
+        
+    Attributes
+    ----------
+    connectors : Set[:class:`compas_fea2.model.Connector`]
+        The connectors belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_Connector"], **kwargs) -> None:
         from compas_fea2.model.connectors import _Connector
@@ -634,7 +760,22 @@ class ConnectorsGroup(_Group["_Connector"]):
 
 
 class ConstraintsGroup(_Group["_Constraint"]):
-    """Base class for constraints groups."""
+    """Base class for constraints groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.Constraint`]
+        The constraints belonging to the group.
+        
+    Attributes
+    ----------
+    constraints : Set[:class:`compas_fea2.model.Constraint`]
+        The constraints belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_Constraint"], **kwargs) -> None:
         from compas_fea2.model.constraints import _Constraint
@@ -647,7 +788,22 @@ class ConstraintsGroup(_Group["_Constraint"]):
 
 
 class ICsGroup(_Group["_InitialCondition"]):
-    """Base class for initial conditions groups."""
+    """Base class for initial conditions groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.InitialCondition`]
+        The initial conditions belonging to the group.
+        
+    Attributes
+    ----------
+    ics : Set[:class:`compas_fea2.model.InitialCondition`]
+        The initial conditions belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_InitialCondition"], **kwargs) -> None:
         from compas_fea2.model.ics import _InitialCondition
@@ -660,7 +816,22 @@ class ICsGroup(_Group["_InitialCondition"]):
 
 
 class ReleasesGroup(_Group["_BeamEndRelease"]):
-    """Base class for releases groups."""
+    """Base class for releases groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.BeamEndRelease`]
+        The beam end releases belonging to the group.
+        
+    Attributes
+    ----------
+    releases : Set[:class:`compas_fea2.model.BeamEndRelease`]
+        The beam end releases belonging to the group.
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
 
     def __init__(self, members: Iterable["_BeamEndRelease"], **kwargs) -> None:
         from compas_fea2.model.releases import _BeamEndRelease
@@ -673,6 +844,22 @@ class ReleasesGroup(_Group["_BeamEndRelease"]):
 
 
 class FieldsGroup(_Group["_ConditionsField"]):
+    """Base class for fields groups.
+    
+    Parameters
+    ----------
+    members : Iterable[:class:`compas_fea2.model.ConditionsField`]
+        The fields belonging to the group.
+        
+    Attributes
+    ----------
+    fields : Set[:class:`compas_fea2.model.ConditionsField`]
+        The fields belonging to the group.  
+    model : :class:`compas_fea2.model.Model`
+        The model where the group is registered, by default `None`.
+    part : :class:`compas_fea2.model._Part`
+        The part where the group is registered, by default `None`.
+    """
     def __init__(self, members: Iterable["_ConditionsField"], **kwargs) -> None:
         from compas_fea2.model.fields import _ConditionsField
 

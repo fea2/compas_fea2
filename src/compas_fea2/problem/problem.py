@@ -8,9 +8,9 @@ from typing import Union
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import from_data
+
 from compas_fea2.job.input_file import InputFile
-from compas_fea2.problem.steps import StaticStep
-from compas_fea2.problem.steps import _Step
+
 from compas_fea2.results.database import ResultsDatabase
 from compas_fea2.results.database import SQLiteResultsDatabase
 
@@ -18,9 +18,13 @@ if TYPE_CHECKING:
     from compas_fea2.base import Registry
     from compas_fea2.model.model import Model
     from compas_fea2.problem.steps import _Step
-    from compas_fea2.problem.steps.perturbations import LinearStaticPerturbation
+    from compas_fea2.problem.steps import StaticStep
+    from compas_fea2.problem.steps import DynamicStep
+    from compas_fea2.problem.steps import HeatTransferStep
 
-
+StepType = Union["StaticStep", "DynamicStep", "HeatTransferStep"]
+    
+    
 class Problem(FEAData):
     """A Problem is a collection of analysis steps (:class:`compas_fea2.problem._Step)
     applied in a specific sequence.
@@ -78,7 +82,7 @@ class Problem(FEAData):
         self.description = description
         self._path = None
         self._path_db = None
-        self._steps = []
+        self._steps: List[StepType] | None = None
         self._rdb = None
 
     @property
@@ -89,7 +93,7 @@ class Problem(FEAData):
                 "description": self.description,
                 "path": str(self.path) if self.path else None,
                 "path_db": str(self.path_db) if self.path else None,
-                "steps": [s.__data__ for s in self._steps],
+                "steps": [s.__data__ for s in self._steps] if self._steps else None,
             }
         )
         return base
@@ -110,45 +114,52 @@ class Problem(FEAData):
 
     @property
     def model(self) -> "Model | None":
+        """Return the model associated with the problem."""
         return self._registration
 
     @property
-    def steps(self) -> list:
+    def steps(self) -> List[StepType] | None:
+        """List of analysis steps in the order they are applied."""
         return self._steps
 
     @property
     def path(self) -> Optional[Path]:
+        """Path to the analysis folder where all the files will be saved."""
         return self._path
 
     @path.setter
     def path(self, value: Union[str, Path]):
+        """Set the path to the analysis folder where all the files will be saved."""
         self._path = value if isinstance(value, Path) else Path(value)
         self._path_db = os.path.join(self._path, f"{self.name}-results.db")
 
     @property
     def path_db(self) -> Optional[str]:
+        """Path to the SQLite database where the results are stored."""
         return self._path_db
 
     @property
     def rdb(self) -> SQLiteResultsDatabase:
+        """Return the results database associated with the problem."""
         return self._rdb or SQLiteResultsDatabase(self)
 
     @rdb.setter
     def rdb(self, value: str):
+        """Set the results database associated with the problem."""
         if not hasattr(ResultsDatabase, value):
             raise ValueError("Invalid ResultsDatabase option")
         self._rdb = getattr(ResultsDatabase, value)(self)
 
     @property
     def input_file(self) -> InputFile:
+        """Return the InputFile object that generates the input file."""
         return InputFile(self)
 
     # =========================================================================
     #                           Step methods
     # =========================================================================
 
-    def find_step_by_name(self, name: str) -> Optional[_Step]:
-        # type: (str) -> _Step
+    def find_step_by_name(self, name: str) -> StepType | None:
         """Find if there is a step with the given name in the problem.
 
         Parameters
@@ -160,11 +171,12 @@ class Problem(FEAData):
         :class:`compas_fea2.problem._Step`
 
         """
-        for step in self.steps:
-            if step.name == name:
-                return step
+        if self._steps:
+            for step in self._steps:
+                if step.name == name:
+                    return step
 
-    def is_step_in_problem(self, step: _Step, add: bool = True) -> Union[bool, _Step]:
+    def is_step_in_problem(self, step: StepType, add: bool = True) -> bool | StepType:
         """Check if a :class:`compas_fea2.problem._Step` is defined in the Problem.
 
         Parameters
@@ -185,18 +197,21 @@ class Problem(FEAData):
             name of a Step already defined in the Problem.
         """
 
-        if not isinstance(step, _Step):
+        if not isinstance(step, StepType):
             raise TypeError("{!r} is not a Step".format(step))
-        if step not in self.steps:
-            print("{!r} not found".format(step))
-            if add:
-                step = self.add_step(step)
-                print("{!r} added to the Problem".format(step))
-                return step
+        if self._steps:
+            if step not in self._steps:
+                print("{!r} not found".format(step))
+                if add:
+                    step = self.add_step(step)
+                    print("{!r} added to the Problem".format(step))
+                    return step
+                return False
+            return True
+        else:
             return False
-        return True
 
-    def add_step(self, step: _Step) -> _Step:
+    def add_step(self, step: StepType) -> StepType:
         # # type: (_Step) -> Step
         """Adds a :class:`compas_fea2.problem._Step` to the problem. The name of
         the Step must be unique
@@ -212,16 +227,18 @@ class Problem(FEAData):
         """
         if not isinstance(step, _Step):
             raise TypeError("You must provide a valid compas_fea2 Step object")
-        if step in self.steps:
+        if self.is_step_in_problem(step):
             raise ValueError("The step is already in the problem.")
         if self.find_step_by_name(step.name):
             raise ValueError("There is already a step with the same name in the model.")
+        if not self._steps:
+            self._steps = []
         step._key = len(self._steps)
         self._steps.append(step)
         step._registration = self
         return step
 
-    def add_steps(self, steps: List[_Step]) -> List[_Step]:
+    def add_steps(self, steps: List[StepType]) -> List[StepType]:
         """Adds multiple :class:`compas_fea2.problem._Step` objects to the problem.
 
         Parameters
@@ -235,30 +252,7 @@ class Problem(FEAData):
         """
         return [self.add_step(step) for step in steps]
 
-    def define_steps_order(self, order: List[_Step]):
-        """Defines the order in which the steps are applied during the analysis.
-
-        Parameters
-        ----------
-        order : list
-            List contaning the names of the analysis steps in the order in which
-            they are meant to be applied during the analysis.
-
-        Returns
-        -------
-        None
-
-        Warning
-        -------
-        Not implemented yet!
-        """
-        for step in order:
-            if not isinstance(step, _Step):
-                raise TypeError("{} is not a step".format(step))
-        self._steps = order
-
-
-    def add_static_step(self, **kwargs) -> StaticStep:
+    def add_static_step(self, **kwargs) -> "StaticStep":
         # # type: (_Step) -> Step
         """Adds a :class:`compas_fea2.problem._Step` to the problem. The name of
         the Step must be unique
@@ -274,6 +268,7 @@ class Problem(FEAData):
         -------
         :class:`compas_fea2.problem._Step`
         """
+        from compas_fea2.problem.steps import StaticStep
         step = StaticStep(**kwargs)
         return self.add_step(step)
     
@@ -391,39 +386,42 @@ Analysis folder path : {self.path or "N/A"}
             path = Path(path)
 
         # Prepare the main and analysis paths
-        self.model.path = path
-        self.path = self.model.path.joinpath(self.name)
+        if not self.model:
+            raise ValueError(f"{self:r} is trying to access the model path but it is not registered to any model.")
+        
+        self.model._path = path
+        self._path = self.model._path.joinpath(self.name)
 
-        if self.path.exists():
+        if self._path.exists():
             # Check if the folder contains FEA2 results
-            is_fea2_folder = any(fname.endswith("-results.db") for fname in os.listdir(self.path))
+            is_fea2_folder = any(fname.endswith("-results.db") for fname in os.listdir(self._path))
 
             if is_fea2_folder:
                 if not erase_data:
-                    user_input = input(f"The directory {self.path} already exists and contains FEA2 results. Do you want to delete its contents? (Y/n): ").strip().lower()
+                    user_input = input(f"The directory {self._path} already exists and contains FEA2 results. Do you want to delete its contents? (Y/n): ").strip().lower()
                     erase_data = user_input in ["y", "yes", ""]
 
                 if erase_data:
-                    _delete_folder_contents(self.path)
+                    _delete_folder_contents(self._path)
                     print(f"All contents of {self.path} have been deleted.")
                 else:
                     print(f"WARNING: The directory {self.path} already exists and contains FEA2 results. Duplicated results expected.")
             else:
                 # Folder exists but is not an FEA2 results folder
                 if erase_data and erase_data == "armageddon":
-                    _delete_folder_contents(self.path)
+                    _delete_folder_contents(self._path)
                 else:
                     user_input = input(f"ATTENTION! The directory {self.path} already exists and might NOT be a FEA2 results folder. Do you want to DELETE its contents? (y/N): ").strip().lower()
                     if user_input in ["y", "yes"]:
-                        _delete_folder_contents(self.path)
+                        _delete_folder_contents(self._path)
                         print(f"All contents of {self.path} have been deleted.")
                     else:
                         raise ValueError(f"The directory {self.path} exists but is not recognized as a valid FEA2 results folder, and its contents were not cleared.")
         else:
             # Create the directory if it does not exist
-            self.path.mkdir(parents=True, exist_ok=True)
+            self._path.mkdir(parents=True, exist_ok=True)
 
-        return self.path
+        return self._path
 
     def analyse(self, path: Optional[Union[Path, str]] = None, erase_data: bool = False, *args, **kwargs):
         """Analyse the problem in the selected backend.

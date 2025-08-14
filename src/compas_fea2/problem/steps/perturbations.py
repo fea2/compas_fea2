@@ -1,6 +1,7 @@
 from compas.geometry import Vector
 from compas.geometry import sum_vectors
 
+from compas_fea2.base import from_data
 from .step import _Step
 
 
@@ -11,20 +12,6 @@ class _Perturbation(_Step):
 
     def __init__(self, **kwargs):
         super(_Perturbation, self).__init__(**kwargs)
-
-    @property
-    def __data__(self) -> dict:
-        data = super().__data__
-        data.update(
-            {
-                "type": self.__class__.__name__,
-            }
-        )
-        return data
-
-    @classmethod
-    def __from_data__(cls, data):
-        return cls(**data)
 
 
 class ModalAnalysis(_Perturbation):
@@ -42,9 +29,6 @@ class ModalAnalysis(_Perturbation):
         super(ModalAnalysis, self).__init__(**kwargs)
         self.modes = modes
 
-    @property
-    def rdb(self):
-        return self.problem.rdb
 
     def _get_results_from_db(self, mode, **kwargs):
         """Get the results for the given members and steps.
@@ -155,6 +139,7 @@ class ModalAnalysis(_Perturbation):
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data):
         return cls(modes=data["modes"], **data)
@@ -221,6 +206,7 @@ class BucklingAnalysis(_Perturbation):
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data):
         return cls(modes=data["_modes"], vectors=data["_vectors"], iterations=data["_iterations"], algorithm=data["_algorithm"], **data)
@@ -232,15 +218,7 @@ class LinearStaticPerturbation(_Perturbation):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         raise NotImplementedError
-
-    @property
-    def __data__(self):
-        return super().__data__
-
-    @classmethod
-    def __from_data__(cls, data):
-        return cls(**data)
-
+    
 
 class SteadyStateDynamic(_Perturbation):
     """"""
@@ -249,14 +227,6 @@ class SteadyStateDynamic(_Perturbation):
         super().__init__(**kwargs)
         raise NotImplementedError
 
-    @property
-    def __data__(self):
-        return super().__data__
-
-    @classmethod
-    def __from_data__(cls, data):
-        return cls(**data)
-
 
 class SubstructureGeneration(_Perturbation):
     """"""
@@ -264,11 +234,3 @@ class SubstructureGeneration(_Perturbation):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         raise NotImplementedError
-
-    @property
-    def __data__(self):
-        return super().__data__
-
-    @classmethod
-    def __from_data__(cls, data):
-        return cls(**data)
