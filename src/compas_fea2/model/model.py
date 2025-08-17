@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     from typing import Union
 
     from compas.geometry import Polygon
+    from compas.geometry import Frame
 
     from compas_fea2.model.bcs import _BoundaryCondition
     from compas_fea2.model.connectors import _Connector
@@ -292,7 +293,7 @@ class Model(FEAData):
     @property
     def bcs(self) -> "FieldsGroup":
         """Return the boundary conditions of the model."""
-        return self._fields.subgroup(lambda x: isinstance(x, _BoundaryCondition))
+        return self._fields.subgroup(lambda x: isinstance(x, BoundaryConditionsField))
 
     @property
     def bcs_nodes(self) -> dict[_BoundaryCondition, "NodesGroup"]:
@@ -301,7 +302,7 @@ class Model(FEAData):
     @property
     def ics(self) -> "FieldsGroup":
         """Return the initial conditions of the model."""
-        return self._fields.subgroup(lambda x: isinstance(x, _InitialCondition))
+        return self._fields.subgroup(lambda x: isinstance(x, _InitialConditionField))
 
     @property
     def ics_nodes(self) -> dict[_InitialCondition, "NodesGroup"]:
@@ -396,7 +397,7 @@ class Model(FEAData):
     @property
     def nodes(self) -> "NodesGroup":
         """Return a group of all nodes in the model."""
-        return NodesGroup(members=list(chain.from_iterable(part.nodes for part in self.parts)))
+        return NodesGroup(members=list(chain.from_iterable(part.nodes for part in self.parts if part.nodes)))
 
     @property
     def points(self) -> "list[Point]":
@@ -406,7 +407,8 @@ class Model(FEAData):
     @property
     def elements(self) -> "ElementsGroup":
         """Return a list of all elements in the model."""
-        return ElementsGroup(members=list(chain.from_iterable(part.elements for part in self.parts)))
+        
+        return ElementsGroup(members=list(chain.from_iterable(part.elements for part in self.parts if part.elements)))
 
     @property
     def bounding_box(self) -> "Optional[Box]":
@@ -518,6 +520,11 @@ class Model(FEAData):
 
     def find_part_by_name(self, name: str, casefold: bool = False) -> "Optional[_Part]":
         """Find if there is a part with a given name in the model.
+        
+        Notes
+        -----
+        Names in fea2 must don't contain spaces. If so, they
+        are replaced by underscores.
 
         Parameters
         ----------
@@ -531,6 +538,8 @@ class Model(FEAData):
         :class:`compas_fea2.model.Part`
 
         """
+        from compas_fea2._utilities._utils import normalize_string
+        name = normalize_string(name)
         for part in self.parts:
             name_1 = part.name if not casefold else part.name.casefold()
             name_2 = name if not casefold else name.casefold()
@@ -1011,10 +1020,11 @@ class Model(FEAData):
             fields = bc_fields
         for bc_field in fields:
             self._fields.add_member(bc_field)
+            self._groups.add(bc_field.distribution)
             bc_field._registration = self
         return bc_fields
 
-    def _add_bc_type(self, bc_type: str, nodes: "Union[list[Node], NodesGroup]", axes="global") -> "BoundaryConditionsField | List[BoundaryConditionsField]":
+    def _add_bc_type(self, bc_type: str, nodes: "Union[list[Node], NodesGroup]", frame: "Frame"=None, **kwargs) -> "BoundaryConditionsField | List[BoundaryConditionsField]":
         """Add a :class=`compas_fea2.model.BoundaryCondition` by type.
 
         Parameters
@@ -1023,8 +1033,8 @@ class Model(FEAData):
             The type of boundary condition to add.
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             The nodes where the boundary condition is applied.
-        axes : str, optional
-            The coordinate system of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         Returns
         -------
@@ -1042,37 +1052,37 @@ class Model(FEAData):
             "thermal": "ThermalBC",
         }
         m = importlib.import_module("compas_fea2.model.bcs")
-        bc = getattr(m, types[bc_type])()
-        field = BoundaryConditionsField(condition=bc, distribution=nodes, axes=axes)
+        bc = getattr(m, types[bc_type])(frame=frame)
+        field = BoundaryConditionsField(condition=bc, distribution=nodes, **kwargs)
         return self.add_bcs(field)
 
-    def add_fix_bc(self, nodes, axes="global"):
+    def add_fix_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame"=None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.FixedBC` to the given nodes.
 
         Parameters
         ----------
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("fix", nodes, axes)
+        return self._add_bc_type("fix", nodes, frame, **kwargs)
 
-    def add_pin_bc(self, nodes, axes="global"):
+    def add_pin_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.PinnedBC` to the given nodes.
 
         Parameters
         ----------
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("pin", nodes, axes)
+        return self._add_bc_type("pin", nodes, frame, **kwargs)
 
-    def add_clampXX_bc(self, nodes, axes="global"):
+    def add_clampXX_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.ClampBCXX` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except rotation about the local XX-axis.
@@ -1081,13 +1091,13 @@ class Model(FEAData):
         ----------
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("clampXX", nodes, axes)
+        return self._add_bc_type("clampXX", nodes, frame, **kwargs)
 
-    def add_clampYY_bc(self, nodes, axes="global"):
+    def add_clampYY_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.ClampBCYY` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except rotation about the local YY-axis.
@@ -1096,13 +1106,13 @@ class Model(FEAData):
         ----------
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("clampYY", nodes, axes)
+        return self._add_bc_type("clampYY", nodes, frame, **kwargs)
 
-    def add_clampZZ_bc(self, nodes, axes="global"):
+    def add_clampZZ_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.ClampBCZZ` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except rotation about the local ZZ-axis.
@@ -1111,13 +1121,13 @@ class Model(FEAData):
         ----------
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("clampZZ", nodes, axes)
+        return self._add_bc_type("clampZZ", nodes, frame, **kwargs)
 
-    def add_rollerX_bc(self, nodes, axes="global"):
+    def add_rollerX_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.RollerBCX` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except displacement in the local X-direction.
@@ -1126,13 +1136,13 @@ class Model(FEAData):
         ----------
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("rollerX", nodes, axes)
+        return self._add_bc_type("rollerX", nodes, frame, **kwargs)
 
-    def add_rollerY_bc(self, nodes, axes="global"):
+    def add_rollerY_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.RollerBCY` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except displacement in the local Y-direction.
@@ -1141,13 +1151,13 @@ class Model(FEAData):
         ----------
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("rollerY", nodes, axes)
+        return self._add_bc_type("rollerY", nodes, frame, **kwargs)
 
-    def add_rollerZ_bc(self, nodes, axes="global"):
+    def add_rollerZ_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.RollerBCZ` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except displacement in the local Z-direction.
@@ -1156,13 +1166,13 @@ class Model(FEAData):
         ----------
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("rollerZ", nodes, axes)
+        return self._add_bc_type("rollerZ", nodes, frame, **kwargs)
 
-    def add_rollerXY_bc(self, nodes, axes="global"):
+    def add_rollerXY_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class:`compas_fea2.model.bcs.RollerBCXY` to the given nodes.
 
         This boundary condition allows translation along the local XY-plane.
@@ -1171,13 +1181,13 @@ class Model(FEAData):
         ----------
         nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("rollerXY", nodes, axes)
+        return self._add_bc_type("rollerXY", nodes, frame, **kwargs)
 
-    def add_rollerXZ_bc(self, nodes, axes="global"):
+    def add_rollerXZ_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame"=None, **kwargs):
         """Add a :class:`compas_fea2.model.bcs.RollerBCXZ` to the given nodes.
 
         This boundary condition allows translation along the local XZ-plane.
@@ -1186,13 +1196,13 @@ class Model(FEAData):
         ----------
         nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("rollerXZ", nodes, axes)
+        return self._add_bc_type("rollerXZ", nodes, frame, **kwargs)
 
-    def add_rollerYZ_bc(self, nodes, axes="global"):
+    def add_rollerYZ_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
         """Add a :class:`compas_fea2.model.bcs.RollerBCYZ` to the given nodes.
 
         This boundary condition allows translation along the local YZ-plane.
@@ -1201,16 +1211,17 @@ class Model(FEAData):
         ----------
         nodes : list[:class:`compas_fea2.model.Node`] or :class:`compas_fea2.model.NodesGroup`
             List or Group with the nodes where the boundary condition is assigned.
-        axes : str, optional
-            Axes_ of the boundary condition, by default 'global'.
+        frame : :class:`compas.geometry.Frame`, optional
+            The frame in which the boundary condition is defined, by default None (global frame).
 
         """
-        return self._add_bc_type("rollerYZ", nodes, axes)
+        return self._add_bc_type("rollerYZ", nodes, frame, **kwargs)
 
     def add_thermal_bc(
         self,
         nodes: "Union[list[Node], NodesGroup]",
         temperature: "float",
+        **kwargs
     ) -> "BoundaryConditionsField | List[BoundaryConditionsField]":
         """Add a :class:`compas_fea2.model.bcs.ThermalBC` to the model.
 
@@ -1233,9 +1244,9 @@ class Model(FEAData):
             nodes = NodesGroup(nodes)
 
         field = BoundaryConditionsField(condition=it, distribution=nodes, axes="global")
-        return self.add_bcs(field)
+        return self.add_bcs(field, **kwargs)
 
-    def remove_bcs(self, field):
+    def remove_bcs(self, field:"BoundaryConditionsField"):
         """Release nodes that were previously restrained.
 
         Parameters
