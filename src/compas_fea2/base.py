@@ -23,6 +23,7 @@ from compas.geometry import Vector
 import compas_fea2
 
 from .utilities._utils import to_dimensionless
+from .utilities._utils import normalize_string
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -150,7 +151,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         else:
             self._uid: uuid.UUID | None = uuid.uuid4()
         super().__init__()
-        self._name: str = name or "".join([c for c in type(self).__name__ if c.isupper()]) + "_" + str(id(self))
+        self._name: str = normalize_string(name or "".join([c for c in type(self).__name__ if c.isupper()]) + str(id(self))) 
         self._registration: Any = None
         self._key: Optional[int] = None
 

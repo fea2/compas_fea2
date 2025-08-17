@@ -244,3 +244,37 @@ def to_dimensionless(func):
 
     wrapper.original = func  # Preserve the original function
     return wrapper
+
+def normalize_string(s: str, join_with="_", capitalize_second: bool = False) -> str:
+    """Normalize a string by joining words with a symbol or capitalizing the second word.
+    The first character must be a letter.
+
+    Parameters
+    ----------
+    s : str
+        The input string to normalize.
+    join_with : str, optional
+        Symbol to join words, by default "_".
+    capitalize_second : bool, optional
+        If True, capitalize only the first letter of the second word (and subsequent words), by default False.
+
+    Returns
+    -------
+    str
+        The normalized string.
+
+    Raises
+    ------
+    ValueError
+        If the first character is not a letter.
+    """
+    s = s.strip()
+    if not s or not s[0].isalpha():
+        raise ValueError("The first character of the string must be a letter.")
+    words = s.split()
+    if len(words) == 1:
+        return words[0]
+    if capitalize_second:
+        return words[0] + ''.join([join_with + w.capitalize() for w in words[1:]])
+    else:
+        return join_with.join(words)
