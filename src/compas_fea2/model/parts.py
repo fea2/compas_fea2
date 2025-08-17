@@ -136,8 +136,8 @@ class _Part(FEAData):
         self._ndm = None
         self._ndf = None
         self._graph = nx.DiGraph()
-        self._nodes: "NodesGroup" = NodesGroup(members=[], name=f"{self.name}_nodes_all")
-        self._elements: "ElementsGroup" = ElementsGroup(members=[], name=f"{self.name}_elements_all")
+        self._nodes: "NodesGroup" = None
+        self._elements: "ElementsGroup" = None
 
         self._groups: Set[GroupType] = set()
 
@@ -1246,13 +1246,18 @@ class _Part(FEAData):
         """
         if not isinstance(node, Node):
             raise TypeError("{!r} is not a node.".format(node))
-
-        if node not in self._nodes:
-            node._part_key = len(self.nodes)
-            self._nodes.add_member(node)
-            node._registration = self
-            if compas_fea2.VERBOSE:
-                print("Node {!r} registered to {!r}.".format(node, self))
+        
+        if not self._nodes:
+            self._nodes = NodesGroup(members=[node], name=f"{self.name}_ALL_NODES")
+            self._groups.add(self._nodes)
+            node._part_key = len(self._nodes)-1
+        else:
+            if node not in self._nodes:
+                self._nodes.add_member(node)
+                node._part_key = len(self._nodes)-1
+        node._registration = self
+        if compas_fea2.VERBOSE:
+            print("Node {!r} registered to {!r}.".format(node, self))
         return node
 
     def add_nodes(self, nodes: Union[List[Node], NodesGroup]) -> List[Node]:
@@ -1414,8 +1419,14 @@ class _Part(FEAData):
         if not element.section:
             raise ValueError("Element must have a section defined before adding it to the part.")
 
-        element._part_key = len(self.elements)
-        self._elements.add_member(element)
+        if not self._elements:
+            self._elements = ElementsGroup(members=[element], name=f"{self.name}_ALL_ELEMENTS")
+            self._groups.add(self._elements)
+            element._part_key = len(self.elements)-1
+        else:
+            if element not in self._elements:
+                self._elements.add_member(element)
+                element._part_key = len(self.elements)-1
         element._registration = self
 
         self.graph.add_node(element, type="element")
