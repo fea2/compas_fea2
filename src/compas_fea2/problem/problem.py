@@ -14,6 +14,7 @@ from compas_fea2.job.input_file import InputFile
 from compas_fea2.results.database import ResultsDatabase
 from compas_fea2.results.database import SQLiteResultsDatabase
 
+
 if TYPE_CHECKING:
     from compas_fea2.base import Registry
     from compas_fea2.model.model import Model
@@ -196,8 +197,8 @@ class Problem(FEAData):
             `step` must be either an instance of a `compas_fea2` Step class or the
             name of a Step already defined in the Problem.
         """
-
-        if not isinstance(step, StepType):
+        from compas_fea2.problem.steps import _Step
+        if not isinstance(step, _Step):
             raise TypeError("{!r} is not a Step".format(step))
         if self._steps:
             if step not in self._steps:
@@ -225,6 +226,7 @@ class Problem(FEAData):
         -------
         :class:`compas_fea2.problem._Step`
         """
+        from compas_fea2.problem.steps import _Step
         if not isinstance(step, _Step):
             raise TypeError("You must provide a valid compas_fea2 Step object")
         if self.is_step_in_problem(step):

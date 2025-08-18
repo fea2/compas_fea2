@@ -153,9 +153,9 @@ class _Part(FEAData):
             {
                 "ndm": self._ndm,
                 "ndf": self._ndf,
-                "nodes": self._nodes.__data__,
-                "elements": self._elements.__data__,
-                "groups": [group.__data__ for group in self._groups],
+                "nodes": self._nodes.__data__ if self._nodes else None,
+                "elements": self._elements.__data__ if self._elements else None,
+                "groups": [group.__data__ for group in self._groups if group.__data__],
                 "boundary_mesh": self._boundary_mesh.__data__ if self._boundary_mesh else None,
                 "discretized_boundary_mesh": self._discretized_boundary_mesh.__data__ if self._discretized_boundary_mesh else None,
                 "reference_node": self._reference_node.__data__ if self._reference_node else None,
@@ -172,15 +172,18 @@ class _Part(FEAData):
         part._ndm = data.get("ndm")
         part._ndf = data.get("ndf")
 
-        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry)  # type: ignore
-        part.add_nodes(nodes)
-        part._nodes._uid = data.get("nodes", {}).get("uid", None)  # change the uid of the nodes group
+        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry)  if data["nodes"] else None # type: ignore
+        if nodes:
+            part.add_nodes(nodes)
+            part._nodes._uid = data.get("nodes", {}).get("uid", None)  # change the uid of the nodes group
 
-        elements = ElementsGroup.__from_data__(data["elements"], registry=registry)  # type: ignore
-        part.add_elements(elements)  # type: ignore
-        part._elements._uid = data.get("elements", {}).get("uid", None)  # change the uid of the nodes group
+        elements = ElementsGroup.__from_data__(data["elements"], registry=registry) if data["elements"] else None # type: ignore
+        if elements:
+            part.add_elements(elements)  # type: ignore
+            part._elements._uid = data.get("elements", {}).get("uid", None)  # change the uid of the nodes group
 
-        part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups", duplicate=duplicate) for group in data.get("groups", [])])
+        if data.get("groups"):
+            part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups", duplicate=duplicate) for group in data.get("groups", [])])
 
         part._boundary_mesh = Mesh.__from_data__(data["boundary_mesh"]) if data.get("boundary_mesh") else None
         part._discretized_boundary_mesh = Mesh.__from_data__(data["discretized_boundary_mesh"]) if data.get("discretized_boundary_mesh") else None
@@ -591,22 +594,6 @@ class _Part(FEAData):
         return self._elements
 
     @property
-    def edges(self) -> EdgesGroup:
-        """The edges of the part's elements."""
-        edges = []
-        for element in self.elements:
-            if hasattr(element, "edges"):
-                element_edges = getattr(element, "edges")
-                if element_edges is not None:
-                    edges.extend(element_edges)
-        return EdgesGroup(edges)
-
-    @property
-    def faces(self) -> FacesGroup:
-        """The faces of the part's elements."""
-        return FacesGroup([face for element in self.elements if element.faces is not None for face in element.faces])
-
-    @property
     def elements_sorted(self) -> List[_Element]:
         """The elements of the part sorted by their part key."""
         return self.elements.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1)
@@ -658,11 +645,7 @@ class _Part(FEAData):
     def sections(self) -> SectionsGroup:
         """All the materials associated with the part. If the part is registered to a model,
         it is faster to use the model's sections property."""
-        sections = set()
-        for element in self.elements:
-            if hasattr(element, "section") and element.section is not None:
-                sections.add(element.section)
-        return SectionsGroup(members=list(sections), name=f"{self.name}_sections_all")
+        return SectionsGroup(members=self.elements.group_by(key=lambda x: getattr(x, "section", None)).keys())
 
     @property
     def sections_sorted(self) -> List[_Section]:
@@ -679,11 +662,7 @@ class _Part(FEAData):
     def materials(self) -> MaterialsGroup:
         """All the materials associated with the part. If the part is registered to a model,
         it is faster to use the model's meaterials property."""
-        materials = set()
-        for section in self.sections:
-            if hasattr(section, "material") and section.material is not None:
-                materials.add(section.material)
-        return MaterialsGroup(members=list(materials), name=f"{self.name}_materials_all")
+        return MaterialsGroup(members=self.sections.group_by(key=lambda x: getattr(x, "material", None)).keys())
 
     @property
     def materials_sorted(self) -> List[_Material]:
@@ -695,6 +674,22 @@ class _Part(FEAData):
         """The materials of the part grouped by their name."""
         materials_group = self.materials.group_by(key=lambda x: x.name)
         return {key: group.members for key, group in materials_group}
+
+    @property
+    def edges(self) -> EdgesGroup:
+        """The edges of the part's elements."""
+        edges = []
+        for element in self.elements:
+            if hasattr(element, "edges"):
+                element_edges = getattr(element, "edges")
+                if element_edges is not None:
+                    edges.extend(element_edges)
+        return EdgesGroup(edges)
+
+    @property
+    def faces(self) -> FacesGroup:
+        """The faces of the part's elements."""
+        return FacesGroup([face for element in self.elements if element.faces is not None for face in element.faces])
 
     # @property
     # def releases(self) -> "ReleasesGroup | None":
@@ -837,6 +832,8 @@ class _Part(FEAData):
             The transformation to apply.
 
         """
+        if not self.nodes:
+            raise ValueError("The part must have nodes to be transformed.")
         for node in self.nodes:
             node.transform(transformation)
         self._boundary_mesh.transform(transformation) if self._boundary_mesh else None
@@ -1246,15 +1243,15 @@ class _Part(FEAData):
         """
         if not isinstance(node, Node):
             raise TypeError("{!r} is not a node.".format(node))
-        
+
         if not self._nodes:
             self._nodes = NodesGroup(members=[node], name=f"{self.name}_ALL_NODES")
             self._groups.add(self._nodes)
-            node._part_key = len(self._nodes)-1
+            node._part_key = len(self._nodes) - 1
         else:
             if node not in self._nodes:
                 self._nodes.add_member(node)
-                node._part_key = len(self._nodes)-1
+                node._part_key = len(self._nodes) - 1
         node._registration = self
         if compas_fea2.VERBOSE:
             print("Node {!r} registered to {!r}.".format(node, self))
@@ -1414,19 +1411,19 @@ class _Part(FEAData):
         """
 
         self.add_nodes(element.nodes)
-        for node in element.nodes:
-            node.connected_elements.add(element)
+        # for node in element.nodes:
+        #     node.connected_elements.add(element)
         if not element.section:
             raise ValueError("Element must have a section defined before adding it to the part.")
 
         if not self._elements:
             self._elements = ElementsGroup(members=[element], name=f"{self.name}_ALL_ELEMENTS")
             self._groups.add(self._elements)
-            element._part_key = len(self.elements)-1
+            element._part_key = len(self.elements) - 1
         else:
             if element not in self._elements:
                 self._elements.add_member(element)
-                element._part_key = len(self.elements)-1
+                element._part_key = len(self.elements) - 1
         element._registration = self
 
         self.graph.add_node(element, type="element")

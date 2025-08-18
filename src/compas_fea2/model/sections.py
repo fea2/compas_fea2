@@ -2032,8 +2032,6 @@ class TieSection(TrussSection):
 # ==============================================================================
 # 2D
 # ==============================================================================
-
-
 class _Section2D(_Section):
     """Base class for 2D sections.
 
@@ -2095,7 +2093,7 @@ class ShellSection(_Section2D):
         super(ShellSection, self).__init__(t=t, material=material, **kwargs)
 
     @property
-    def __data(self):
+    def __data__(self):
         data = super().__data__
         data.update(
             {
@@ -2141,7 +2139,7 @@ class MembraneSection(_Section2D):
         super(MembraneSection, self).__init__(t=t, material=material, **kwargs)
 
     @property
-    def __data(self):
+    def __data__(self):
         data = super().__data__
         data.update(
             {

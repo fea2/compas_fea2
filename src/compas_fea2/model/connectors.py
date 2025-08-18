@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from compas_fea2.model.parts import RigidPart
 
 
+# FIXME: switch to fields here as well
 class _Connector(FEAData):
     """Base class for connectors.
 

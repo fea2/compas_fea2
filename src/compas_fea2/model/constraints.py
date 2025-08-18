@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from compas_fea2.model.model import Model
 
 
+# FIXME: switch to fields here as well
 class _Constraint(FEAData):
     """Base class for constraints.
 

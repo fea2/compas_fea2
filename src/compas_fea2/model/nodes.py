@@ -118,7 +118,7 @@ class Node(FEAData):
         self._temperature = temperature
         self._on_boundary = None
         self._is_reference = False
-        self._connected_elements = set()
+        # self._connected_elements = set()
 
     @property
     def __data__(self):
@@ -134,7 +134,7 @@ class Node(FEAData):
                 "mass": self._mass,
                 "temperature": self._temperature,
                 "on_boundary": self._on_boundary,
-                "connected_elements": [elem.__data__ for elem in self._connected_elements],
+                # "connected_elements": [elem.__data__ for elem in self._connected_elements],
             }
         )
         return data
@@ -149,7 +149,7 @@ class Node(FEAData):
         )
         node._on_boundary = data.get("on_boundary")
         node._is_reference = data.get("is_reference")
-        node._connected_elements = set(registry.add_from_data(elem_data, "compas_fea2.model.elements", duplicate=duplicate) for elem_data in data.get("connected_elements", []))  # type: ignore
+        # node._connected_elements = set(registry.add_from_data(elem_data, "compas_fea2.model.elements", duplicate=duplicate) for elem_data in data.get("connected_elements", []))  # type: ignore
         return node
 
     @classmethod
@@ -299,7 +299,12 @@ class Node(FEAData):
 
     @property
     def connected_elements(self) -> set:
-        return self._connected_elements
+        if self.part:
+            if self.part.elements:
+                return self.part.elements.group_by(key=lambda e: self in e.nodes)
+        else:
+            raise ValueError("Node is not registered to a Part.")
+        # return self._connected_elements
 
     def transform(self, transformation) -> None:
         """Transform the node using a transformation matrix.

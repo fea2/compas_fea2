@@ -251,46 +251,6 @@ class Model(FEAData):
         return self._groups
 
     @property
-    def partgroups(self) -> "List[PartsGroup]":
-        """Return all the part groups registered to the Model."""
-        return [group for group in self._groups if isinstance(group, PartsGroup)]
-
-    @property
-    def materialgroups(self) -> "List[MaterialsGroup]":
-        """Return all the materials groups of the model."""
-        return [group for group in self._groups if isinstance(group, MaterialsGroup)]
-
-    @property
-    def elementgroups(self) -> "List[ElementsGroup]":
-        """Return all the element groups of the model."""
-        return [group for group in self._groups if isinstance(group, ElementsGroup)]
-
-    @property
-    def secionggroups(self) -> "List[SectionsGroup]":
-        """Return all the section groups of the model."""
-        return [group for group in self._groups if isinstance(group, SectionsGroup)]
-
-    @property
-    def interactiongroups(self) -> "List[InteractionsGroup]":
-        """Return all the interaction groups of the model."""
-        return [group for group in self._groups if isinstance(group, InteractionsGroup)]
-
-    @property
-    def connectorgroups(self) -> "List[ConnectorsGroup]":
-        """Return all the connector groups of the model."""
-        return [group for group in self._groups if isinstance(group, ConnectorsGroup)]
-
-    @property
-    def constraintsgroups(self) -> "List[ConstraintsGroup]":
-        """Return all the constraints groups of the model."""
-        return [group for group in self._groups if isinstance(group, ConstraintsGroup)]
-
-    @property
-    def interfacesgroups(self) -> "InterfacesGroup":
-        """Return all the interfaces groups of the model."""
-        return [group for group in self._groups if isinstance(group, InterfacesGroup)][0] if self._groups else InterfacesGroup(members=[])
-
-    @property
     def bcs(self) -> "FieldsGroup":
         """Return the boundary conditions of the model."""
         return self._fields.subgroup(lambda x: isinstance(x, BoundaryConditionsField))
@@ -341,7 +301,7 @@ class Model(FEAData):
     @property
     def materials(self) -> "MaterialsGroup":
         """Return a set of all materials in the model."""
-        return self._materials
+        return MaterialsGroup(members=[k for k in self.elements.group_by(lambda x: x.material).keys()], name="ALL_MATERIALS")
 
     @property
     def part_materials(self) -> "Dict[_Part, Set[_Material]]":
@@ -351,12 +311,17 @@ class Model(FEAData):
     @property
     def sections(self) -> "SectionsGroup":
         """Return a set of all sections in the model."""
-        return self._sections
+        return SectionsGroup(members=[k for k in self.elements.group_by(key=lambda x: x.section).keys()], name="ALL_SECTIONS")
 
     @property
     def part_sections(self) -> "Dict[_Part, Set[_Section]]":
         """Return a dictionary with the sections contained in each part in the model."""
         return {part: part.sections.members for part in self.parts if not isinstance(part, RigidPart)}
+    
+    @property
+    def section_elements(self) -> "Dict[_Section, ElementsGroup]":
+        """Return a dictionary with the elements contained in each section in the model."""
+        return self.elements.group_by(key=lambda x: x.section)
 
     @property
     def interfaces(self) -> "InterfacesGroup":
@@ -368,6 +333,7 @@ class Model(FEAData):
         """Return a dictionary of all interactions in the model."""
         return self._interactions
 
+    # TODO change to leverage groups
     @property
     def amplitudes(self):
         amplitudes = set()
@@ -407,7 +373,6 @@ class Model(FEAData):
     @property
     def elements(self) -> "ElementsGroup":
         """Return a list of all elements in the model."""
-        
         return ElementsGroup(members=list(chain.from_iterable(part.elements for part in self.parts if part.elements)))
 
     @property
@@ -538,7 +503,7 @@ class Model(FEAData):
         :class:`compas_fea2.model.Part`
 
         """
-        from compas_fea2._utilities._utils import normalize_string
+        from compas_fea2.utilities._utils import normalize_string
         name = normalize_string(name)
         for part in self.parts:
             name_1 = part.name if not casefold else part.name.casefold()
@@ -664,41 +629,6 @@ class Model(FEAData):
     #                           Materials methods
     # =========================================================================
 
-    def add_material(self, material: "_Material") -> "_Material":
-        """Add a material to the model.
-
-        Parameters
-        ----------
-        material : :class=`compas_fea2.model.materials.Material`
-
-        Returns
-        -------
-        :class=`compas_fea2.model.materials.Material`
-
-        """
-        from compas_fea2.model.materials.material import _Material
-
-        if not isinstance(material, _Material):
-            raise TypeError("{!r} is not a material.".format(material))
-        material._registration = self
-        material._key = len(self._materials)
-        self._materials.add_member(material)
-        return material
-
-    def add_materials(self, materials: "list[_Material]") -> "list[_Material]":
-        """Add multiple materials to the model.
-
-        Parameters
-        ----------
-        materials : list[:class=`compas_fea2.model.materials.Material`]
-
-        Returns
-        -------
-        list[:class=`compas_fea2.model.materials.Material`]
-
-        """
-        return [self.add_material(material) for material in materials]
-
     def find_material_by_name(self, name: str) -> "Optional[_Material]":
         """Find a material by name.
 
@@ -771,46 +701,6 @@ class Model(FEAData):
             if abs(getattr(material, attr) - value) < tolerance:
                 materials.append(material)
         return materials
-
-    # =========================================================================
-    #                           Sections methods
-    # =========================================================================
-
-    def add_section(self, section: "_Section") -> "_Section":
-        """Add a section to the model.
-
-        Parameters
-        ----------
-        section : :class=`compas_fea2.model.sections.Section`
-
-        Returns
-        -------
-        :class=`compas_fea2.model.sections.Section`
-
-        """
-        from compas_fea2.model.sections import _Section
-
-        if not isinstance(section, _Section):
-            raise TypeError("{!r} is not a section.".format(section))
-        self.add_material(section.material)
-        section._registration = self
-        section._key = len(self._sections)
-        self._sections.add_member(section)
-        return section
-
-    def add_sections(self, sections: "list[_Section]") -> "list[_Section]":
-        """Add multiple sections to the model.
-
-        Parameters
-        ----------
-        sections : list[:class=`compas_fea2.model.sections.Section`]
-
-        Returns
-        -------
-        list[:class=`compas_fea2.model.sections.Section`]
-
-        """
-        return [self.add_section(section) for section in sections]
 
     def find_section_by_name(self, name: str) -> "Optional[_Section]":
         """Find a section by name.
@@ -1002,6 +892,7 @@ class Model(FEAData):
     # =========================================================================
     #                           BCs methods
     # =========================================================================
+    # FIXME: currently it is possible to bcs to nodes that are not in any part whcih could lead to problems
     def add_bcs(self, bc_fields: "BoundaryConditionsField | List[BoundaryConditionsField]") -> "BoundaryConditionsField | List[BoundaryConditionsField]":
         """Add a :class=`compas_fea2.model.BoundaryConditionsField` to the model.
 
@@ -1274,6 +1165,7 @@ class Model(FEAData):
             nodes = NodesGroup(nodes)
         field.distribution.remove_members(nodes)
 
+    # FIXME: this should be easy to implement
     def add_ics(self, ic: "_InitialCondition", members: "Union[list[Union[Node, _Element]], NodesGroup]") -> "_InitialCondition":
         """Add a :class=`compas_fea2.model._InitialCondition` to the model.
 
@@ -1324,6 +1216,7 @@ class Model(FEAData):
     # =========================================================================
     #                           Constraints methods
     # =========================================================================
+    # FIXME: switch to fields here as well
     def add_constraint(self, constraint: "_Constraint") -> "_Constraint":
         """Add a constraint to the model.
 
@@ -1363,6 +1256,7 @@ class Model(FEAData):
     # =========================================================================
     #                           Connectors methods
     # =========================================================================
+    # FIXME: switch to fields here as well
     def add_connector(self, connector: "_Connector") -> "_Connector":
         """Add a connector to the model.
 
@@ -1436,7 +1330,7 @@ class Model(FEAData):
     # =========================================================================
     #                           Problems methods
     # =========================================================================
-    def add_problem(self, problem: "Problem") -> "Problem":
+    def add_problem(self, problem: Optional["Problem"]=None, **kwargs) -> "Problem":
         """Add a problem to the model.
 
         Parameters
@@ -1450,6 +1344,8 @@ class Model(FEAData):
             The added problem.
         """
         from compas_fea2.problem import Problem
+        if not problem:
+            problem = Problem(**kwargs)
         if not isinstance(problem, Problem):
             raise TypeError("{!r} is not a problem.".format(problem))
         problem._registration = self

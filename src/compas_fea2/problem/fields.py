@@ -47,10 +47,13 @@ class _BaseLoadField(FEAData):
     def __init__(self, *, loads, distribution, load_case: str | None = None, combination_rank: int = 1, **kwargs):
         super().__init__(**kwargs)
         self._loads = loads if isinstance(loads, list) else [loads]
+        if len(self._loads) ==1:
+            self._loads = self._loads * len(distribution)
+        if len(self._loads) != len(distribution):
+            raise ValueError("Number of loads must be 1 or match the number of distribution elements.")
         self._distribution = distribution
         self._load_case = load_case
         self._registration: "_Step | None" = None
-        self._loads: list[Any] = []
         self.combination_rank = combination_rank  # validates via setter
 
     # Removed value_kind & domain (now inferred downstream if needed)
@@ -204,18 +207,10 @@ class _NodesLoadField(_BaseLoadField):
     """
 
     def __init__(self, loads, nodes: "Node | Iterable[Node] | NodesGroup", *, load_case: str | None = None, **kwargs):
-        super().__init__(loads=loads, distribution=nodes, load_case=load_case, **kwargs)
         if not isinstance(nodes, NodesGroup):
             nodes = NodesGroup(nodes)
-        self._distribution = nodes
+        super().__init__(loads=loads, distribution=nodes, load_case=load_case, **kwargs)
 
-        if isinstance(loads, Iterable):
-            loads_list = list(loads)
-        else:
-            loads_list = [loads] * len(nodes)
-        if len(loads_list) != len(nodes):
-            raise ValueError("Loads length must be 1 or match number of nodes.")
-        self._loads = loads_list
 
     @property
     def nodes(self):

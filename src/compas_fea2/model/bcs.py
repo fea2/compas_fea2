@@ -21,9 +21,6 @@ BoundaryConditions are registered to a :class:`compas_fea2.model.Model`.
 
 Parameters
 ----------
-name : str, optional
-    Unique identifier. If not provided it is automatically generated. Set a
-    name if you want a more human-readable input file.
 frame : :class:`compas.geometry.Frame`, optional
     The reference frame for the boundary condition. Defaults to the world XY plane.
     
@@ -33,8 +30,6 @@ The frame is a WIP feature and may change in future versions.
 
 Attributes
 ----------
-name : str
-    Unique identifier.
 x : bool
     Restrain translations along the x axis.
 y : bool

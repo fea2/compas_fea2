@@ -26,6 +26,7 @@ from compas_fea2.base import Registry
 from compas_fea2.base import from_data
 
 if TYPE_CHECKING:
+    from compas_fea2.model.materials import _Material
     from compas_fea2.model.sections import SpringSection
     from compas_fea2.model.sections import _Section
     from compas_fea2.model.sections import _Section1D
@@ -269,6 +270,10 @@ class _Element(FEAData, Frameable):
     def section(self) -> "Union[_Section, _Section1D, _Section2D, _Section3D, None]":
         """Return the section object assigned to the element."""
         return self._section
+
+    @property
+    def material(self) -> "Union[None, _Material]":
+        return self.section.material if self.section else None
 
     @section.setter
     def section(self, value: "Union[_Section, _Section1D, _Section2D, _Section3D, None]"):

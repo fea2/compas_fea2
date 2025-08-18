@@ -225,7 +225,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             registration_data = [registration.__class__.__name__, registration._uid]
         else:
             registration_data = None
-        return {"class": self.__class__.__name__, "name": self.name, "uid": str(self._uid), "key": self._key, "registration": registration_data}
+        return {"class": self.__class__.__name__, "name": self._name, "uid": str(self._uid), "key": self._key, "registration": registration_data}
 
     @from_data
     def __from_data__(cls: Type[T], data: dict, registry: Optional["Registry"] = None) -> T:  # type: ignore[override]

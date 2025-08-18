@@ -306,7 +306,9 @@ class GeneralStep(_Step):
     def loads(self):
         """Return the loads associated with the step."""
         if self._fields:
-            return list(filter(lambda p: not isinstance(p, DisplacementField), self._fields))
+            loadsfield_groups = list(filter(lambda p: not isinstance(p, LoadsFieldGroup), self._fields))
+            loads_fields = [field for field in loadsfield_groups if isinstance(field, ForceField)]
+            return loads_fields
 
     @property
     def max_increments(self):
@@ -432,7 +434,7 @@ class GeneralStep(_Step):
             raise TypeError("nodes must be a list, tuple or NodesGroup, not {}".format(type(nodes)))
         nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
         load = VectorLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, amplitude=amplitude)
-        field = ForceField(loads=[load], nodes=nodes, load_case=load_case, **kwargs)
+        field = ForceField(loads=load, nodes=nodes, load_case=load_case, **kwargs)
 
         return self.add_field(field)
 

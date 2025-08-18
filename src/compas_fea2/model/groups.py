@@ -193,7 +193,8 @@ class _Group(FEAData, Generic[_MemberType]):
         List[_MemberType]
             A sorted list of group members.
         """
-        return sorted(self._members, key=lambda x: getattr(x, "key", str(x)))
+        
+        return sorted(self._members, key=lambda x: getattr(x, "key", 0))
 
     def sorted_by(self, key: Callable[[_MemberType], Union[str, int, float]], reverse: bool = False) -> List[_MemberType]:
         """

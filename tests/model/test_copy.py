@@ -6,6 +6,7 @@ from compas.geometry import Translation  # type: ignore
 
 from compas_fea2.model.model import Model  # explicit import
 from compas_fea2.model.parts import Part  # type: ignore
+from compas_fea2.model.nodes import Node  # type: ignore
 from compas_fea2.model.materials.steel import Steel  # type: ignore
 from compas_fea2.model.sections import GenericBeamSection  # type: ignore
 
@@ -41,6 +42,7 @@ class TestFEADataCopy(unittest.TestCase):
     def test_duplicate_nested_object(self):
         m = Model(name="test")
         part = m.add_part(Part(name="p1"))
+        part.add_node(Node(name="n1", xyz=(0, 0, 0)))
 
         m2 = m.copy(duplicate=True)
         self.assertEqual(m2.parts[0].name, part.name)
@@ -58,6 +60,7 @@ class TestModelPartCopy(unittest.TestCase):
     def setUp(self):
         self.model = Model(name="test")
         self.part = self.model.add_part(Part(name="p1"))
+        self.part.add_node(Node(name="n1", xyz=(0, 0, 0)))
 
     def test_copy_part(self):
         # translation by vector [1,1,1]
@@ -71,37 +74,6 @@ class TestModelPartCopy(unittest.TestCase):
 class TestModelMaterialsSections(unittest.TestCase):
     def setUp(self):
         self.model = Model()
-
-    def test_add_materials(self):
-        mat = Steel.S355()  # type: ignore
-        returned = self.model.add_material(mat)  # type: ignore
-        self.assertIn(mat, self.model.materials)  # type: ignore
-        self.assertEqual(returned, mat)
-
-    def test_add_sections(self):
-        mat = Steel.S355()  # type: ignore
-        sec = GenericBeamSection(
-            material=mat,
-            area=0.1,
-            Ixx=0.01,
-            Iyy=0.01,
-            J=0.01,
-            Ixy=0.0,
-            Ixz=0.0,
-            Iyz=0.0,
-            shear_area_y=0.0,
-            shear_area_z=0.0,
-            torsional_constant=0.0,
-            A=0.1,
-            Avx=0.05,
-            Avy=0.05,
-            g0=0.0,
-            gw=0.0,
-            name="test_section",
-        )
-        returned = self.model.add_section(sec)  # type: ignore
-        self.assertIn(sec, self.model.sections)  # type: ignore
-        self.assertEqual(returned, sec)
 
 
 class TestToJson(unittest.TestCase):
