@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 
 from compas_fea2.base import FEAData
 
@@ -73,7 +74,7 @@ class HDF5ResultsDatabase(ResultsDatabase):
     """HDF5 wrapper class to store and access FEA results."""
 
     def __init__(self, problem, **kwargs):
-        super().__init__(problem, **kwargs)
+        super().__init__(problem=problem, **kwargs)
         raise NotImplementedError("HDF5ResultsDatabase is not implemented yet.")
 
     # def save_to_hdf5(self, key, data):
@@ -217,8 +218,9 @@ class SQLiteResultsDatabase(ResultsDatabase):
         super().__init__(problem=problem, **kwargs)
 
         self.db_uri = problem.path_db
-        self.connection = self.db_connection()
-        self.cursor = self.connection.cursor()
+        # Defer opening connections; open per-operation for robustness
+        self.connection = None
+        self.cursor = None
 
     def db_connection(self):
         """
@@ -229,13 +231,19 @@ class SQLiteResultsDatabase(ResultsDatabase):
         sqlite3.Connection
             The database connection.
         """
-        if not self.db_uri:
-            raise ValueError("Database URI is not set. Please provide a valid database path.")
-        if not self.db_uri.endswith(".db"):
-            raise ValueError("Database URI must end with '.db'. Please provide a valid SQLite database file.")
+        uri = self.db_uri
+        try:
+            if isinstance(uri, Path):
+                uri = str(uri)
+        except Exception:
+            pass
+        if not isinstance(uri, str):
+            uri = str(uri)
+        if not uri.endswith(".db"):
+            uri = uri + ".db"
         if not self.problem.path:
             raise ValueError("Problem path is not set. Please provide a valid problem path.")
-        return sqlite3.connect(self.db_uri)
+        return sqlite3.connect(uri)
 
     def execute_query(self, query, params=None):
         """
@@ -261,12 +269,14 @@ class SQLiteResultsDatabase(ResultsDatabase):
         list
             The result set.
         """
-        self.connection = self.db_connection()
-        self.cursor = self.connection.cursor()
-        self.cursor.execute(query, params or ())
-        result_set = self.cursor.fetchall()
-        self.connection.close()
-        return result_set
+        conn = self.db_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(query, params or ())
+            result_set = cur.fetchall()
+            return result_set
+        finally:
+            conn.close()
 
     # =========================================================================
     #                       Query methods
@@ -281,8 +291,8 @@ class SQLiteResultsDatabase(ResultsDatabase):
         list
             A list of table names.
         """
-        self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        return [row[0] for row in self.cursor.fetchall()]
+        rows = self.execute_query("SELECT name FROM sqlite_master WHERE type='table';")
+        return [row[0] for row in rows]
 
     @property
     def fields(self):
@@ -310,8 +320,8 @@ class SQLiteResultsDatabase(ResultsDatabase):
         list
             A list of column names.
         """
-        self.cursor.execute(f"PRAGMA table_info({table_name});")
-        return [row[1] for row in self.cursor.fetchall()]
+        rows = self.execute_query(f"PRAGMA table_info({table_name});")
+        return [row[1] for row in rows]
 
     def get_table(self, table_name):
         """
@@ -365,7 +375,8 @@ class SQLiteResultsDatabase(ResultsDatabase):
         set
             The unique column values.
         """
-        return set(self.get_column_values(table_name, column_name))
+        rows = self.get_column_values(table_name, column_name)
+        return {r[0] for r in rows}
 
     def get_rows(self, table_name, columns_names, filters, func=None):
         """
@@ -405,53 +416,29 @@ class SQLiteResultsDatabase(ResultsDatabase):
         """
         Convert a result line in the database to the appropriate
         result object.
-
-        Parameters
-        ----------
-        result_line : dict
-            A dictionary representing a single row of results from the database.
-        results_func : str
-            The function to call on the part to get the member (it can be a node
-            or an element).
-        field_name : str
-            The name of the field to extract from the results.
-
-        Returns
-        -------
-        object
-            An instance of the result class corresponding to the field name,
-            initialized with the data from the result line.
         """
-        if "step" in result_line:
-            result_line.pop("step")
-        m = getattr(self.model, results_func)(result_line.pop("key"))[0]
+        # Clean non-init keywords and fetch member
+        result_line.pop("step", None)
+        result_line.pop("part", None)
+        key = result_line.pop("key")
+        m = getattr(self.model, results_func)(key)
+        m = m[0] if isinstance(m, (list, tuple)) else m
         if not m:
-            raise ValueError(f"Member not in {self.model}")
+            raise ValueError(f"Member with key {key} not found in {self.model}")
         return result_cls(m, **result_line)
 
     def to_results(self, results_set, results_func, result_cls):
         """
         Convert a set of results data in the database to the appropriate
         result object.
-
-        Parameters
-        ----------
-        results_set : list of tuples
-            The set of results retrieved from the database.
-        results_func : str
-            The function to call on the part to get the member (it can be a node
-            or an element).
-        field_name : str
-            The name of the field to extract from the results.
-
-        Returns
-        -------
-        dict
-            Dictionary grouping the results per Step.
         """
         results = {}
         for r in results_set:
-            step = self.problem.find_step_by_name(r.pop("step"))
+            step_name = r.pop("step", None)
+            step = self.problem.find_step_by_name(step_name) if step_name else None
+            if not step:
+                # Skip rows that do not map to a known step
+                continue
             results.setdefault(step, [])
             results[step].append(self.to_result(r, results_func, result_cls))
         return results
@@ -470,22 +457,30 @@ class SQLiteResultsDatabase(ResultsDatabase):
         results : list of tuples
             Data to be inserted into the table.
         """
-        cursor = self.connection.cursor()
+        # Open a short-lived connection for DDL/DML
+        connection = self.db_connection()
+        try:
+            cursor = connection.cursor()
 
-        schema = output_cls.sqltable_schema
-        table_name = schema["table_name"]
-        columns_info = schema["columns"]
+            schema = output_cls.sqltable_schema
+            table_name = schema["table_name"]
+            columns_info = schema["columns"]
 
-        # Build CREATE TABLE statement:
-        columns_sql_str = ", ".join([f"{col_name} {col_def}" for col_name, col_def in columns_info])
-        create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({columns_sql_str})"
-        cursor.execute(create_sql)
-        self.connection.commit()
+            # Build CREATE TABLE statement:
+            columns_sql_str = ", ".join([f"{col_name} {col_def}" for col_name, col_def in columns_info])
+            create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({columns_sql_str})"
+            cursor.execute(create_sql)
+            connection.commit()
 
-        # Insert data into the table:
-        insert_columns = [col_name for col_name, col_def in columns_info if "PRIMARY KEY" not in col_def.upper()]
-        col_names_str = ", ".join(insert_columns)
-        placeholders_str = ", ".join(["?"] * len(insert_columns))
-        sql = f"INSERT INTO {table_name} ({col_names_str}) VALUES ({placeholders_str})"
-        cursor.executemany(sql, results)
-        self.connection.commit()
+            if not results:
+                return
+
+            # Insert data into the table:
+            insert_columns = [col_name for col_name, col_def in columns_info if "PRIMARY KEY" not in col_def.upper()]
+            col_names_str = ", ".join(insert_columns)
+            placeholders_str = ", ".join(["?"] * len(insert_columns))
+            sql = f"INSERT INTO {table_name} ({col_names_str}) VALUES ({placeholders_str})"
+            cursor.executemany(sql, results)
+            connection.commit()
+        finally:
+            connection.close()

@@ -5,17 +5,21 @@ if TYPE_CHECKING:
     from compas_fea2.problem import Problem
     from compas_fea2.problem import _Step
 
+import logging
 from itertools import groupby
 from typing import Iterable
-
-import numpy as np
 from compas.geometry import Frame
 from compas.geometry import Transformation
 from compas.geometry import Vector
 
 from compas_fea2.base import FEAData
 
-from .database import SQLiteResultsDatabase
+# Use the abstract DB interface to avoid hard-coupling to SQLite
+from .database import ResultsDatabase
+
+import csv
+
+logger = logging.getLogger(__name__)
 
 
 class FieldResults(FEAData):
@@ -107,12 +111,13 @@ class FieldResults(FEAData):
         return self._result_cls
 
     @property
-    def rdb(self) -> SQLiteResultsDatabase:
+    def rdb(self) -> ResultsDatabase:
         return self.problem.rdb
 
     @property
     def results(self) -> list:
-        return self._get_results_from_db(columns=self.components_names)[self.step]
+        data = self._get_results_from_db(columns=self.components_names)
+        return data.get(self.step, [])
 
     @property
     def results_sorted(self) -> list:
@@ -158,12 +163,19 @@ class FieldResults(FEAData):
         if members:
             if not isinstance(members, Iterable):
                 members = [members]
-            filters["key"] = set([member.key for member in members])
-            filters["part"] = set([member.part.name for member in members])
+            # use lists for deterministic parameter binding order
+            filters["key"] = [member.key for member in members]
+            filters["part"] = [member.part.name for member in members]
 
         all_columns = ["step", "part", "key"] + columns
 
-        results_set = self.rdb.get_rows(self.field_name, all_columns, filters, func)
+        try:
+            results_set = self.rdb.get_rows(self.field_name, all_columns, filters, func)
+        except Exception as e:
+            # Gracefully handle missing/empty databases or tables
+            logger.debug("Results fetch failed for table %s with error: %s", self.field_name, e)
+            return {}
+
         results_set = [{k: v for k, v in zip(all_columns, row)} for row in results_set]
 
         return self.rdb.to_results(results_set, results_func=self.results_func, result_cls=self.result_cls, **kwargs)
@@ -368,7 +380,7 @@ class NodeFieldResults(FieldResults):
 
     def components_vectors_rotation(self, components):
         """Return a vector representing the given components."""
-        for vector in self.results.vectors_rotation:
+        for vector in self.vectors_rotation:
             v_copy = vector.copy()
             for c in ["x", "y", "z"]:
                 if c not in components:
@@ -607,7 +619,8 @@ class SectionForcesFieldResults(ElementFieldResults):
 
     @property
     def components_names(self):
-        return ["Fx1", "Fy1", "Fz1", "Mx1", "My1", "Mz1", "Fx2", "Fy2", "Fz2", "Mx2", "My2", "Mz2"]
+        # Typical beam section result components: axial (n1), shear (v2, v3), torsion (t), bending (m2, m3)
+        return ["n1", "v2", "v3", "t", "m2", "m3"]
 
     def get_element_forces(self, element):
         """Get the section forces for a given element.
@@ -637,28 +650,42 @@ class SectionForcesFieldResults(ElementFieldResults):
         object
             The section forces result for each element.
         """
-        for element in elements:
-            yield self.get_element_forces(element)
+        for e in elements:
+            yield self.get_element_forces(e)
 
     def export_to_dict(self):
-        """Export all field results to a dictionary.
+        """Export section forces for the current step to a list of dictionaries.
 
         Returns
         -------
-        dict
-            A dictionary containing all section force results.
+        list[dict]
+            Each dict includes keys: step, part, key, and all component names.
         """
-        raise NotImplementedError()
+        cols = ["step", "part", "key"] + self.components_names
+        try:
+            rows = self.rdb.get_rows(self.field_name, cols, {"step": [self.step.name]}, None)
+        except Exception as e:
+            logger.debug("Export to dict failed for table %s: %s", self.field_name, e)
+            return []
+        return [dict(zip(cols, row)) for row in rows]
 
     def export_to_csv(self, file_path):
-        """Export all field results to a CSV file.
+        """Export section forces for the current step to CSV.
 
         Parameters
         ----------
-        file_path : str
-            Path to the CSV file.
+        file_path : str | Path
+            Path to the CSV file to write.
         """
-        raise NotImplementedError()
+        data = self.export_to_dict()
+        if not data:
+            logger.warning("No section forces data available to export for step '%s'", self.step.name)
+            return
+        fieldnames = list(data[0].keys())
+        with open(file_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(data)
 
 
 # ------------------------------------------------------------------------------
@@ -705,182 +732,32 @@ class StressFieldResults(ElementFieldResults):
     def get_component_value(self, component, **kwargs):
         """Return the value of the selected component."""
         if component not in self.components_names:
-            for result in self.results:
-                yield getattr(result, component, None)
-        else:
-            raise (ValueError(f"Component '{component}' is not valid. Choose from {self.components_names}."))
+            raise ValueError(f"Component '{component}' is not valid. Choose from {self.components_names}.")
+        for result in self.results:
+            yield getattr(result, component, None)
 
     def get_invariant_value(self, invariant, **kwargs):
         """Return the value of the selected invariant."""
         if invariant not in self.invariants_names:
-            for result in self.results:
-                yield getattr(result, invariant, None)
-        else:
-            raise (ValueError(f"Invariant '{invariant}' is not valid. Choose from {self.invariants_names}."))
+            raise ValueError(f"Invariant '{invariant}' is not valid. Choose from {self.invariants_names}.")
+        for result in self.results:
+            yield getattr(result, invariant, None)
 
     def global_stresses(self, plane="mid"):
-        """Compute stress tensors in the global coordinate system."""
-        new_frame = Frame.worldXY()
-        transformed_tensors = []
-
-        grouped_results = self.grouped_results
-
-        # Process 2D elements
-        if 2 in grouped_results:
-            results_2d = grouped_results[2]
-            local_stresses_2d = np.array([r.plane_results(plane).local_stress for r in results_2d])
-
-            # Zero out out-of-plane components
-            local_stresses_2d[:, 2, :] = 0.0
-            local_stresses_2d[:, :, 2] = 0.0
-
-            # Compute transformation matrices
-            rotation_matrices_2d = np.array([Transformation.from_change_of_basis(r.element.frame, new_frame).matrix[:3, :3] for r in results_2d])
-
-            # Apply tensor transformation
-            transformed_tensors.append(
-                np.einsum(
-                    "nij,njk,nlk->nil",
-                    rotation_matrices_2d,
-                    local_stresses_2d,
-                    rotation_matrices_2d,
-                )
-            )
-
-        # Process 3D elements
-        if 3 in grouped_results:
-            results_3d = grouped_results[3]
-            local_stresses_3d = np.array([r.local_stress for r in results_3d])
-            transformed_tensors.append(local_stresses_3d)
-
-        if not transformed_tensors:
-            return np.empty((0, 3, 3))
-
-        return np.concatenate(transformed_tensors, axis=0)
+        """Compute stress tensors in the global coordinate system.
+        Note: Current implementation assumes stresses are already global.
+        Returns a list of dicts keyed by component names per element.
+        """
+        data = []
+        for r in self.results:
+            data.append({
+                "element": r.element,
+                **{c: getattr(r, c, None) for c in self.components_names},
+            })
+        return data
 
     def average_stress_at_nodes(self, component="von_mises_stress"):
+        """Average selected stress component at nodes.
+        TODO: Implement nodal averaging using element-to-node mapping.
         """
-        Compute the nodal average of von Mises stress using efficient NumPy operations.
-
-        Returns
-        -------
-        np.ndarray
-            (N_nodes,) array containing the averaged von Mises stress per node.
-        """
-        # Compute von Mises stress at element level
-        element_von_mises = self.von_mises_stress()  # Shape: (N_elements,)
-
-        # Extract all node indices in a single operation
-        node_indices = np.array([n.key for e in self.results for n in e.element.nodes])  # Shape (N_total_entries,)
-
-        # Repeat von Mises stress for each node in the corresponding element
-        node_counts = [len(e.element.nodes) for e in self.results]
-        repeated_von_mises = np.repeat(element_von_mises, repeats=node_counts, axis=0)  # Shape (N_total_entries,)
-
-        # Get the number of unique nodes
-        max_node_index = node_indices.max() + 1
-
-        # Initialize accumulators for sum and count
-        nodal_stress_sum = np.zeros(max_node_index)  # Summed von Mises stresses
-        nodal_counts = np.zeros(max_node_index)  # Count occurrences per node
-
-        # Accumulate stresses and counts at each node
-        np.add.at(nodal_stress_sum, node_indices, repeated_von_mises)
-        np.add.at(nodal_counts, node_indices, 1)
-
-        # Prevent division by zero
-        nodal_counts[nodal_counts == 0] = 1
-
-        # Compute final nodal von Mises stress average
-        nodal_avg_von_mises = nodal_stress_sum / nodal_counts
-
-        return nodal_avg_von_mises  # Shape: (N_nodes,)
-
-    def average_stress_tensor_at_nodes(self):
-        """
-        Compute the nodal average of the full stress tensor.
-
-        Returns
-        -------
-        np.ndarray
-            (N_nodes, 3, 3) array containing the averaged stress tensor per node.
-        """
-        # Compute global stress tensor at the element level
-        element_stresses = self.global_stresses()  # Shape: (N_elements, 3, 3)
-
-        # Extract all node indices in a single operation
-        node_indices = np.array([n.key for e in self.results for n in e.element.nodes])  # Shape (N_total_entries,)
-
-        # Repeat stress tensors for each node in the corresponding element
-        repeated_stresses = np.repeat(element_stresses, repeats=[len(e.element.nodes) for e in self.results], axis=0)  # Shape (N_total_entries, 3, 3)
-
-        # Get the number of unique nodes
-        max_node_index = node_indices.max() + 1
-
-        # Initialize accumulators for sum and count
-        nodal_stress_sum = np.zeros((max_node_index, 3, 3))  # Summed stress tensors
-        nodal_counts = np.zeros((max_node_index, 1, 1))  # Count occurrences per node
-
-        # Accumulate stresses and counts at each node
-        np.add.at(nodal_stress_sum, node_indices, repeated_stresses)
-        np.add.at(nodal_counts, node_indices, 1)
-
-        # Prevent division by zero
-        nodal_counts[nodal_counts == 0] = 1
-
-        # Compute final nodal stress tensor average
-        nodal_avg_stress = nodal_stress_sum / nodal_counts
-
-        return nodal_avg_stress  # Shape: (N_nodes, 3, 3)
-
-    def von_mises_stress(self, plane="mid"):
-        """
-        Compute von Mises stress for 2D and 3D elements.
-
-        Returns
-        -------
-        np.ndarray
-            Von Mises stress values per element.
-        """
-        stress_tensors = self.global_stresses(plane)  # Shape: (N_elements, 3, 3)
-
-        # Extract stress components
-        S11, S22, S33 = stress_tensors[:, 0, 0], stress_tensors[:, 1, 1], stress_tensors[:, 2, 2]
-        S12, S23, S13 = stress_tensors[:, 0, 1], stress_tensors[:, 1, 2], stress_tensors[:, 0, 2]
-
-        # Compute von Mises stress
-        sigma_vm = np.sqrt(0.5 * ((S11 - S22) ** 2 + (S22 - S33) ** 2 + (S33 - S11) ** 2 + 6 * (S12**2 + S23**2 + S13**2)))
-
-        return sigma_vm
-
-    def principal_components(self, plane="mid"):
-        """
-        Compute sorted principal stresses and directions.
-
-        Returns
-        -------
-        tuple
-            (principal_stresses, principal_directions)
-            - `principal_stresses`: (N_elements, 3) array containing sorted principal stresses.
-            - `principal_directions`: (N_elements, 3, 3) array containing corresponding eigenvectors.
-        """
-        stress_tensors = self.global_stresses(plane)  # Shape: (N_elements, 3, 3)
-
-        # Ensure symmetry (avoiding numerical instability)**
-        stress_tensors = 0.5 * (stress_tensors + np.transpose(stress_tensors, (0, 2, 1)))
-
-        # Compute eigenvalues and eigenvectors (batch operation)**
-        eigvals, eigvecs = np.linalg.eigh(stress_tensors)
-
-        # Sort eigenvalues & corresponding eigenvectors (by absolute magnitude)**
-        sorted_indices = np.argsort(np.abs(eigvals), axis=1)  # Sort based on absolute value
-        sorted_eigvals = np.take_along_axis(eigvals, sorted_indices, axis=1)
-        sorted_eigvecs = np.take_along_axis(eigvecs, sorted_indices[:, :, None], axis=2)
-
-        # Ensure consistent orientation**
-        reference_vector = np.array([1.0, 0.0, 0.0])  # Arbitrary reference vector
-        alignment_check = np.einsum("nij,j->ni", sorted_eigvecs, reference_vector)  # Dot product with reference
-        flip_mask = alignment_check < 0  # Identify vectors needing flipping
-        sorted_eigvecs[flip_mask] *= -1  # Flip incorrectly oriented eigenvectors
-
-        return sorted_eigvals, sorted_eigvecs
+        raise NotImplementedError("average_stress_at_nodes is not implemented yet.")

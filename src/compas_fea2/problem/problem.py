@@ -1,5 +1,7 @@
 import os
+import sys
 import shutil
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import List
@@ -12,8 +14,9 @@ from compas_fea2.base import from_data
 from compas_fea2.job.input_file import InputFile
 
 from compas_fea2.results.database import ResultsDatabase
-from compas_fea2.results.database import SQLiteResultsDatabase
 
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from compas_fea2.base import Registry
@@ -107,7 +110,6 @@ class Problem(FEAData):
         problem._path = data.get("path", None)
         for step_data in data.get("steps", []):
             problem.add_step(registry.add_from_data(step_data, module_name="compas_fea2.problem.steps", duplicate=duplicate))
-        problem._rdb = registry.add_from_data(data, module_name="compas_fea2.results.database", duplicate=duplicate)
         return problem
 
     @property
@@ -129,23 +131,48 @@ class Problem(FEAData):
     def path(self, value: Union[str, Path]):
         """Set the path to the analysis folder where all the files will be saved."""
         self._path = value if isinstance(value, Path) else Path(value)
+        # Keep the results database (if already created) in sync with the new path
+        if self._rdb and hasattr(self._rdb, "db_uri"):
+            self._rdb.db_uri = self.path_db
 
     @property
-    def path_db(self) -> Optional[str]:
+    def path_db(self) -> Optional[Path]:
         """Path to the SQLite database where the results are stored."""
-        return os.path.join(self._path, f"{self.name}-results.db")
+        if not self._path:
+            return None
+        return Path(self._path) / f"{self.name}-results.db"
 
     @property
-    def rdb(self) -> SQLiteResultsDatabase:
-        """Return the results database associated with the problem."""
-        return self._rdb or SQLiteResultsDatabase(self)
+    def rdb(self) -> ResultsDatabase:
+        """Return the results database associated with the problem.
+        Defaults to the SQLite implementation, cached on first access.
+        """
+        # Ensure we have a valid DB path before instantiating
+        if not self.path_db:
+            raise ValueError("Problem path is not set. Set Problem.path or run analysis/extraction before accessing the results database.")
+        # (Re)create the DB wrapper if it doesn't exist or if the path changed
+        if self._rdb is None or getattr(self._rdb, "db_uri", None) != self.path_db:
+            self._rdb = ResultsDatabase.sqlite(self)
+        return self._rdb
 
     @rdb.setter
-    def rdb(self, value: str):
-        """Set the results database associated with the problem."""
-        if not hasattr(ResultsDatabase, value):
-            raise ValueError("Invalid ResultsDatabase option")
-        self._rdb = getattr(ResultsDatabase, value)(self)
+    def rdb(self, value: Union[str, ResultsDatabase]):
+        """Set the results database associated with the problem.
+        Pass one of the available factories on ResultsDatabase, e.g. "sqlite", "hdf5", "json",
+        or provide an already-instantiated ResultsDatabase.
+        """
+        # Accept a ready instance
+        if isinstance(value, ResultsDatabase):
+            self._rdb = value
+            # Ensure the instance has the current db path, if applicable
+            if hasattr(self._rdb, "db_uri"):
+                self._rdb.db_uri = self.path_db
+            return
+        # Accept a factory name
+        if isinstance(value, str) and hasattr(ResultsDatabase, value):
+            self._rdb = getattr(ResultsDatabase, value)(self)
+            return
+        raise ValueError("Invalid ResultsDatabase option")
 
     @property
     def input_file(self) -> InputFile:
@@ -306,7 +333,7 @@ class Problem(FEAData):
         str
             Problem summary
         """
-        steps_data = "\n".join([f"{step.name}" for step in self.steps])
+        steps_data = "\n".join([f"{step.name}" for step in (self._steps or [])])
 
         summary = f"""
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -351,15 +378,16 @@ Analysis folder path : {self.path or "N/A"}
             path.mkdir(parents=True)
         return self.input_file.write_to_file(path)
 
-    def _check_analysis_path(self, path: Path, erase_data: bool = False) -> Path:
+    def _check_analysis_path(self, path: Path, erase_data: Union[bool, str] = False) -> Path:
         """Check and prepare the analysis path, ensuring the correct folder structure.
 
         Parameters
         ----------
         path : :class:`pathlib.Path`
             Path where the input file will be saved.
-        erase_data : bool, optional
+        erase_data : bool | str, optional
             If True, automatically erase the folder's contents if it is recognized as an FEA2 results folder. Default is False.
+            Pass "armageddon" to erase all contents without prompting even if the folder is not recognized as an FEA2 results folder.
 
         Returns
         -------
@@ -374,47 +402,52 @@ Analysis folder path : {self.path or "N/A"}
 
         def _delete_folder_contents(folder_path: Path):
             """Helper method to delete all contents of a folder."""
-            for root, dirs, files in os.walk(folder_path):
-                for file in files:
-                    os.remove(Path(root) / file)
-                for dir in dirs:
-                    shutil.rmtree(Path(root) / dir)
+            for entry in folder_path.iterdir():
+                try:
+                    if entry.is_dir():
+                        shutil.rmtree(entry)
+                    else:
+                        entry.unlink()
+                except FileNotFoundError:
+                    # Entry may already be gone due to concurrent operations
+                    pass
 
         if not isinstance(path, Path):
             path = Path(path)
 
         # Prepare the main and analysis paths
         if not self.model:
-            raise ValueError(f"{self:r} is trying to access the model path but it is not registered to any model.")
+            raise ValueError(f"{self!r} is trying to access the model path but it is not registered to any model.")
         
+        # Model folder and problem subfolder
         self.model._path = path
         self._path = self.model._path.joinpath(self.name)
 
         if self._path.exists():
             # Check if the folder contains FEA2 results
-            is_fea2_folder = any(fname.endswith("-results.db") for fname in os.listdir(self._path))
+            try:
+                entries = os.listdir(self._path)
+            except FileNotFoundError:
+                entries = []
+            is_fea2_folder = any(fname.endswith("-results.db") for fname in entries)
 
             if is_fea2_folder:
-                if not erase_data:
-                    user_input = input(f"The directory {self._path} already exists and contains FEA2 results. Do you want to delete its contents? (Y/n): ").strip().lower()
-                    erase_data = user_input in ["y", "yes", ""]
-
-                if erase_data:
+                if erase_data is True:
                     _delete_folder_contents(self._path)
-                    print(f"All contents of {self.path} have been deleted.")
                 else:
-                    print(f"WARNING: The directory {self.path} already exists and contains FEA2 results. Duplicated results expected.")
+                    # keep existing contents
+                    logger.debug("Reusing existing FEA2 folder at %s", self._path)
             else:
                 # Folder exists but is not an FEA2 results folder
-                if erase_data and erase_data == "armageddon":
+                if erase_data == "armageddon":
                     _delete_folder_contents(self._path)
+                elif erase_data is True:
+                    raise ValueError(
+                        f"Folder {self._path} is not recognized as an FEA2 results folder. "
+                        "Refusing to erase contents without 'armageddon'."
+                    )
                 else:
-                    user_input = input(f"ATTENTION! The directory {self.path} already exists and might NOT be a FEA2 results folder. Do you want to DELETE its contents? (y/N): ").strip().lower()
-                    if user_input in ["y", "yes"]:
-                        _delete_folder_contents(self._path)
-                        print(f"All contents of {self.path} have been deleted.")
-                    else:
-                        raise ValueError(f"The directory {self.path} exists but is not recognized as a valid FEA2 results folder, and its contents were not cleared.")
+                    logger.debug("Existing non-FEA2 folder kept at %s", self._path)
         else:
             # Create the directory if it does not exist
             self._path.mkdir(parents=True, exist_ok=True)
@@ -432,13 +465,17 @@ Analysis folder path : {self.path or "N/A"}
         """
         # generate keys
         if not self.model:
-            raise ValueError("You must register a model to the Problem before analysing it.")
+            raise ValueError("Problem is not registered to any model.")
+        # Prepare analysis folder
+        analysis_root = Path(path) if path else (self.model._path or Path.cwd())
+        self._check_analysis_path(analysis_root, erase_data=erase_data)
+        # Ensure model members have keys
         self.model.assign_keys()
         raise NotImplementedError("this function is not available for the selected backend")
 
     def analyze(self, path: Optional[Union[Path, str]] = None, erase_data: bool = False, *args, **kwargs):
         """American spelling of the analyse method"""
-        self.analyse(path=path, *args, **kwargs)
+        self.analyse(path=path, erase_data=erase_data, *args, **kwargs)
 
     def extract_results(self, path: Optional[Union[Path, str]] = None, erase_data: Optional[Union[bool, str]] = False, *args, **kwargs):
         """Extract the results from the native database system to SQLite.
@@ -457,7 +494,9 @@ Analysis folder path : {self.path or "N/A"}
             This method is implemented only at the backend level.
         """
         if path:
-            self.path = path
+            self._check_analysis_path(Path(path), erase_data=erase_data or False)
+        elif not self._path:
+            raise ValueError("Problem path is not set. Provide a path or set Problem.path before extracting results.")
         raise NotImplementedError("this function is not available for the selected backend")
 
     def analyse_and_extract(self, path: Optional[Union[Path, str]] = None, erase_data: bool = False, *args, **kwargs):
@@ -470,7 +509,9 @@ Analysis folder path : {self.path or "N/A"}
             This method is implemented only at the backend level.
         """
         if path:
-            self.path = path
+            self._check_analysis_path(Path(path), erase_data=erase_data)
+        elif not self._path:
+            raise ValueError("Problem path is not set. Provide a path or set Problem.path before analysis.")
         raise NotImplementedError("this function is not available for the selected backend")
 
     def restart_analysis(self, *args, **kwargs):

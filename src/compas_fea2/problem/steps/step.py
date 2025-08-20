@@ -100,7 +100,7 @@ class _Step(FEAData):
     #                             Field outputs
     # ==========================================================================
 
-    def add_field_output(self, field_output: "OutputType") -> "OutputType":
+    def add_field_output(self, field_output):
         """Add a field output to the step.
         Parameters
         ----------
