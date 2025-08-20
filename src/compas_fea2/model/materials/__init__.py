@@ -1,4 +1,4 @@
-from .material import _Material
+from .material import _Material, ElasticIsotropic
 from .steel import Steel
 from .concrete import Concrete
 from .aluminum import Aluminum

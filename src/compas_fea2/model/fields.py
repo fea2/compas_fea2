@@ -113,8 +113,8 @@ class BoundaryConditionsField(_ConditionsField):
         distribution_data = data.get("distribution")
         condition_data = data.get("condition")
         field = cls(
-            distribution=[registry.add_from_data(n, "compas_fea2.model.nodes", duplicate=duplicate) for n in distribution_data],
-            condition=registry.add_from_data(condition_data, "compas_fea2.model.bcs", duplicate=duplicate),
+            distribution=registry.add_from_data(distribution_data, duplicate=duplicate),
+            condition=registry.add_from_data(condition_data, duplicate=duplicate),
         )
         return field
 

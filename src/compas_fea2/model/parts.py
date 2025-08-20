@@ -176,9 +176,9 @@ class _Part(FEAData):
             part._elements._uid = data.get("elements", {}).get("uid", None)  # change the uid of the nodes group
 
         if data.get("groups"):
-            part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups", duplicate=duplicate) for group in data.get("groups", [])])
+            part._groups = set([registry.add_from_data(group,duplicate=duplicate) for group in data.get("groups", [])])
 
-        part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes", duplicate=duplicate) if data.get("reference_node") else None
+        part._reference_node = registry.add_from_data(data["reference_node"], duplicate=duplicate) if data.get("reference_node") else None
 
         return part
 

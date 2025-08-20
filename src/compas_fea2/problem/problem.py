@@ -109,7 +109,7 @@ class Problem(FEAData):
         problem = cls(description=description)
         problem._path = data.get("path", None)
         for step_data in data.get("steps", []):
-            problem.add_step(registry.add_from_data(step_data, module_name="compas_fea2.problem.steps", duplicate=duplicate))
+            problem.add_step(registry.add_from_data(step_data, duplicate=duplicate))
         return problem
 
     @property

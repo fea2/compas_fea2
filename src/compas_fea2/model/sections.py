@@ -87,7 +87,7 @@ class _Section(FEAData):
     def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True):
         if registry is None:
             registry = Registry()
-        material = registry.add_from_data(data.get("material"), "compas_fea2.model.materials", duplicate)
+        material = registry.add_from_data(data.get("material"), duplicate=duplicate)
         section = cls(material=material)
         return section
 
@@ -162,12 +162,9 @@ class SpringSection(FEAData):
         data = super().__data__ if hasattr(super(), "__data__") else {}
         data.update(
             {
-                "class": self.__class__.__name__,
                 "axial": self.axial,
                 "lateral": self.lateral,
                 "rotational": self.rotational,
-                "uid": self._uid,
-                "name": self.name,
             }
         )
         return data

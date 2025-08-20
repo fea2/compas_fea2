@@ -222,10 +222,21 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         """Return the minimum data representation of the object."""
         registration = self._registration
         if registration:
-            registration_data = [registration.__class__.__name__, registration._uid]
+            registration_data = [registration.__class__.__name__, str(registration._uid)]
         else:
             registration_data = None
-        return {"class": self.__class__.__name__, "name": self._name, "uid": str(self._uid), "key": self._key, "registration": registration_data}
+        base = {
+            "class": self.__class__.__name__,
+            "name": self._name,
+            "uid": str(self._uid),
+            "key": self._key,
+            "registration": registration_data,
+        }
+        base.update({
+            "module": self.__class__.__module__,
+            "class": self.__class__.__name__,
+        })
+        return base
 
     @from_data
     def __from_data__(cls: Type[T], data: dict, registry: Optional["Registry"] = None) -> T:  # type: ignore[override]
@@ -338,13 +349,30 @@ class Registry:
         """Retrieve an object from the registry by its key."""
         return self._registry.get(key)
 
-    def add_from_data(self, data, module_name, duplicate) -> Any:
-        """Add an object to the registry from its data representation."""
-        cls = getattr(importlib.import_module(module_name), data["class"])
-        if not issubclass(cls, FEAData):
-            raise TypeError(f"Class {data['class']} is not a subclass of FEAData.")
-        obj = cls.__from_data__(data, registry=self, duplicate=duplicate)  # type: ignore[return-value, no-any-return]
-        return obj
+    def add_from_data(self, data, module_name: Optional[str] = None, duplicate=True) -> Any:
+        """Instantiate object described by data.
+
+        If module_name is None, the function will look for 'module' and 'class'
+        keys inside data (written by FEAData.__data__).
+        """
+        if not isinstance(data, dict):
+            raise TypeError("data must be a dict")
+
+        cls_name = data.get("class")
+        mod_name = module_name or data.get("module")
+        if not mod_name or not cls_name:
+            raise ValueError("module_name or data['module'] and data['class'] must be provided")
+
+        module = importlib.import_module(mod_name)
+        cls = getattr(module, cls_name)
+
+        # existing internal logic to create/return instance from data
+        # Typically this calls something like cls.__from_data__ or registry-managed constructor
+        # We delegate to the existing registry implementation while preserving duplicate semantics
+        if hasattr(cls, '__from_data__'):
+            return cls.__from_data__(data, registry=self, duplicate=duplicate)
+        # fallback: try to instantiate directly
+        return cls(**data)
 
     def add(self, key, obj):
         """Add an object to the registry."""

@@ -141,14 +141,12 @@ class Model(FEAData):
         self._graph = Graph()
 
         self._parts: "PartsGroup" = PartsGroup(members=[], name="ALL_PARTS")
-        self._materials: "MaterialsGroup" = MaterialsGroup(members=[], name="ALL_MATERIALS")
-        self._sections: "SectionsGroup" = SectionsGroup(members=[], name="ALL_SECTIONS")
         self._interfaces: "InterfacesGroup" = InterfacesGroup(members=[], name="ALL_INTERFACES")
         self._interactions: "InteractionsGroup" = InteractionsGroup(members=[], name="ALL_INTERACTIONS")
         self._connectors: "ConnectorsGroup" = ConnectorsGroup(members=[], name="ALL_CONNECTORS")
         self._constraints: "ConstraintsGroup" = ConstraintsGroup(members=[], name="ALL_CONSTRAINTS")
         self._fields: "FieldsGroup" = FieldsGroup(members=[], name="ALL_FIELDS")
-        self._groups: "Set[_Group]" = set([self._parts, self._materials, self._sections, self._interfaces, self._interactions, self._connectors, self._constraints, self._fields])
+        self._groups: "Set[_Group]" = set([self._parts, self._interfaces, self._interactions, self._connectors, self._constraints, self._fields])
 
         self._problems: "Set[Problem]" = set()
 
@@ -161,8 +159,6 @@ class Model(FEAData):
                 "author": self.author,
                 "constants": self._constants,
                 "parts": [part.__data__ for part in self._parts],
-                "materials": [material.__data__ for material in self._materials],
-                "sections": [section.__data__ for section in self._sections],
                 "interfaces": [interface.__data__ for interface in self._interfaces],
                 "interactions": [interaction.__data__ for interaction in self._interactions],
                 "constraints": [constraint.__data__ for constraint in self._constraints],
@@ -185,28 +181,25 @@ class Model(FEAData):
         model._constants = data.get("constants", {})
 
         for part_data in data.get("parts", []):
-            model.add_part(registry.add_from_data(part_data, "compas_fea2.model.parts", duplicate=duplicate))
-
-        for material_data in data.get("materials", []):
-            model.add_material(registry.add_from_data(material_data, "compas_fea2.model.materials.material", duplicate=duplicate))
-
-        for section_data in data.get("sections", []):
-            model.add_section(registry.add_from_data(section_data, "compas_fea2.model.sections", duplicate=duplicate))
+            model.add_part(registry.add_from_data(part_data, duplicate=duplicate))
 
         for interface_data in data.get("interfaces", []):
-            model.interfaces.add_member(registry.add_from_data(interface_data, "compas_fea2.model.interfaces", duplicate=duplicate))
+            model.interfaces.add_member(registry.add_from_data(interface_data, duplicate=duplicate))
 
         for interaction_data in data.get("interactions", []):
-            model.interactions.add_member(registry.add_from_data(interaction_data, "compas_fea2.model.interactions", duplicate=duplicate))
+            model.interactions.add_member(registry.add_from_data(interaction_data, duplicate=duplicate))
 
         for constraint_data in data.get("constraints", []):
-            model.constraints.add_member(registry.add_from_data(constraint_data, "compas_fea2.model.constraints", duplicate=duplicate))
+            model.constraints.add_member(registry.add_from_data(constraint_data, duplicate=duplicate))
 
         for connector_data in data.get("connectors", []):
-            model.connectors.add_member(registry.add_from_data(connector_data, "compas_fea2.model.connectors", duplicate=duplicate))
+            model.connectors.add_member(registry.add_from_data(connector_data, duplicate=duplicate))
 
         for problem_data in data.get("problems", []):
-            model.add_problem(registry.add_from_data(problem_data, "compas_fea2.problem", duplicate=duplicate))
+            model.add_problem(registry.add_from_data(problem_data, duplicate=duplicate))
+            
+        for field_data in data.get("fields", []):
+            model.fields.add_member(registry.add_from_data(field_data, duplicate=duplicate))
 
         return model
 

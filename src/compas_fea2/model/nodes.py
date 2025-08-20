@@ -134,7 +134,6 @@ class Node(FEAData):
                 "mass": self._mass,
                 "temperature": self._temperature,
                 "on_boundary": self._on_boundary,
-                # "connected_elements": [elem.__data__ for elem in self._connected_elements],
             }
         )
         return data

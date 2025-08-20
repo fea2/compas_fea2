@@ -113,12 +113,25 @@ class _Group(FEAData, Generic[_MemberType]):
     @classmethod
     def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate=True) -> Union["_Group[Any]", "NodesGroup", "ElementsGroup", "EdgesGroup", "FacesGroup"]:
         member_class_name = data.get("member_class")
-        members = [registry.add_from_data(member, "compas_fea2.model", duplicate=duplicate) for member in data["members"]]  # type: ignore
+        members = [registry.add_from_data(member, duplicate=duplicate) for member in data.get("members", [])]  # type: ignore
+
+        # Prefer the actual runtime class of deserialized members (handles plugin-registered classes)
+        member_class = None
+        if members:
+            # infer class from first member instance
+            member_class = type(next(iter(members)))
+        elif member_class_name:
+            # fallback: try to resolve from the core compas_fea2.model module
+            try:
+                member_class = import_module("compas_fea2.model").__dict__.get(member_class_name)
+            except Exception:
+                member_class = None
+
+        # If this class expects an explicit member_class argument (base _Group), pass it; otherwise rely on subclass constructors
         if "member_class" in cls.__dict__:
-            member_class = import_module("compas_fea2.model").__dict__.get(member_class_name) if member_class_name else None
             group = cls(member_class=member_class, members=members)  # type: ignore
         else:
-            group = cls(members=members)  # type: ignore (this is for the specific groups where _member_class is already defined)
+            group = cls(members=members)  # type: ignore (specific group subclasses provide their own member_class)
         return group
 
     def __len__(self) -> int:
