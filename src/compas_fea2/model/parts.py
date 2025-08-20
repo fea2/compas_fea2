@@ -121,8 +121,6 @@ class _Part(FEAData):
         Number of elements in the part.
     boundary_mesh : :class:`compas.datastructures.Mesh`
         The outer boundary mesh enveloping the Part.
-    discretized_boundary_mesh : :class:`compas.datastructures.Mesh`
-        The discretized outer boundary mesh enveloping the Part.
 
     Notes
     -----
@@ -135,14 +133,11 @@ class _Part(FEAData):
         self._registration: Optional["Model"] = None
         self._ndm = None
         self._ndf = None
-        self._graph = nx.DiGraph()
-        self._nodes: "NodesGroup" = None
-        self._elements: "ElementsGroup" = None
+        self._graph = None
+        self._nodes: "NodesGroup | None" = None
+        self._elements: "ElementsGroup | None" = None
 
         self._groups: Set[GroupType] = set()
-
-        self._boundary_mesh: Optional[Mesh] = None
-        self._discretized_boundary_mesh: Optional[Mesh] = None
 
         self._reference_node: Optional[Node] = None
 
@@ -156,8 +151,6 @@ class _Part(FEAData):
                 "nodes": self._nodes.__data__ if self._nodes else None,
                 "elements": self._elements.__data__ if self._elements else None,
                 "groups": [group.__data__ for group in self._groups if group.__data__],
-                "boundary_mesh": self._boundary_mesh.__data__ if self._boundary_mesh else None,
-                "discretized_boundary_mesh": self._discretized_boundary_mesh.__data__ if self._discretized_boundary_mesh else None,
                 "reference_node": self._reference_node.__data__ if self._reference_node else None,
             }
         )
@@ -185,13 +178,30 @@ class _Part(FEAData):
         if data.get("groups"):
             part._groups = set([registry.add_from_data(group, module_name="compas_fea2.model.groups", duplicate=duplicate) for group in data.get("groups", [])])
 
-        part._boundary_mesh = Mesh.__from_data__(data["boundary_mesh"]) if data.get("boundary_mesh") else None
-        part._discretized_boundary_mesh = Mesh.__from_data__(data["discretized_boundary_mesh"]) if data.get("discretized_boundary_mesh") else None
-
         part._reference_node = registry.add_from_data(data["reference_node"], "compas_fea2.model.nodes", duplicate=duplicate) if data.get("reference_node") else None
 
         return part
 
+    def _build_graph(self):
+        """Build the connectivity graph"""
+        print("-> Building connectivity graph for the first time...")
+        self._graph = nx.DiGraph()
+
+        if not self.elements:
+            return
+
+        # Prepare nodes, elements, and edges for bulk insertion
+        nodes = list(self.nodes)
+        elements = list(self.elements)
+        graph_edges = [
+            (element, node) for element in elements for node in element.nodes
+        ]
+
+        # Use fast, bulk methods to build the graph
+        self._graph.add_nodes_from(nodes, type="node")
+        self._graph.add_nodes_from(elements, type="element")
+        self._graph.add_edges_from(graph_edges, relation="connects")
+        
     # =========================================================================
     #                       Constructors
     # =========================================================================
@@ -317,13 +327,69 @@ class _Part(FEAData):
             element = ShellElement(nodes=nodes, section=section, implementation=implementation, heat=heat, **kwargs)
             part.add_element(element)
 
-        part._boundary_mesh = mesh
-        part._discretized_boundary_mesh = mesh
-
         return part
 
     @classmethod
-    def from_gmsh(cls, gmshModel, element_cls: Optional[type | None] = None, section: "Optional[Union[_Section2D, _Section3D]]" = None, **kwargs) -> "_Part":
+    def from_gmsh(cls, section, **kwargs):
+        """
+        Creates a 'lightweight' Part from Gmsh using direct group assignment.
+        The connectivity graph is built separately on-demand.
+        """
+        print("-> Starting gmsh convertion to compas_fea2 Part...")
+        import gmsh
+        import numpy as np
+        
+        from compas_fea2.model import Node, TetrahedronElement, HexahedronElement
+        from compas_fea2.model.groups import NodesGroup, ElementsGroup
+
+        part = cls(name=kwargs.get("name"))
+
+        # === PHASE 1: Prepare Node Data ===
+        node_tags, node_coords, _ = gmsh.model.mesh.get_nodes()
+        node_coords = node_coords.reshape(-1, 3)
+        num_nodes = len(node_tags)
+
+        py_nodes = [Node(key=int(tag), xyz=coord.tolist()) for tag, coord in zip(node_tags, node_coords)]
+        
+        # === PHASE 2: Prepare Element Data ===
+        remap_array = np.empty(node_tags.max() + 1, dtype=np.int64)
+        remap_array[node_tags] = np.arange(num_nodes)
+        np_nodes = np.array(py_nodes, dtype=object)
+
+        element_mapping = {4: (TetrahedronElement, 4), 5: (HexahedronElement, 8)}
+        element_types, _, node_tags_by_type = gmsh.model.mesh.get_elements(dim=3)
+        
+        py_elements = []
+        for el_type, node_tags_flat in zip(element_types, node_tags_by_type):
+            if el_type in element_mapping:
+                element_cls, nodes_per_element = element_mapping[el_type]
+                element_node_indices = remap_array[node_tags_flat].reshape(-1, nodes_per_element)
+                all_element_nodes = np_nodes[element_node_indices]
+                py_elements.extend([element_cls(nodes=node_list, section=section) for node_list in all_element_nodes])
+
+        # === Add members ===
+        nodes_group = NodesGroup(members=py_nodes, name=f"{part.name}_ALL_NODES")
+        part._nodes = nodes_group
+        part.add_group(nodes_group)
+
+        elements_group = ElementsGroup(members=py_elements, name=f"{part.name}_ALL_ELEMENTS")
+        part._elements = elements_group
+        part.add_group(elements_group)
+
+        # === Register members ===
+        for i, node in enumerate(part.nodes):
+            node._registration = part
+            node._part_key = i
+        
+        for i, element in enumerate(part.elements):
+            element._registration = part
+            element._part_key = i
+        
+        print("-> Part creation complete.")
+        return part
+
+    @classmethod
+    def from_compas_gmsh(cls, gmshModel, element_cls: Optional[type | None] = None, section: "Optional[Union[_Section2D, _Section3D]]" = None, **kwargs) -> "_Part":
         """Create a Part object from a gmshModel object with support for C3D4 and C3D10 elements.
 
         Parameters
@@ -401,13 +467,8 @@ class _Part(FEAData):
             gmshModel.generate_mesh(2)
             part._boundary_mesh = gmshModel.mesh_to_compas()
 
-        if not part._discretized_boundary_mesh:
-            part._discretized_boundary_mesh = part._boundary_mesh
-
         if rigid:
-            if not part._discretized_boundary_mesh:
-                raise ValueError("Discretized boundary mesh is required for rigid parts.")
-            point = part._discretized_boundary_mesh.centroid()
+            point = part.boundary_mesh.centroid()
             part.reference_node = Node(xyz=point)
 
         return part
@@ -474,7 +535,7 @@ class _Part(FEAData):
 
         cls._apply_gmsh_mesh_options(gmshModel, **kwargs)
 
-        part = cls.from_gmsh(gmshModel=gmshModel, name=name, **kwargs)
+        part = cls.from_compas_gmsh(gmshModel=gmshModel, name=name, **kwargs)
 
         if gmshModel:
             del gmshModel
@@ -503,7 +564,7 @@ class _Part(FEAData):
         gmshModel = MeshModel.from_step(step_file)
         cls._apply_gmsh_mesh_options(gmshModel, **kwargs)
 
-        part = cls.from_gmsh(gmshModel=gmshModel, name=name, **kwargs)
+        part = cls.from_compas_gmsh(gmshModel=gmshModel, name=name, **kwargs)
 
         if gmshModel:
             del gmshModel
@@ -532,7 +593,7 @@ class _Part(FEAData):
         gmshModel = MeshModel.from_brep(brep)
         cls._apply_gmsh_mesh_options(gmshModel, **kwargs)
 
-        part = cls.from_gmsh(gmshModel=gmshModel, name=name, **kwargs)
+        part = cls.from_compas_gmsh(gmshModel=gmshModel, name=name, **kwargs)
 
         if gmshModel:
             del gmshModel
@@ -554,6 +615,13 @@ class _Part(FEAData):
         self._registration = value
 
     @property
+    def graph(self):
+        """The connectivity graph of the part."""
+        if self._graph is None:
+            self._build_graph()
+        return self._graph
+    
+    @property
     def reference_node(self) -> Optional[Node]:
         """The reference point of the part."""
         return self._reference_node
@@ -562,11 +630,6 @@ class _Part(FEAData):
     def reference_node(self, value: Node):
         self._reference_node = self.add_node(value)
         value._is_reference = True
-
-    @property
-    def graph(self):
-        """The directed graph of the part."""
-        return self._graph
 
     @property
     def nodes(self) -> NodesGroup:
@@ -704,40 +767,63 @@ class _Part(FEAData):
         return self.nodes.gkey_node
 
     @property
-    def boundary_mesh(self):
+    def boundary_mesh(self) -> "Mesh":
         """The outer boundary mesh of the part."""
-        return self._boundary_mesh
+        from compas.datastructures import Mesh
 
-    @property
-    def discretized_boundary_mesh(self):
-        """The discretized outer boundary mesh of the part."""
-        return self._discretized_boundary_mesh
+        # Step 1: Get the group of all faces on the boundary.
+        boundary_faces_group = self.find_boundary_faces()
+        if not boundary_faces_group:
+            return Mesh() # Return an empty mesh if there are no boundary faces
 
-    @property
-    def outer_faces(self):
-        """Extract the outer faces of the part."""
-        # FIXME: extend to shell elements
-        face_count = defaultdict(int)
-        for tet in self.elements_connectivity:
-            faces = [
-                tuple(sorted([tet[0], tet[1], tet[2]])),
-                tuple(sorted([tet[0], tet[1], tet[3]])),
-                tuple(sorted([tet[0], tet[2], tet[3]])),
-                tuple(sorted([tet[1], tet[2], tet[3]])),
-            ]
-            for face in faces:
-                face_count[face] += 1
-        # Extract faces that appear only once (boundary faces)
-        outer_faces = np.array([face for face, count in face_count.items() if count == 1])
-        return outer_faces
+        # Step 2: Collect all unique nodes from these faces.
+        # Create a mapping from the node's part_key to the node object itself.
+        boundary_nodes = {}
+        for face in boundary_faces_group:
+            for node in face.nodes:
+                boundary_nodes[node.part_key] = node
 
-    @property
-    def outer_mesh(self):
-        """Extract the outer mesh of the part."""
-        unique_vertices, unique_indices = np.unique(self.outer_faces, return_inverse=True)
-        vertices = np.array(self.points_sorted)[unique_vertices]
-        faces = unique_indices.reshape(self.outer_faces.shape).tolist()
-        return Mesh.from_vertices_and_faces(vertices.tolist(), faces)
+        # Step 3: Create the vertex list and a mapping for re-indexing.
+        # The new mesh will have a clean, 0-based index for its vertices.
+        sorted_keys = sorted(boundary_nodes.keys())
+        vertices = [boundary_nodes[key].xyz for key in sorted_keys]
+        key_to_index = {key: i for i, key in enumerate(sorted_keys)}
+
+        # Step 4: Create the face list using the new vertex indices.
+        faces = []
+        for face in boundary_faces_group:
+            # Use the map to convert the old part_keys to the new 0-based indices
+            face_indices = [key_to_index[node.part_key] for node in face.nodes]
+            faces.append(face_indices)
+            
+        return Mesh.from_vertices_and_faces(vertices, faces)
+
+
+    # @property
+    # def outer_faces(self):
+    #     """Extract the outer faces of the part."""
+    #     # FIXME: extend to shell elements
+    #     face_count = defaultdict(int)
+    #     for tet in self.elements_connectivity:
+    #         faces = [
+    #             tuple(sorted([tet[0], tet[1], tet[2]])),
+    #             tuple(sorted([tet[0], tet[1], tet[3]])),
+    #             tuple(sorted([tet[0], tet[2], tet[3]])),
+    #             tuple(sorted([tet[1], tet[2], tet[3]])),
+    #         ]
+    #         for face in faces:
+    #             face_count[face] += 1
+    #     # Extract faces that appear only once (boundary faces)
+    #     outer_faces = np.array([face for face, count in face_count.items() if count == 1])
+    #     return outer_faces
+
+    # @property
+    # def outer_mesh(self):
+    #     """Extract the outer mesh of the part."""
+    #     unique_vertices, unique_indices = np.unique(self.outer_faces, return_inverse=True)
+    #     vertices = np.array(self.points_sorted)[unique_vertices]
+    #     faces = unique_indices.reshape(self.outer_faces.shape).tolist()
+    #     return Mesh.from_vertices_and_faces(vertices.tolist(), faces)
 
     @property
     def bounding_box(self) -> Box:
@@ -820,6 +906,156 @@ class _Part(FEAData):
         return self._groups
 
     # =========================================================================
+    #                         Graph-Based Methods
+    # =========================================================================
+
+    def find_elements_by_node(self, node: "Node") -> "ElementsGroup":
+        """Finds all elements connected to a given node.
+
+        Parameters
+        ----------
+        node : compas_fea2.model.Node
+            The node to query.
+
+        Returns
+        -------
+        ElementsGroup
+            A group containing all elements that share the given node.
+        """
+        if node not in self.graph:
+            return ElementsGroup(members=[])
+        
+        # The graph builds automatically on first access via the @property
+        connected_elements = self.graph.neighbors(node)
+        return ElementsGroup(members=[e for e in connected_elements if isinstance(e, _Element)])
+
+    def find_adjacent_elements(self, element: "_Element") -> "ElementsGroup":
+        """Finds all elements that share at least one node with a given element.
+
+        Parameters
+        ----------
+        element : compas_fea2.model._Element
+            The element to query.
+
+        Returns
+        -------
+        ElementsGroup
+            A group containing all elements adjacent to the given element.
+        """
+        if element not in self.graph:
+            return ElementsGroup(members=[])
+
+        adjacent_elements = set()
+        for node in self.graph.neighbors(element):
+            adjacent_elements.update(self.graph.neighbors(node))
+        
+        adjacent_elements.discard(element) # Remove the original element
+        return ElementsGroup(members=[e for e in adjacent_elements if isinstance(e, _Element)])
+    
+    def find_shortest_path_between_nodes(self, start_node: "Node", end_node: "Node") -> "NodesGroup":
+        """Finds the shortest path of nodes through the mesh between two nodes.
+
+        Parameters
+        ----------
+        start_node : compas_fea2.model.Node
+            The starting node of the path.
+        end_node : compas_fea2.model.Node
+            The ending node of the path.
+
+        Returns
+        -------
+        NodesGroup
+            A group of nodes representing the shortest path, or an empty group if no path exists.
+        """
+        import networkx as nx
+
+        # Use an undirected view of the graph for pathfinding
+        undirected_graph = self.graph.to_undirected()
+
+        try:
+            # shortest_path returns a list of both Nodes and Elements in the path
+            path = nx.shortest_path(undirected_graph, source=start_node, target=end_node)
+            # Filter to return only the nodes
+            node_path = [item for item in path if isinstance(item, Node)]
+            return NodesGroup(members=node_path)
+        except nx.NetworkXNoPath:
+            print(f"No path found between node {start_node.key} and {end_node.key}.")
+            return NodesGroup(members=[])
+            
+    def get_connected_components(self) -> List["NodesGroup"]:
+        """Checks if the mesh is fully connected or consists of multiple 'islands'.
+
+        Returns
+        -------
+        List[NodesGroup]
+            A list of NodesGroup objects. If the list contains only one group,
+            the mesh is fully connected. If it contains multiple groups, each
+            group represents a disconnected island of nodes.
+        """
+        import networkx as nx
+        
+        undirected_graph = self.graph.to_undirected()
+        components = list(nx.connected_components(undirected_graph))
+        
+        component_groups = []
+        for island in components:
+            nodes_in_island = {item for item in island if isinstance(item, Node)}
+            component_groups.append(NodesGroup(members=nodes_in_island))
+            
+        return component_groups
+
+    def find_element_neighbors_by_layer(self, start_element: "_Element", layers: int = 1) -> List["ElementsGroup"]:
+        """Finds element neighbors in expanding layers (rings) around a starting element.
+
+        This performs a breadth-first search on the element connectivity graph.
+        Layer 1 is the group of elements directly touching the start_element.
+        Layer 2 is the group of elements touching Layer 1 elements (excluding
+        the start element and Layer 1), and so on.
+
+        Parameters
+        ----------
+        start_element : compas_fea2.model._Element
+            The element to start the search from.
+        layers : int, optional
+            The number of layers to search, by default 1.
+
+        Returns
+        -------
+        List[ElementsGroup]
+            A list of ElementsGroup objects, where each group corresponds to a layer.
+        """
+        import networkx as nx
+
+        # Create a graph of only element-to-element connections for simplicity
+        element_graph = nx.Graph()
+        for element in self.elements:
+            # find_adjacent_elements is the method we created earlier
+            neighbors = self.find_adjacent_elements(element)
+            for neighbor in neighbors:
+                element_graph.add_edge(element, neighbor)
+
+        # Breadth-first search
+        layered_neighbors = []
+        visited = {start_element}
+        current_layer = {start_element}
+
+        for i in range(layers):
+            next_layer = set()
+            for element in current_layer:
+                # Find all neighbors of the current element in the graph
+                for neighbor in element_graph.neighbors(element):
+                    if neighbor not in visited:
+                        next_layer.add(neighbor)
+                        visited.add(neighbor)
+            if not next_layer:
+                break # Stop if no new neighbors are found
+            layered_neighbors.append(ElementsGroup(members=next_layer))
+            current_layer = next_layer
+        
+        return layered_neighbors
+    
+
+    # =========================================================================
     #                       Methods
     # =========================================================================
 
@@ -836,8 +1072,6 @@ class _Part(FEAData):
             raise ValueError("The part must have nodes to be transformed.")
         for node in self.nodes:
             node.transform(transformation)
-        self._boundary_mesh.transform(transformation) if self._boundary_mesh else None
-        self._discretized_boundary_mesh.transform(transformation) if self._discretized_boundary_mesh else None
 
     def transformed(self, transformation: Transformation) -> "_Part":
         """Return a transformed copy of the part.
@@ -1197,6 +1431,40 @@ class _Part(FEAData):
 
         return NodesGroup(closest_nodes) if len(closest_nodes) > 1 else closest_nodes[0]
 
+    def find_nodes_by_box(self, box: "Box") -> "NodesGroup":
+        """Finds all nodes within a given compas.geometry.Box.
+
+        This method uses a KDTree for efficient spatial querying, making it
+        very fast for large meshes.
+
+        Parameters
+        ----------
+        box : compas.geometry.Box
+            The bounding box for the search.
+
+        Returns
+        -------
+        NodesGroup
+            A group containing all nodes inside the box.
+        """
+        from scipy.spatial import KDTree
+
+        # Get the corner points of the search box
+        min_corner = box.corner
+        max_corner = box.point + box.xaxis + box.yaxis + box.zaxis
+
+        # Create a KDTree from all node coordinates in the part
+        node_coords = np.array([node.xyz for node in self.nodes])
+        tree = KDTree(node_coords)
+
+        # Query the tree for all points within the box's bounds
+        indices = tree.query_ball_point([min_corner, max_corner], p=np.inf, eps=0)[0]
+        
+        part_nodes = list(self.nodes)
+        nodes_in_box = [part_nodes[i] for i in indices]
+        
+        return NodesGroup(members=nodes_in_box)
+    
     def contains_node(self, node: Node) -> bool:
         """Verify that the part contains a given node.
 
@@ -1341,6 +1609,23 @@ class _Part(FEAData):
                     node.mass = [a + b for a, b in zip(node.mass[:3], elNodalMass[:3])] + [0.0, 0.0, 0.0]
         return [sum(node.mass[i] for node in self.nodes) for i in range(3)]
 
+    def find_boundary_nodes(self) -> "NodesGroup":
+        """Finds all nodes located on the exterior boundary of the part.
+        
+        This refactored method leverages `find_boundary_faces` to first
+        identify all exterior faces and then collects their unique nodes.
+        """
+        # Step 1: Get all the boundary faces by calling the other method.
+        boundary_faces_group = self.find_boundary_faces()
+
+        # Step 2: Collect all unique nodes from these faces into a set.
+        boundary_nodes = set()
+        for face in boundary_faces_group:
+            boundary_nodes.update(face.nodes)
+            
+        # Step 3: Return the result as a NodesGroup.
+        return NodesGroup(members=boundary_nodes)
+    
     # =========================================================================
     #                           Elements methods
     # =========================================================================
@@ -1426,10 +1711,12 @@ class _Part(FEAData):
                 element._part_key = len(self.elements) - 1
         element._registration = self
 
-        self.graph.add_node(element, type="element")
-        for node in element.nodes:
-            self.graph.add_node(node, type="node")
-            self.graph.add_edge(element, node, relation="connects")
+
+        self._graph = None # reset the graph if it exists
+        # self.graph.add_node(element, type="element")
+        # for node in element.nodes:
+        #     self.graph.add_node(node, type="node")
+        #     self.graph.add_edge(element, node, relation="connects")
 
         if compas_fea2.VERBOSE:
             print(f"Element {element!r} registered to {self!r}.")
@@ -1498,7 +1785,7 @@ class _Part(FEAData):
             True if the element is on the boundary, False otherwise.
         """
 
-        discretized_boundary_mesh = getattr(self, "_discretized_boundary_mesh", None)
+        boundary_mesh = getattr(self, "boundary_mesh", None)
 
         if element.on_boundary is None:
             if all(node.on_boundary for node in element.nodes):
@@ -1507,17 +1794,17 @@ class _Part(FEAData):
                 element.on_boundary = False
             else:
                 element_faces = getattr(element, "faces", None)
-                if not discretized_boundary_mesh or not element_faces:
+                if not boundary_mesh or not element_faces:
                     raise ValueError("Discretized boundary mesh or element faces not defined for checking boundary condition.")
                 if isinstance(element, _Element3D):
-                    if any(TOL.geometric_key(centroid_points([node.xyz for node in face.nodes])) in discretized_boundary_mesh.centroid_face for face in element_faces):
+                    if any(TOL.geometric_key(centroid_points([node.xyz for node in face.nodes])) in boundary_mesh.centroid_face for face in element_faces):
                         element.on_boundary = True
                     else:
                         element.on_boundary = False
                 elif isinstance(element, _Element2D):
                     centroid = centroid_points([node.xyz for node in element.nodes])
                     geometric_key = TOL.geometric_key(centroid)
-                    if geometric_key in discretized_boundary_mesh.centroid_face:
+                    if geometric_key in boundary_mesh.centroid_face:
                         element.on_boundary = True
                     else:
                         element.on_boundary = False
@@ -1598,15 +1885,28 @@ class _Part(FEAData):
         faces_subgroup.subgroup(condition=lambda face: all(is_point_in_polygon_xy(Point(*node.xyz).transformed(T), polygon_xy) for node in face.nodes))
         return faces_subgroup
 
-    def find_boudary_faces(self) -> "FacesGroup":
-        """Find the boundary faces of the part.
-
-        Returns
-        -------
-        list[:class:`compas_fea2.model.Face`]
-            List with the boundary faces.
+    def find_boundary_faces(self) -> "FacesGroup":
+        """Finds all element faces located on the exterior boundary of the part.
+        
+        This method remains the same and does the heavy lifting.
         """
-        return self.faces.subgroup(condition=lambda x: all(node.on_boundary for node in x.nodes))
+        from collections import defaultdict
+
+        face_key_map = defaultdict(list)
+        for element in self.elements:
+            if not hasattr(element, "faces") or not element.faces:
+                continue
+            
+            for face in element.faces:
+                face_key = tuple(sorted([node.part_key for node in face.nodes]))
+                face_key_map[face_key].append(face)
+
+        boundary_faces = []
+        for face_key, face_list in face_key_map.items():
+            if len(face_list) == 1:
+                boundary_faces.append(face_list[0])
+        
+        return FacesGroup(members=boundary_faces)
 
     # =========================================================================
     #                           Groups methods
@@ -1853,7 +2153,7 @@ class Part(_Part):
         return part
 
     @classmethod
-    def from_gmsh(cls, gmshModel: object, section: Union["SolidSection", "ShellSection"], name: Optional[str] = None, **kwargs) -> "_Part":
+    def from_compas_gmsh(cls, gmshModel: object, section: Union["SolidSection", "ShellSection"], name: Optional[str] = None, **kwargs) -> "_Part":
         """Create a Part object from a gmshModel object.
 
         Parameters
@@ -1870,7 +2170,7 @@ class Part(_Part):
         _Part
             The part created from the gmsh model.
         """
-        return super().from_gmsh(gmshModel, section=section, name=name, **kwargs)
+        return super().from_compas_gmsh(gmshModel, section=section, name=name, **kwargs)
 
     @classmethod
     def from_boundary_mesh(cls, boundary_mesh: "Mesh", section: Union["SolidSection", "ShellSection"], name: Optional[str] = None, **kwargs) -> "_Part":
@@ -1942,7 +2242,7 @@ class RigidPart(_Part):
         self._reference_node = reference_node
 
     @classmethod
-    def from_gmsh(cls, gmshModel: object, name: Optional[str] = None, **kwargs) -> "_Part":
+    def from_compas_gmsh(cls, gmshModel: object, name: Optional[str] = None, **kwargs) -> "_Part":
         """Create a RigidPart object from a gmshModel object.
 
         Parameters
@@ -1958,7 +2258,7 @@ class RigidPart(_Part):
             The part created from the gmsh model.
         """
         kwargs["rigid"] = True
-        return super().from_gmsh(gmshModel, name=name, **kwargs)
+        return super().from_compas_gmsh(gmshModel, name=name, **kwargs)
 
     @classmethod
     def from_boundary_mesh(cls, boundary_mesh: "Mesh", name: Optional[str] = None, **kwargs) -> _Part:
