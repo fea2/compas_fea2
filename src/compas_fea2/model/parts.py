@@ -346,14 +346,16 @@ class _Part(FEAData):
 
         # === PHASE 1: Prepare Node Data ===
         node_tags, node_coords, _ = gmsh.model.mesh.get_nodes()
-        node_coords = node_coords.reshape(-1, 3)
-        num_nodes = len(node_tags)
+        # ensure integer tag array and proper shape for coords
+        node_tags = np.asarray(node_tags, dtype=np.int64)
+        node_coords = np.asarray(node_coords, dtype=float).reshape(-1, 3)
+        num_nodes = int(len(node_tags))
 
         py_nodes = [Node(key=int(tag), xyz=coord.tolist()) for tag, coord in zip(node_tags, node_coords)]
         
         # === PHASE 2: Prepare Element Data ===
-        remap_array = np.empty(node_tags.max() + 1, dtype=np.int64)
-        remap_array[node_tags] = np.arange(num_nodes)
+        remap_array = np.empty(int(node_tags.max()) + 1, dtype=np.int64)
+        remap_array[node_tags] = np.arange(num_nodes, dtype=np.int64)
         np_nodes = np.array(py_nodes, dtype=object)
 
         element_mapping = {4: (TetrahedronElement, 4), 5: (HexahedronElement, 8)}
@@ -363,6 +365,8 @@ class _Part(FEAData):
         for el_type, node_tags_flat in zip(element_types, node_tags_by_type):
             if el_type in element_mapping:
                 element_cls, nodes_per_element = element_mapping[el_type]
+                # ensure integer indexing array for element node tags
+                node_tags_flat = np.asarray(node_tags_flat, dtype=np.int64)
                 element_node_indices = remap_array[node_tags_flat].reshape(-1, nodes_per_element)
                 all_element_nodes = np_nodes[element_node_indices]
                 py_elements.extend([element_cls(nodes=node_list, section=section) for node_list in all_element_nodes])
@@ -543,7 +547,7 @@ class _Part(FEAData):
         return part
 
     @classmethod
-    def from_step_file(cls, step_file: str, name: Optional[str] = None, **kwargs) -> "_Part":
+    def from_step_file(cls, step_file: str, section: Union["_Section1D, _Section2D, _Section3D"], **kwargs) -> "_Part":
         """Create a Part object from a STEP file.
 
         Parameters
@@ -559,17 +563,42 @@ class _Part(FEAData):
             The part.
 
         """
-        from compas_gmsh.models import MeshModel
+        import gmsh
+        try:
+            gmsh.initialize()
+            try:
+                gmsh.model.occ.importShapes(str(step_file))
+            except Exception as e:
+                gmsh.logger.write("Could not load STEP file. Make sure the path is correct.", "error")
+                gmsh.finalize()
+                exit()
 
-        gmshModel = MeshModel.from_step(step_file)
-        cls._apply_gmsh_mesh_options(gmshModel, **kwargs)
-
-        part = cls.from_compas_gmsh(gmshModel=gmshModel, name=name, **kwargs)
-
-        if gmshModel:
-            del gmshModel
-        print("Part created.")
-
+            gmsh.model.occ.synchronize()
+            print("Healing the geometry...")
+            healing_tolerance = 1 
+            gmsh.model.occ.healShapes(tolerance=healing_tolerance)
+            gmsh.model.occ.synchronize()
+            gmsh.option.setNumber("Mesh.MeshSizeMin", kwargs.get("MeshSizeMin", 100))
+            gmsh.option.setNumber("Mesh.MeshSizeMax", kwargs.get("MeshSizeMax", 500))
+            gmsh.option.setNumber("Mesh.Algorithm3D", 1) 
+            gmsh.option.setNumber("Mesh.Optimize", 1) # Optional: optimize for quality
+            gmsh.option.setNumber("Mesh.Algorithm3D", 7) 
+            
+            if isinstance(section, _Section1D):
+                dim = 1
+            elif isinstance(section, _Section2D):
+                dim = 2
+            elif isinstance(section, _Section3D):
+                dim = 3
+            else:
+                raise ValueError("Unsupported section type. Must be _Section1D, _Section2D, or _Section3D.")
+            
+            gmsh.model.mesh.generate(dim)  # Generate mesh based on section type
+            print("Mesh generation complete.")
+            part = cls.from_gmsh(section=section, name=kwargs.get("name", None))
+        finally:
+            gmsh.finalize()
+    
         return part
 
     @classmethod
@@ -858,7 +887,7 @@ class _Part(FEAData):
     def top_plane(self) -> Plane:
         """The top plane of the part's bounding box."""
         return Plane.from_three_points(*[self.bounding_box.points[i] for i in self.bounding_box.top[:3]])
-
+    
     @property
     def volume(self) -> float:
         """The total volume of the part."""
@@ -1262,7 +1291,8 @@ class _Part(FEAData):
         for node in self._nodes:
             if node.key == key:
                 return node
-        print(f"No nodes found with key {key}")
+        if compas_fea2.VERBOSE:
+            print(f"No nodes found with key {key}")
         return None
 
     def find_node_by_name(self, name: str) -> Set[Node]:
