@@ -55,7 +55,7 @@ class _ConditionsField(FEAData):
         self._check_registration()
 
     def _check_registration(self):
-        registrations = set([n.registration for n in self._distribution])
+        registrations = set([n.model for n in self._distribution])
         if len(registrations) != 1:
             raise ValueError("All nodes in the distribution must be registered to the same model.")
         if self._registration is None:

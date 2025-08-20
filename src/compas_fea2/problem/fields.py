@@ -8,7 +8,7 @@ from numbers import Number
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-from compas_fea2.model.groups import NodesGroup
+from compas_fea2.model.groups import NodesGroup, ElementsGroup
 from compas_fea2.problem.loads import ScalarLoad
 from compas_fea2.problem.loads import VectorLoad
 
@@ -56,8 +56,17 @@ class _BaseLoadField(FEAData):
         self._registration: "_Step | None" = None
         self.combination_rank = combination_rank  # validates via setter
 
-    # Removed value_kind & domain (now inferred downstream if needed)
-
+    @property
+    def problem(self) -> "_Problem | None":
+        if self._registration:
+            return self._registration.problem
+        
+    @property
+    def model(self) -> "Model | None":
+        """Model: The model to which this field belongs."""
+        if self.problem:
+            return self.problem.model
+    
     @property
     def load_case(self) -> str | None:
         """str | None: Load case identifier to which this field belongs."""
@@ -295,12 +304,12 @@ class _ElementsLoadField(_BaseLoadField):
         1 and does not match the number of elements.
     """
 
-    def __init__(self, loads, elements, *, load_case: str | None = None, **kwargs):
-        super().__init__(loads=loads, distribution=elements,load_case=load_case, **kwargs)
-        if isinstance(elements, NodesGroup):
-            distribution = elements
+    def __init__(self, loads, distribution, *, load_case: str | None = None, **kwargs):
+        super().__init__(loads=loads, distribution=distribution,load_case=load_case, **kwargs)
+        if isinstance(distribution, ElementsGroup):
+            distribution = distribution
         else:
-            distribution = NodesGroup(elements)
+            distribution = ElementsGroup(distribution)
         self._distribution = distribution
 
         if isinstance(loads, Iterable):
@@ -419,10 +428,10 @@ class _NodeVectorField(_NodesLoadField):
 class _ElementScalarField(_ElementsLoadField):
     """Scalar load field over elements."""
 
-    def __init__(self, scalars, elements, load_case: str | None = None, **kwargs):
+    def __init__(self, scalars, distribution, load_case: str | None = None, **kwargs):
         if not isinstance(scalars, Iterable):
             scalars = [scalars]
-        super().__init__(loads=list(scalars), elements=elements, load_case=load_case, **kwargs)
+        super().__init__(loads=list(scalars), distribution=distribution, load_case=load_case, **kwargs)
 
     # @from_data
     # @classmethod
@@ -434,10 +443,10 @@ class _ElementScalarField(_ElementsLoadField):
 class _ElementVectorField(_ElementsLoadField):
     """Vector load field over elements."""
 
-    def __init__(self, vectors, elements, load_case: str | None = None, **kwargs):
+    def __init__(self, vectors, distribution, load_case: str | None = None, **kwargs):
         if not isinstance(vectors, Iterable) or isinstance(vectors, (str, bytes)):
             vectors = [vectors]
-        super().__init__(loads=list(vectors), elements=elements, load_case=load_case, **kwargs)
+        super().__init__(loads=list(vectors), distribution=distribution, load_case=load_case, **kwargs)
 
     # @from_data
     # @classmethod
@@ -556,7 +565,7 @@ class UniformSurfaceLoadField(_NodeVectorField):
         return self._load_value
 
 
-class GravityLoadField(_NodeVectorField):
+class GravityLoadField(_ElementVectorField):
     """Field distributing self‑weight (gravity) to nodes.
 
     Parameters
@@ -569,31 +578,44 @@ class GravityLoadField(_NodeVectorField):
     combination_rank : int, optional
         Typically 1 for permanent, unless you want to force a different rank.
     """
-    def __init__(self, g=9.81, direction=(0, 0, -1), parts=None, nodes=None, load_case=None, **kwargs):
+    def __init__(self, g=9.81, direction=(0, 0, -1), parts=None, load_case=None, **kwargs):
         from compas_fea2.problem.loads import VectorLoad
 
         self._g = g
         self._direction = direction
-        if parts:
-            nodes_list = []
-            for part in parts:
-                nodes_list.extend(part.nodes)
-        else:
-            if nodes is None:
-                raise ValueError("Provide either parts or nodes for GravityLoadField.")
-            nodes_list = list(nodes)
+        self._parts = parts
         components: List[float] = [g * v for v in direction]
         loads = []
-        for n in nodes_list:
-            force_components = [n.mass[i] * components[i] for i in range(len(components))]
-            loads.append(VectorLoad(*force_components, name="gravity_load", load_case=load_case))
-        super().__init__(loads=loads, nodes=nodes_list, load_case=load_case, **kwargs)
+        nodes_list=[]
+        for part in parts:
+            for element in part.elements:
+                nodes_list.append(element)
+                force_components = [element.mass[i] * components[i] for i in range(len(components))]
+                loads.append(VectorLoad(*force_components, load_case=load_case))
+        
+        super().__init__(vectors=loads, distribution=nodes_list, load_case=load_case, **kwargs)
 
+    @property
+    def g(self):
+        """float: Gravitational acceleration (default 9.81 m/s²)."""
+        return self._g
+    
+    @property
+    def direction(self):
+        """tuple[float, float, float]: Direction of the gravity load vector."""
+        return self._direction
+    
     @property
     def __data__(self):
         data = super().__data__
         data.update({"g": self._g, "direction": list(self._direction)})
         return data
+    
+    @property
+    def parts(self):
+        """Iterable[Any]: Parts over which the gravity load is distributed."""
+        return self._parts
+
 
     # @from_data
     # @classmethod

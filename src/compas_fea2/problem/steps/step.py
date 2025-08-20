@@ -17,6 +17,8 @@ from compas_fea2.model.nodes import Node
 
 from compas_fea2.problem.fields import DisplacementField
 from compas_fea2.problem.fields import ForceField
+from compas_fea2.problem.fields import GravityLoadField
+from compas_fea2.problem.fields import TemperatureField
 from compas_fea2.problem.groups import LoadsGroup, LoadsFieldGroup
 from compas_fea2.problem.combinations import LoadFieldsCombination, StepsCombination
 
@@ -306,8 +308,7 @@ class GeneralStep(_Step):
     def loads(self):
         """Return the loads associated with the step."""
         if self._fields:
-            loadsfield_groups = list(filter(lambda p: not isinstance(p, LoadsFieldGroup), self._fields))
-            loads_fields = [field for field in loadsfield_groups if isinstance(field, ForceField)]
+            loads_fields = [field for field in self._fields if isinstance(field, (ForceField, GravityLoadField))]
             return loads_fields
 
     @property
@@ -372,12 +373,13 @@ class GeneralStep(_Step):
         :class:`compas_fea2.problem.patterns.Pattern`
 
         """
-        if not isinstance(field, (ForceField, DisplacementField)):
+        if not isinstance(field, (ForceField, DisplacementField, GravityLoadField, TemperatureField)):
             raise TypeError("{!r} is not a LoadField.".format(field))
         if not self._fields:
             self._fields = LoadsFieldGroup(members=[field])
         else:
             self._fields.add_member(field)
+            self.model._groups.add(field.distribution)
         field._registration = self
         return field
 
@@ -506,7 +508,7 @@ class GeneralStep(_Step):
 
         return self.add_field(field)
 
-    def add_gravity_fied(self, parts=None, g=9.81, x=0.0, y=0.0, z=-1.0, load_case=None, **kwargs):
+    def add_gravity_fied(self, parts=None, g=9810, x=0.0, y=0.0, z=-1.0, load_case=None, **kwargs):
         """Add a :class:`compas_fea2.problem.GravityLoad` load to the ``Step``
 
         Parameters
@@ -533,11 +535,13 @@ class GeneralStep(_Step):
         Be careful to assign a value of *g* consistent with the units in your
         model!
         """
-        raise NotImplementedError("This method is not implemented yet.")
         from compas_fea2.problem.fields import GravityLoadField
-
+        if not self.model:
+            raise AttributeError("Step is not registered to a Model.")
+        parts = parts or self.model.parts
         gravity = GravityLoadField(g=g, parts=parts, direction=[x, y, z], load_case=load_case, **kwargs)
         self.add_field(gravity)
+        return gravity
 
     def add_temperature_field(self, field, node):
         """Add a temperature field to the Step object.
