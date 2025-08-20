@@ -1,5 +1,4 @@
 import os
-from collections import defaultdict
 from dotenv import load_dotenv
 from compas.tolerance import Tolerance
 from compas.geometry import Frame
@@ -11,6 +10,11 @@ try:
 except Exception:
     entry_points = None  # Python <3.8 fallback
 
+# Add logging and plugin discovery constants
+import logging
+logger = logging.getLogger(__name__)
+BACKENDS_ENTRYPOINT_GROUP = "compas_fea2.backends"
+_LOADED_ENTRYPOINTS = False
 
 __author__ = ["Francesco Ranaudo"]
 __copyright__ = "COMPAS Association"
@@ -19,7 +23,7 @@ __email__ = "francesco.ranaudo@gmail.com"
 __version__ = "0.3.1"
 
 
-def init_fea2(verbose=False, point_overlap=True, global_tolerance=1, precision=3, part_nodes_limit=100000):
+def init_fea2(verbose=False, point_overlap=True, global_tolerance=1, precision=3):
     """Create a default environment file if it doesn't exist and loads its variables.
 
     Parameters
@@ -49,10 +53,11 @@ def init_fea2(verbose=False, point_overlap=True, global_tolerance=1, precision=3
                     ]
                 )
             )
-    load_dotenv(env_path)
+    # Always load the .env we manage without overriding existing env
+    load_dotenv(env_path, override=False)
 
 
-# pluggable function to be
+# pluggable function to be implemented in the plucgin
 def _register_backend():
     """Create the class registry for the plugin.
 
@@ -73,6 +78,24 @@ def register_backend(name: str):
     return reg
 
 
+# Public helper: register a specific implementation and warn on overrides
+def register_impl(backend: str, base, impl):
+    reg = register_backend(backend)
+    prev = reg.get(base)
+    if prev and prev is not impl:
+        logger.warning("Overriding implementation for %s in backend '%s': %s -> %s", base, backend, prev, impl)
+    reg[base] = impl
+    return reg
+
+
+# Public decorator: declare which base(s) a class implements
+def implements(*bases):
+    def _wrap(cls):
+        cls.__implements__ = bases if len(bases) > 1 else bases[0]
+        return cls
+    return _wrap
+
+
 def set_backend(plugin: str):
     """Set the active backend by plugin name.
 
@@ -82,13 +105,19 @@ def set_backend(plugin: str):
     BACKEND = plugin
     CURRENT_BACKEND.set(plugin)
 
+    # Ensure entry-point registered plugins are loaded first
+    try:
+        discover_backends()
+    except Exception as e:
+        logger.debug("discover_backends failed: %s", e)
+
     # Try to import plugin and call its registration hook (legacy mode).
     try:
         mod = import_module(plugin)
         if hasattr(mod, "_register_backend"):
             mod._register_backend()
     except ImportError:
-        print("backend plugin not found. Make sure that you have installed it before.")
+        logger.error("backend plugin '%s' not found. Make sure that you have installed it before.", plugin)
 
 
 @contextmanager
@@ -96,13 +125,18 @@ def use_backend(plugin: str):
     """Temporarily activate a backend within a 'with' block."""
     token = CURRENT_BACKEND.set(plugin)
     try:
+        # Ensure entry-point registered plugins are loaded first
+        try:
+            discover_backends()
+        except Exception as e:
+            logger.debug("discover_backends failed: %s", e)
         # lazy import/registration for legacy plugins
         try:
             mod = import_module(plugin)
             if hasattr(mod, "_register_backend"):
                 mod._register_backend()
         except ImportError:
-            print("backend plugin not found. Make sure that you have installed it before.")
+            logger.error("backend plugin '%s' not found. Make sure that you have installed it before.", plugin)
         yield
     finally:
         CURRENT_BACKEND.reset(token)
@@ -110,14 +144,19 @@ def use_backend(plugin: str):
 
 def discover_backends():
     """Load plugins registered via entry points: group 'compas_fea2.backends'."""
-    if not entry_points:
+    global _LOADED_ENTRYPOINTS
+    if _LOADED_ENTRYPOINTS or not entry_points:
         return
-    eps = entry_points()
-    group = getattr(eps, "select", None)
-    if group:
-        eps = group(group="compas_fea2.backends")
-    else:
-        eps = eps.get("compas_fea2.backends", [])
+    try:
+        eps = entry_points()
+        group = getattr(eps, "select", None)
+        if group:
+            eps = group(group=BACKENDS_ENTRYPOINT_GROUP)
+        else:
+            eps = eps.get(BACKENDS_ENTRYPOINT_GROUP, [])
+    except Exception as e:
+        logger.debug("Failed to obtain entry points: %s", e)
+        return
     for ep in eps:
         try:
             # Expect callable that registers itself when invoked
@@ -125,7 +164,8 @@ def discover_backends():
             if callable(loader):
                 loader()
         except Exception as e:
-            print(f"Failed to load backend entry point {ep.name}: {e}")
+            logger.warning("Failed to load backend entry point %s: %s", getattr(ep, "name", "?"), e)
+    _LOADED_ENTRYPOINTS = True
 
 
 def _get_backend_implementation(cls):
@@ -143,14 +183,15 @@ UMAT = os.path.abspath(os.path.join(DATA, "umat"))
 DOCS = os.path.abspath(os.path.join(HOME, "docs"))
 TEMP = os.path.abspath(os.path.join(HOME, "temp"))
 
-if not load_dotenv():
+# Load our .env explicitly from this package folder; create if missing
+if not load_dotenv(os.path.join(HERE, ".env")):
     init_fea2()
 
-VERBOSE = os.getenv("VERBOSE").lower() == "true"
-POINT_OVERLAP = os.getenv("POINT_OVERLAP").lower() == "true"
-GLOBAL_TOLERANCE = float(os.getenv("GLOBAL_TOLERANCE"))
+VERBOSE = os.getenv("VERBOSE", "false").lower() == "true"
+POINT_OVERLAP = os.getenv("POINT_OVERLAP", "true").lower() == "true"
+GLOBAL_TOLERANCE = float(os.getenv("GLOBAL_TOLERANCE", "1"))
 GLOBAL_FRAME = Frame.worldXY()
-PRECISION = int(os.getenv("PRECISION"))
+PRECISION = int(os.getenv("PRECISION", "3"))
 
 # ensure these exist
 try:

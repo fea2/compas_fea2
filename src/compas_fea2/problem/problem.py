@@ -82,7 +82,6 @@ class Problem(FEAData):
         super(Problem, self).__init__(**kwargs)
         self.description = description
         self._path = None
-        self._path_db = None
         self._steps: List[StepType] | None = None
         self._rdb = None
 
@@ -93,7 +92,6 @@ class Problem(FEAData):
             {
                 "description": self.description,
                 "path": str(self.path) if self.path else None,
-                "path_db": str(self.path_db) if self.path else None,
                 "steps": [s.__data__ for s in self._steps] if self._steps else None,
             }
         )
@@ -107,7 +105,6 @@ class Problem(FEAData):
         description = data.get("description", "")
         problem = cls(description=description)
         problem._path = data.get("path", None)
-        problem._path_db = data.get("path_db", None)
         for step_data in data.get("steps", []):
             problem.add_step(registry.add_from_data(step_data, module_name="compas_fea2.problem.steps", duplicate=duplicate))
         problem._rdb = registry.add_from_data(data, module_name="compas_fea2.results.database", duplicate=duplicate)
@@ -132,12 +129,11 @@ class Problem(FEAData):
     def path(self, value: Union[str, Path]):
         """Set the path to the analysis folder where all the files will be saved."""
         self._path = value if isinstance(value, Path) else Path(value)
-        self._path_db = os.path.join(self._path, f"{self.name}-results.db")
 
     @property
     def path_db(self) -> Optional[str]:
         """Path to the SQLite database where the results are stored."""
-        return self._path_db
+        return os.path.join(self._path, f"{self.name}-results.db")
 
     @property
     def rdb(self) -> SQLiteResultsDatabase:

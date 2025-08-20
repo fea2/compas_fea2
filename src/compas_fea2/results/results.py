@@ -20,25 +20,6 @@ if TYPE_CHECKING:
 class Result(FEAData):
     """Result object defined at the nodes or elements. This ensures that the results from all
     the backends are consistently stored.
-
-    Parameters
-    ----------
-    location : :class:`compas_fea2.model.Node` | :class:`compas_fea2.model._Element`
-        The location of the result. It can be either a Node or an Element.
-    components : dict
-        A dictionary with {"component name": component value} for each component of the result.
-    invariants : dict
-        A dictionary with {"invariant name": invariant value} for each invariant of the result.
-
-    Attributes
-    ----------
-    location : :class:`compas_fea2.model.Node` | :class:`compas_fea2.model._Element`
-        The location of the result. I can be either a Node or an Element.
-    components : dict
-        A dictionary with {"component name": component value} for each component of the result.
-    invariants : dict
-        A dictionary with {"invariant name": invariant value} for each invariant of the result.
-
     """
 
     _field_name = ""  # name of the field
@@ -58,26 +39,32 @@ class Result(FEAData):
 
     @property
     def field_name(self):
+        """The name of the field."""
         return self._field_name
 
     @property
     def location(self):
+        """The location of the result."""
         return self._registration
 
     @property
     def reference_point(self):
+        """The reference point of the result."""
         return self.location.reference_point
 
     @property
     def components(self):
+        """A dictionary with {"component name": component value} for each component of the result."""
         return {component: getattr(self, component) for component in self._components_names}
 
     @property
     def components_names(self):
+        """Names of the components of the result."""
         return self._components_names
 
     @property
     def invariants(self):
+        """A dictionary with {"invariant name": invariant value} for each invariant of the result."""
         return self._invariants
 
     def safety_factor(self, component, allowable):
@@ -98,6 +85,15 @@ class Result(FEAData):
         return abs(self.vector[component] / allowable) if self.vector[component] != 0 else 1
 
 
+class VectorResult(Result):
+    """VectorResult object.
+    Parameters
+    ----------
+    """
+    
+    pass
+
+
 class NodeResult(Result):
     """NodeResult object.
 
@@ -105,21 +101,38 @@ class NodeResult(Result):
     ----------
     node : :class:`compas_fea2.model.Node`
         The location of the result.
-    components : dict
-        A dictionary with {"component name": component value} for each component of the result.
-    invariants : dict
-        A dictionary with {"invariant name": invariant value} for each invariant of the result.
+    x : float, optional
+        The x component of the result vector.
+    y : float, optional
+        The y component of the result vector.
+    z : float, optional
+        The z component of the result vector.
+    xx : float, optional
+        The xx component of the result vector.
+    yy : float, optional
+        The yy component of the result vector.
+    zz : float, optional
+        The zz component of the result vector.
+    **kwargs : dict, optional
+        Additional keyword arguments for the Result class.
+        
 
     Attributes
     ----------
-    location : :class:`compas_fea2.model.Node`
-        The location of the result.
     node : :class:`compas_fea2.model.Node`
         The location of the result.
-    components : dict
-        A dictionary with {"component name": component value} for each component of the result.
-    invariants : dict
-        A dictionary with {"invariant name": invariant value} for each invariant of the result.
+    x : float, optional
+        The x component of the result vector.
+    y : float, optional
+        The y component of the result vector.
+    z : float, optional
+        The z component of the result vector.
+    xx : float, optional
+        The xx component of the result vector.
+    yy : float, optional
+        The yy component of the result vector.
+    zz : float, optional
+        The zz component of the result vector.
 
     Notes
     -----
@@ -188,6 +201,43 @@ class NodeResult(Result):
 class DisplacementResult(NodeResult):
     """DisplacementResult object.
 
+    Parameters
+    ----------
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    x : float, optional
+        The x component of the result vector.
+    y : float, optional
+        The y component of the result vector.
+    z : float, optional
+        The z component of the result vector.
+    xx : float, optional
+        The xx component of the result vector.
+    yy : float, optional
+        The yy component of the result vector.
+    zz : float, optional
+        The zz component of the result vector.
+    **kwargs : dict, optional
+        Additional keyword arguments for the Result class.
+        
+
+    Attributes
+    ----------
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    x : float, optional
+        The x component of the result vector.
+    y : float, optional
+        The y component of the result vector.
+    z : float, optional
+        The z component of the result vector.
+    xx : float, optional
+        The xx component of the result vector.
+    yy : float, optional
+        The yy component of the result vector.
+    zz : float, optional
+        The zz component of the result vector.
+
     Notes
     -----
     DisplacementResults are registered to a :class:`compas_fea2.model.Node`
@@ -206,6 +256,42 @@ class DisplacementResult(NodeResult):
 class AccelerationResult(NodeResult):
     """AccelerationResult object.
 
+    Parameters
+    ----------
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    x : float, optional
+        The x component of the result vector.
+    y : float, optional
+        The y component of the result vector.
+    z : float, optional
+        The z component of the result vector.
+    xx : float, optional
+        The xx component of the result vector.
+    yy : float, optional
+        The yy component of the result vector.
+    zz : float, optional
+        The zz component of the result vector.
+    **kwargs : dict, optional
+        Additional keyword arguments for the Result class.
+
+    Attributes
+    ----------
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    x : float, optional
+        The x component of the result vector.
+    y : float, optional
+        The y component of the result vector.
+    z : float, optional
+        The z component of the result vector.
+    xx : float, optional
+        The xx component of the result vector.
+    yy : float, optional
+        The yy component of the result vector.
+    zz : float, optional
+        The zz component of the result vector.
+
     Notes
     -----
     DisplacementResults are registered to a :class:`compas_fea2.model.Node`
@@ -222,7 +308,44 @@ class AccelerationResult(NodeResult):
 
 
 class VelocityResult(NodeResult):
-    """AccelerationResult object.
+    """VelocityResult object.
+
+    Parameters
+    ----------
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    x : float, optional
+        The x component of the result vector.
+    y : float, optional
+        The y component of the result vector.
+    z : float, optional
+        The z component of the result vector.
+    xx : float, optional
+        The xx component of the result vector.
+    yy : float, optional
+        The yy component of the result vector.
+    zz : float, optional
+        The zz component of the result vector.
+    **kwargs : dict, optional
+        Additional keyword arguments for the Result class.
+        
+
+    Attributes
+    ----------
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    x : float, optional
+        The x component of the result vector.
+    y : float, optional
+        The y component of the result vector.
+    z : float, optional
+        The z component of the result vector.
+    xx : float, optional
+        The xx component of the result vector.
+    yy : float, optional
+        The yy component of the result vector.
+    zz : float, optional
+        The zz component of the result vector.
 
     Notes
     -----
@@ -240,7 +363,7 @@ class VelocityResult(NodeResult):
 
 
 class ReactionResult(NodeResult):
-    """DisplacementResult object.
+    """ReactionResult object.
 
     Parameters
     ----------
@@ -290,7 +413,7 @@ class ReactionResult(NodeResult):
 
 
 class TemperatureResult(NodeResult):
-    """DisplacementResult object.
+    """TemperatureResult object.
 
     Parameters
     ----------
@@ -323,8 +446,8 @@ class TemperatureResult(NodeResult):
     _components_names = ["temp"]
     _invariants_names = ["magnitude"]
 
-    def __init__(self, node, temp, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
-        super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
+    def __init__(self, node, temp, **kwargs):
+        super().__init__(node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs)
         self._temp = temp
 
     @property

@@ -28,38 +28,14 @@ class FieldResults(FEAData):
     You can use FieldResults to visualize a field over a part or the model, or to compute
     global quantities, such as maximum or minimum values.
 
-    Parameters
-    ----------
-    field_name : str
-        Name of the field.
-    step : :class:`compas_fea2.problem._Step`
-        The analysis step where the results are defined.
-
-    Attributes
-    ----------
-    field_name : str
-        Name of the field.
-    step : :class:`compas_fea2.problem._Step`
-        The analysis step where the results are defined.
-    problem : :class:`compas_fea2.problem.Problem`
-        The Problem where the Step is registered.
-    model : :class:`compas_fea2.problem.Model`
-        The Model where the Step is registered.
-    db_connection : :class:`sqlite3.Connection` | None
-        Connection object or None.
-    components : dict
-        A dictionary with {"component name": component value} for each component of the result.
-    invariants : dict
-        A dictionary with {"invariant name": invariant value} for each invariant of the result.
 
     Notes
     -----
     FieldResults are registered to a :class:`compas_fea2.problem.Step`.
     """
 
-    def __init__(self, step: "_Step", *args, **kwargs):
-        super(FieldResults, self).__init__(*args, **kwargs)
-        self._registration = step
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @property
     def sqltable_schema(self):
@@ -95,7 +71,7 @@ class FieldResults(FEAData):
         }
 
     @property
-    def step(self) -> "_Step":
+    def step(self) -> "_Step | None":
         return self._registration
 
     @property
@@ -301,8 +277,8 @@ class NodeFieldResults(FieldResults):
         The function used to find nodes by key.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super(NodeFieldResults, self).__init__(step=step, *args, **kwargs)
+    def __init__(self,  *args, **kwargs):
+        super(NodeFieldResults, self).__init__(*args, **kwargs)
         self._results_func = "find_node_by_key"
         self._field_name = None
 
@@ -414,8 +390,8 @@ class DisplacementFieldResults(NodeFieldResults):
         The function used to find nodes by key.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super(DisplacementFieldResults, self).__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(DisplacementFieldResults, self).__init__(*args, **kwargs)
         self._field_name = "u"
 
 
@@ -441,8 +417,8 @@ class AccelerationFieldResults(NodeFieldResults):
         The function used to find nodes by key.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super(AccelerationFieldResults, self).__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(AccelerationFieldResults, self).__init__(*args, **kwargs)
         self._field_name = "a"
 
 
@@ -468,8 +444,8 @@ class VelocityFieldResults(NodeFieldResults):
         The function used to find nodes by key.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super(VelocityFieldResults, self).__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(VelocityFieldResults, self).__init__(*args, **kwargs)
         self._field_name = "v"
 
 
@@ -495,8 +471,8 @@ class ReactionFieldResults(NodeFieldResults):
         The function used to find nodes by key.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super(ReactionFieldResults, self).__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(ReactionFieldResults, self).__init__(*args, **kwargs)
         self._field_name = "rf"
 
 
@@ -522,8 +498,8 @@ class ContactForcesFieldResults(NodeFieldResults):
         The function used to find nodes by key.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super().__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._field_name = "c"
 
 
@@ -549,8 +525,8 @@ class TemperatureFieldResults(NodeFieldResults):
         The function used to find nodes by key.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super().__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._field_name = "t"
 
     @property
@@ -567,8 +543,8 @@ class ElementFieldResults(FieldResults):
     This class handles the element field results from a finite element analysis.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super(ElementFieldResults, self).__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(ElementFieldResults, self).__init__(*args, **kwargs)
         self._results_func = "find_element_by_key"
 
 
@@ -594,8 +570,8 @@ class SectionForcesFieldResults(ElementFieldResults):
         The function used to find elements by key.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super(SectionForcesFieldResults, self).__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(SectionForcesFieldResults, self).__init__(*args, **kwargs)
         self._results_func = "find_element_by_key"
         self._field_name = "sf"
 
@@ -675,8 +651,8 @@ class StressFieldResults(ElementFieldResults):
     Operations on stress results are performed on the field level to improve efficiency.
     """
 
-    def __init__(self, step, *args, **kwargs):
-        super().__init__(step=step, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._results_func = "find_element_by_key"
         self._field_name = "s"
 

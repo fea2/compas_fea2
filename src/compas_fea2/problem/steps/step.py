@@ -23,6 +23,7 @@ from compas_fea2.problem.groups import LoadsGroup, LoadsFieldGroup
 from compas_fea2.problem.combinations import LoadFieldsCombination, StepsCombination
 
 from compas_fea2.results import TemperatureFieldResults
+from compas_fea2.results import DisplacementFieldResults
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 
 FieldType = Union["DisplacementField", "ForceField"]
 ComboType = Union["LoadFieldsCombination", "StepsCombination"]
-
+OutputType = Union["DisplacementFieldResults", "TemperatureFieldResults"]
 
 # ==============================================================================
 #                                Base Steps
@@ -44,11 +45,6 @@ ComboType = Union["LoadFieldsCombination", "StepsCombination"]
 class _Step(FEAData):
     """Initialises base Step object.
 
-    Parameters
-    ----------
-    name : str, optional
-        Uniqe identifier. If not provided it is automatically generated. Set a
-        name if you want a more human-readable input file.
 
     Attributes
     ----------
@@ -76,6 +72,8 @@ class _Step(FEAData):
 
     def __init__(self, **kwargs):
         super(_Step, self).__init__(**kwargs)
+        self._field_outputs = set()
+        self._history_outputs = set()
 
     @property
     def problem(self) -> "Problem":
@@ -87,11 +85,36 @@ class _Step(FEAData):
     def model(self) -> "Model | None":
         if self.problem:
             return self.problem.model
+        
+    @property
+    def field_outputs(self):
+        """Return the field outputs requested for the step."""
+        return self._field_outputs
+    
+    @property
+    def history_outputs(self):
+        """Return the history outputs requested for the step."""
+        return self._history_outputs
 
     # ==========================================================================
     #                             Field outputs
     # ==========================================================================
 
+    def add_field_output(self, field_output: "OutputType") -> "OutputType":
+        """Add a field output to the step.
+        Parameters
+        ----------
+        field_output : :class:`compas_fea2.problem.fields.FieldType`
+            The field output to add.
+        Returns
+        -------
+        :class:`compas_fea2.problem.fields.FieldType`
+        """
+        self._field_outputs.add(field_output)
+        field_output._registration = self
+        return field_output
+        
+        
     # # ==========================================================================
     # #                             Results methods
     # # ==========================================================================
@@ -209,6 +232,8 @@ class GeneralStep(_Step):
 
         self._fields: "LoadsFieldGroup | None" = None
         self._combination: ComboType | None = None
+        
+        
 
     @property
     def __data__(self):
