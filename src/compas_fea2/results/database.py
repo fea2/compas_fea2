@@ -401,7 +401,7 @@ class SQLiteResultsDatabase(ResultsDatabase):
     #                       FEA2 Methods
     # =========================================================================
 
-    def to_result(self, result_line, results_func, field_name):
+    def to_result(self, result_line, results_func, result_cls):
         """
         Convert a result line in the database to the appropriate
         result object.
@@ -427,9 +427,9 @@ class SQLiteResultsDatabase(ResultsDatabase):
         m = getattr(self.model, results_func)(result_line.pop("key"))[0]
         if not m:
             raise ValueError(f"Member not in {self.model}")
-        return m.results_cls[field_name](m, **result_line)
+        return result_cls(m, **result_line)
 
-    def to_results(self, results_set, results_func, field_name):
+    def to_results(self, results_set, results_func, result_cls):
         """
         Convert a set of results data in the database to the appropriate
         result object.
@@ -453,7 +453,7 @@ class SQLiteResultsDatabase(ResultsDatabase):
         for r in results_set:
             step = self.problem.find_step_by_name(r.pop("step"))
             results.setdefault(step, [])
-            results[step].append(self.to_result(r, results_func, field_name))
+            results[step].append(self.to_result(r, results_func, result_cls))
         return results
 
     def add_results_to_output_class_table(self, output_cls, results):

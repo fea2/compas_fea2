@@ -98,6 +98,13 @@ class FieldResults(FEAData):
     @property
     def results_func(self) -> str:
         raise NotImplementedError("This method should be implemented in the subclass.")
+    
+    @property
+    def result_cls(self):
+        """Return the class used to instantiate the results."""
+        if not self._result_cls:
+            raise ValueError("Result class is not set. Please set the result class in the subclass.")
+        return self._result_cls
 
     @property
     def rdb(self) -> SQLiteResultsDatabase:
@@ -159,7 +166,7 @@ class FieldResults(FEAData):
         results_set = self.rdb.get_rows(self.field_name, all_columns, filters, func)
         results_set = [{k: v for k, v in zip(all_columns, row)} for row in results_set]
 
-        return self.rdb.to_results(results_set, results_func=self.results_func, field_name=self.field_name, **kwargs)
+        return self.rdb.to_results(results_set, results_func=self.results_func, result_cls=self.result_cls, **kwargs)
 
     def get_result_at(self, location):
         """Get the result for a given location.
@@ -281,6 +288,7 @@ class NodeFieldResults(FieldResults):
         super(NodeFieldResults, self).__init__(*args, **kwargs)
         self._results_func = "find_node_by_key"
         self._field_name = None
+        self._result_cls = None
 
     @property
     def components_names(self):
@@ -393,6 +401,8 @@ class DisplacementFieldResults(NodeFieldResults):
     def __init__(self, *args, **kwargs):
         super(DisplacementFieldResults, self).__init__(*args, **kwargs)
         self._field_name = "u"
+        from compas_fea2.results.results import DisplacementResult
+        self._result_cls = DisplacementResult
 
 
 class AccelerationFieldResults(NodeFieldResults):
@@ -420,6 +430,8 @@ class AccelerationFieldResults(NodeFieldResults):
     def __init__(self, *args, **kwargs):
         super(AccelerationFieldResults, self).__init__(*args, **kwargs)
         self._field_name = "a"
+        from compas_fea2.results.results import AccelerationResult
+        self._result_cls = AccelerationResult
 
 
 class VelocityFieldResults(NodeFieldResults):
@@ -447,6 +459,8 @@ class VelocityFieldResults(NodeFieldResults):
     def __init__(self, *args, **kwargs):
         super(VelocityFieldResults, self).__init__(*args, **kwargs)
         self._field_name = "v"
+        from compas_fea2.results.results import VelocityResult
+        self._result_cls = VelocityResult
 
 
 class ReactionFieldResults(NodeFieldResults):
@@ -474,6 +488,8 @@ class ReactionFieldResults(NodeFieldResults):
     def __init__(self, *args, **kwargs):
         super(ReactionFieldResults, self).__init__(*args, **kwargs)
         self._field_name = "rf"
+        from compas_fea2.results.results import ReactionResult
+        self._result_cls = ReactionResult
 
 
 class ContactForcesFieldResults(NodeFieldResults):
@@ -501,6 +517,8 @@ class ContactForcesFieldResults(NodeFieldResults):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._field_name = "c"
+        from compas_fea2.results.results import ContactForcesResult
+        self._result_cls = ContactForcesResult
 
 
 class TemperatureFieldResults(NodeFieldResults):
@@ -528,6 +546,8 @@ class TemperatureFieldResults(NodeFieldResults):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._field_name = "t"
+        from compas_fea2.results.results import TemperatureResult
+        self._result_cls = TemperatureResult
 
     @property
     def components_names(self):
@@ -574,6 +594,8 @@ class SectionForcesFieldResults(ElementFieldResults):
         super(SectionForcesFieldResults, self).__init__(*args, **kwargs)
         self._results_func = "find_element_by_key"
         self._field_name = "sf"
+        from compas_fea2.results.results import SectionForcesResult
+        self._result_cls = SectionForcesResult
 
     @property
     def field_name(self):
@@ -655,6 +677,8 @@ class StressFieldResults(ElementFieldResults):
         super().__init__(*args, **kwargs)
         self._results_func = "find_element_by_key"
         self._field_name = "s"
+        from compas_fea2.results.results import StressResult
+        self._result_cls = StressResult
 
     @property
     def grouped_results(self):
