@@ -458,24 +458,26 @@ class Model(FEAData):
         start = start or self._starting_key
         for i, material in enumerate(self.materials):
             material._key = i + start
-
         for i, section in enumerate(self.sections):
             section._key = i + start
-
         for i, connector in enumerate(self.connectors):
             connector._key = i + start
 
         if not restart:
-            for i, node in enumerate(self.nodes):
-                node._key = i + start
-
-            for i, element in enumerate(self.elements):
-                element._key = i + start
+            i=0
+            j=0
+            for part in self.parts:
+                for node in part.nodes:
+                    node._key = i + start
+                    i += 1
+                    
+                for element in part.elements:
+                    element._key = j + start
+                    j += 1
         else:
             for part in self.parts:
                 for i, node in enumerate(part.nodes):
                     node._key = i + start
-
                 for i, element in enumerate(part.elements):
                     element._key = i + start
 
