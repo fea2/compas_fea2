@@ -22,8 +22,8 @@ from compas.geometry import Vector
 
 import compas_fea2
 
-from .utilities._utils import to_dimensionless
 from .utilities._utils import normalize_string
+from .utilities._utils import to_dimensionless
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -151,7 +151,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         else:
             self._uid: uuid.UUID | None = uuid.uuid4()
         super().__init__()
-        self._name: str = normalize_string(name or "".join([c for c in type(self).__name__ if c.isupper()]) + str(id(self))) 
+        self._name: str = normalize_string(name or "".join([c for c in type(self).__name__ if c.isupper()]) + str(id(self)))
         self._registration: Any = None
         self._key: Optional[int] = None
 
@@ -232,10 +232,12 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             "key": self._key,
             "registration": registration_data,
         }
-        base.update({
-            "module": self.__class__.__module__,
-            "class": self.__class__.__name__,
-        })
+        base.update(
+            {
+                "module": self.__class__.__module__,
+                "class": self.__class__.__name__,
+            }
+        )
         return base
 
     @from_data
@@ -369,7 +371,7 @@ class Registry:
         # existing internal logic to create/return instance from data
         # Typically this calls something like cls.__from_data__ or registry-managed constructor
         # We delegate to the existing registry implementation while preserving duplicate semantics
-        if hasattr(cls, '__from_data__'):
+        if hasattr(cls, "__from_data__"):
             return cls.__from_data__(data, registry=self, duplicate=duplicate)
         # fallback: try to instantiate directly
         return cls(**data)

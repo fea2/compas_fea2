@@ -9,7 +9,6 @@ class QuasiStaticStep(GeneralStep):
         raise NotImplementedError
 
 
-
 class DirectCyclicStep(GeneralStep):
     """Step for a direct cyclic analysis."""
 

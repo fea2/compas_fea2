@@ -165,18 +165,18 @@ class _Part(FEAData):
         part._ndm = data.get("ndm")
         part._ndf = data.get("ndf")
 
-        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry)  if data["nodes"] else None # type: ignore
+        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry) if data["nodes"] else None  # type: ignore
         if nodes:
             part.add_nodes(nodes)
             part._nodes._uid = data.get("nodes", {}).get("uid", None)  # change the uid of the nodes group
 
-        elements = ElementsGroup.__from_data__(data["elements"], registry=registry) if data["elements"] else None # type: ignore
+        elements = ElementsGroup.__from_data__(data["elements"], registry=registry) if data["elements"] else None  # type: ignore
         if elements:
             part.add_elements(elements)  # type: ignore
             part._elements._uid = data.get("elements", {}).get("uid", None)  # change the uid of the nodes group
 
         if data.get("groups"):
-            part._groups = set([registry.add_from_data(group,duplicate=duplicate) for group in data.get("groups", [])])
+            part._groups = set([registry.add_from_data(group, duplicate=duplicate) for group in data.get("groups", [])])
 
         part._reference_node = registry.add_from_data(data["reference_node"], duplicate=duplicate) if data.get("reference_node") else None
 
@@ -193,15 +193,13 @@ class _Part(FEAData):
         # Prepare nodes, elements, and edges for bulk insertion
         nodes = list(self.nodes)
         elements = list(self.elements)
-        graph_edges = [
-            (element, node) for element in elements for node in element.nodes
-        ]
+        graph_edges = [(element, node) for element in elements for node in element.nodes]
 
         # Use fast, bulk methods to build the graph
         self._graph.add_nodes_from(nodes, type="node")
         self._graph.add_nodes_from(elements, type="element")
         self._graph.add_edges_from(graph_edges, relation="connects")
-        
+
     # =========================================================================
     #                       Constructors
     # =========================================================================
@@ -338,9 +336,12 @@ class _Part(FEAData):
         print("-> Starting gmsh convertion to compas_fea2 Part...")
         import gmsh
         import numpy as np
-        
-        from compas_fea2.model import Node, TetrahedronElement, HexahedronElement
-        from compas_fea2.model.groups import NodesGroup, ElementsGroup
+
+        from compas_fea2.model import HexahedronElement
+        from compas_fea2.model import Node
+        from compas_fea2.model import TetrahedronElement
+        from compas_fea2.model.groups import ElementsGroup
+        from compas_fea2.model.groups import NodesGroup
 
         part = cls(name=kwargs.get("name"))
 
@@ -352,7 +353,7 @@ class _Part(FEAData):
         num_nodes = int(len(node_tags))
 
         py_nodes = [Node(key=int(tag), xyz=coord.tolist()) for tag, coord in zip(node_tags, node_coords)]
-        
+
         # === PHASE 2: Prepare Element Data ===
         remap_array = np.empty(int(node_tags.max()) + 1, dtype=np.int64)
         remap_array[node_tags] = np.arange(num_nodes, dtype=np.int64)
@@ -360,7 +361,7 @@ class _Part(FEAData):
 
         element_mapping = {4: (TetrahedronElement, 4), 5: (HexahedronElement, 8)}
         element_types, _, node_tags_by_type = gmsh.model.mesh.get_elements(dim=3)
-        
+
         py_elements = []
         for el_type, node_tags_flat in zip(element_types, node_tags_by_type):
             if el_type in element_mapping:
@@ -384,11 +385,11 @@ class _Part(FEAData):
         for i, node in enumerate(part.nodes):
             node._registration = part
             node._part_key = i
-        
+
         for i, element in enumerate(part.elements):
             element._registration = part
             element._part_key = i
-        
+
         print("-> Part creation complete.")
         return part
 
@@ -564,26 +565,27 @@ class _Part(FEAData):
 
         """
         import gmsh
+
         try:
             gmsh.initialize()
             try:
                 gmsh.model.occ.importShapes(str(step_file))
-            except Exception as e:
+            except Exception:
                 gmsh.logger.write("Could not load STEP file. Make sure the path is correct.", "error")
                 gmsh.finalize()
                 exit()
 
             gmsh.model.occ.synchronize()
             print("Healing the geometry...")
-            healing_tolerance = 1 
+            healing_tolerance = 1
             gmsh.model.occ.healShapes(tolerance=healing_tolerance)
             gmsh.model.occ.synchronize()
             gmsh.option.setNumber("Mesh.MeshSizeMin", kwargs.get("MeshSizeMin", 100))
             gmsh.option.setNumber("Mesh.MeshSizeMax", kwargs.get("MeshSizeMax", 500))
-            gmsh.option.setNumber("Mesh.Algorithm3D", 1) 
-            gmsh.option.setNumber("Mesh.Optimize", 1) # Optional: optimize for quality
-            gmsh.option.setNumber("Mesh.Algorithm3D", 7) 
-            
+            gmsh.option.setNumber("Mesh.Algorithm3D", 1)
+            gmsh.option.setNumber("Mesh.Optimize", 1)  # Optional: optimize for quality
+            gmsh.option.setNumber("Mesh.Algorithm3D", 7)
+
             if isinstance(section, _Section1D):
                 dim = 1
             elif isinstance(section, _Section2D):
@@ -592,13 +594,13 @@ class _Part(FEAData):
                 dim = 3
             else:
                 raise ValueError("Unsupported section type. Must be _Section1D, _Section2D, or _Section3D.")
-            
+
             gmsh.model.mesh.generate(dim)  # Generate mesh based on section type
             print("Mesh generation complete.")
             part = cls.from_gmsh(section=section, name=kwargs.get("name", None))
         finally:
             gmsh.finalize()
-    
+
         return part
 
     @classmethod
@@ -649,7 +651,7 @@ class _Part(FEAData):
         if self._graph is None:
             self._build_graph()
         return self._graph
-    
+
     @property
     def reference_node(self) -> Optional[Node]:
         """The reference point of the part."""
@@ -803,7 +805,7 @@ class _Part(FEAData):
         # Step 1: Get the group of all faces on the boundary.
         boundary_faces_group = self.find_boundary_faces()
         if not boundary_faces_group:
-            return Mesh() # Return an empty mesh if there are no boundary faces
+            return Mesh()  # Return an empty mesh if there are no boundary faces
 
         # Step 2: Collect all unique nodes from these faces.
         # Create a mapping from the node's part_key to the node object itself.
@@ -824,9 +826,8 @@ class _Part(FEAData):
             # Use the map to convert the old part_keys to the new 0-based indices
             face_indices = [key_to_index[node.part_key] for node in face.nodes]
             faces.append(face_indices)
-            
-        return Mesh.from_vertices_and_faces(vertices, faces)
 
+        return Mesh.from_vertices_and_faces(vertices, faces)
 
     # @property
     # def outer_faces(self):
@@ -887,7 +888,7 @@ class _Part(FEAData):
     def top_plane(self) -> Plane:
         """The top plane of the part's bounding box."""
         return Plane.from_three_points(*[self.bounding_box.points[i] for i in self.bounding_box.top[:3]])
-    
+
     @property
     def volume(self) -> float:
         """The total volume of the part."""
@@ -953,7 +954,7 @@ class _Part(FEAData):
         """
         if node not in self.graph:
             return ElementsGroup(members=[])
-        
+
         # The graph builds automatically on first access via the @property
         connected_elements = self.graph.neighbors(node)
         return ElementsGroup(members=[e for e in connected_elements if isinstance(e, _Element)])
@@ -977,10 +978,10 @@ class _Part(FEAData):
         adjacent_elements = set()
         for node in self.graph.neighbors(element):
             adjacent_elements.update(self.graph.neighbors(node))
-        
-        adjacent_elements.discard(element) # Remove the original element
+
+        adjacent_elements.discard(element)  # Remove the original element
         return ElementsGroup(members=[e for e in adjacent_elements if isinstance(e, _Element)])
-    
+
     def find_shortest_path_between_nodes(self, start_node: "Node", end_node: "Node") -> "NodesGroup":
         """Finds the shortest path of nodes through the mesh between two nodes.
 
@@ -1010,7 +1011,7 @@ class _Part(FEAData):
         except nx.NetworkXNoPath:
             print(f"No path found between node {start_node.key} and {end_node.key}.")
             return NodesGroup(members=[])
-            
+
     def get_connected_components(self) -> List["NodesGroup"]:
         """Checks if the mesh is fully connected or consists of multiple 'islands'.
 
@@ -1022,15 +1023,15 @@ class _Part(FEAData):
             group represents a disconnected island of nodes.
         """
         import networkx as nx
-        
+
         undirected_graph = self.graph.to_undirected()
         components = list(nx.connected_components(undirected_graph))
-        
+
         component_groups = []
         for island in components:
             nodes_in_island = {item for item in island if isinstance(item, Node)}
             component_groups.append(NodesGroup(members=nodes_in_island))
-            
+
         return component_groups
 
     def find_element_neighbors_by_layer(self, start_element: "_Element", layers: int = 1) -> List["ElementsGroup"]:
@@ -1077,12 +1078,11 @@ class _Part(FEAData):
                         next_layer.add(neighbor)
                         visited.add(neighbor)
             if not next_layer:
-                break # Stop if no new neighbors are found
+                break  # Stop if no new neighbors are found
             layered_neighbors.append(ElementsGroup(members=next_layer))
             current_layer = next_layer
-        
+
         return layered_neighbors
-    
 
     # =========================================================================
     #                       Methods
@@ -1489,12 +1489,12 @@ class _Part(FEAData):
 
         # Query the tree for all points within the box's bounds
         indices = tree.query_ball_point([min_corner, max_corner], p=np.inf, eps=0)[0]
-        
+
         part_nodes = list(self.nodes)
         nodes_in_box = [part_nodes[i] for i in indices]
-        
+
         return NodesGroup(members=nodes_in_box)
-    
+
     def contains_node(self, node: Node) -> bool:
         """Verify that the part contains a given node.
 
@@ -1641,7 +1641,7 @@ class _Part(FEAData):
 
     def find_boundary_nodes(self) -> "NodesGroup":
         """Finds all nodes located on the exterior boundary of the part.
-        
+
         This refactored method leverages `find_boundary_faces` to first
         identify all exterior faces and then collects their unique nodes.
         """
@@ -1652,10 +1652,10 @@ class _Part(FEAData):
         boundary_nodes = set()
         for face in boundary_faces_group:
             boundary_nodes.update(face.nodes)
-            
+
         # Step 3: Return the result as a NodesGroup.
         return NodesGroup(members=boundary_nodes)
-    
+
     # =========================================================================
     #                           Elements methods
     # =========================================================================
@@ -1741,8 +1741,7 @@ class _Part(FEAData):
                 element._part_key = len(self.elements) - 1
         element._registration = self
 
-
-        self._graph = None # reset the graph if it exists
+        self._graph = None  # reset the graph if it exists
         # self.graph.add_node(element, type="element")
         # for node in element.nodes:
         #     self.graph.add_node(node, type="node")
@@ -1917,16 +1916,15 @@ class _Part(FEAData):
 
     def find_boundary_faces(self) -> "FacesGroup":
         """Finds all element faces located on the exterior boundary of the part.
-        
+
         This method remains the same and does the heavy lifting.
         """
-        from collections import defaultdict
 
         face_key_map = defaultdict(list)
         for element in self.elements:
             if not hasattr(element, "faces") or not element.faces:
                 continue
-            
+
             for face in element.faces:
                 face_key = tuple(sorted([node.part_key for node in face.nodes]))
                 face_key_map[face_key].append(face)
@@ -1935,7 +1933,7 @@ class _Part(FEAData):
         for face_key, face_list in face_key_map.items():
             if len(face_list) == 1:
                 boundary_faces.append(face_list[0])
-        
+
         return FacesGroup(members=boundary_faces)
 
     # =========================================================================
@@ -2165,7 +2163,7 @@ class Part(_Part):
         for edge in mesh.edges():
             n1, n2 = [vertex_node[vertex] for vertex in edge]
             p1 = Point(*n1.xyz)
-            p2 = Point(*n2.xyz)
+            # p2 = Point(*n2.xyz)
 
             # Get averaged normal from adjacent faces
             faces = mesh.edge_faces(edge)

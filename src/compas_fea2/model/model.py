@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import importlib
 from itertools import chain
+from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
-
-from pathlib import Path
 
 from compas.datastructures import Graph
 from compas.geometry import Box
@@ -56,8 +55,8 @@ if TYPE_CHECKING:
     from typing import Set
     from typing import Union
 
-    from compas.geometry import Polygon
     from compas.geometry import Frame
+    from compas.geometry import Polygon
 
     from compas_fea2.model.bcs import _BoundaryCondition
     from compas_fea2.model.connectors import _Connector
@@ -77,9 +76,8 @@ if TYPE_CHECKING:
     from compas_fea2.model.interfaces import _Interface
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.sections import _Section
-    from compas_fea2.units import UnitRegistry
-    
     from compas_fea2.problem import Problem
+    from compas_fea2.units import UnitRegistry
 
 
 class Model(FEAData):
@@ -197,7 +195,7 @@ class Model(FEAData):
 
         for problem_data in data.get("problems", []):
             model.add_problem(registry.add_from_data(problem_data, duplicate=duplicate))
-            
+
         for field_data in data.get("fields", []):
             model.fields.add_member(registry.add_from_data(field_data, duplicate=duplicate))
 
@@ -310,7 +308,7 @@ class Model(FEAData):
     def part_sections(self) -> "Dict[_Part, Set[_Section]]":
         """Return a dictionary with the sections contained in each part in the model."""
         return {part: part.sections.members for part in self.parts if not isinstance(part, RigidPart)}
-    
+
     @property
     def section_elements(self) -> "Dict[_Section, ElementsGroup]":
         """Return a dictionary with the elements contained in each section in the model."""
@@ -457,13 +455,13 @@ class Model(FEAData):
             connector._key = i + start
 
         if not restart:
-            i=0
-            j=0
+            i = 0
+            j = 0
             for part in self.parts:
                 for node in part.nodes:
                     node._key = i + start
                     i += 1
-                    
+
                 for element in part.elements:
                     element._key = j + start
                     j += 1
@@ -480,7 +478,7 @@ class Model(FEAData):
 
     def find_part_by_name(self, name: str, casefold: bool = False) -> "Optional[_Part]":
         """Find if there is a part with a given name in the model.
-        
+
         Notes
         -----
         Names in fea2 must don't contain spaces. If so, they
@@ -499,6 +497,7 @@ class Model(FEAData):
 
         """
         from compas_fea2.utilities._utils import normalize_string
+
         name = normalize_string(name)
         for part in self.parts:
             name_1 = part.name if not casefold else part.name.casefold()
@@ -910,7 +909,7 @@ class Model(FEAData):
             bc_field._registration = self
         return bc_fields
 
-    def _add_bc_type(self, bc_type: str, nodes: "Union[list[Node], NodesGroup]", frame: "Frame"=None, **kwargs) -> "BoundaryConditionsField | List[BoundaryConditionsField]":
+    def _add_bc_type(self, bc_type: str, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs) -> "BoundaryConditionsField | List[BoundaryConditionsField]":
         """Add a :class=`compas_fea2.model.BoundaryCondition` by type.
 
         Parameters
@@ -942,7 +941,7 @@ class Model(FEAData):
         field = BoundaryConditionsField(condition=bc, distribution=nodes, **kwargs)
         return self.add_bcs(field)
 
-    def add_fix_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame"=None, **kwargs):
+    def add_fix_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.FixedBC` to the given nodes.
 
         Parameters
@@ -955,7 +954,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("fix", nodes, frame, **kwargs)
 
-    def add_pin_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_pin_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.PinnedBC` to the given nodes.
 
         Parameters
@@ -968,7 +967,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("pin", nodes, frame, **kwargs)
 
-    def add_clampXX_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_clampXX_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.ClampBCXX` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except rotation about the local XX-axis.
@@ -983,7 +982,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("clampXX", nodes, frame, **kwargs)
 
-    def add_clampYY_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_clampYY_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.ClampBCYY` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except rotation about the local YY-axis.
@@ -998,7 +997,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("clampYY", nodes, frame, **kwargs)
 
-    def add_clampZZ_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_clampZZ_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.ClampBCZZ` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except rotation about the local ZZ-axis.
@@ -1013,7 +1012,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("clampZZ", nodes, frame, **kwargs)
 
-    def add_rollerX_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_rollerX_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.RollerBCX` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except displacement in the local X-direction.
@@ -1028,7 +1027,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("rollerX", nodes, frame, **kwargs)
 
-    def add_rollerY_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_rollerY_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.RollerBCY` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except displacement in the local Y-direction.
@@ -1043,7 +1042,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("rollerY", nodes, frame, **kwargs)
 
-    def add_rollerZ_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_rollerZ_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class=`compas_fea2.model.bcs.RollerBCZ` to the given nodes.
 
         This boundary condition clamps all degrees of freedom except displacement in the local Z-direction.
@@ -1058,7 +1057,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("rollerZ", nodes, frame, **kwargs)
 
-    def add_rollerXY_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_rollerXY_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class:`compas_fea2.model.bcs.RollerBCXY` to the given nodes.
 
         This boundary condition allows translation along the local XY-plane.
@@ -1073,7 +1072,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("rollerXY", nodes, frame, **kwargs)
 
-    def add_rollerXZ_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame"=None, **kwargs):
+    def add_rollerXZ_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class:`compas_fea2.model.bcs.RollerBCXZ` to the given nodes.
 
         This boundary condition allows translation along the local XZ-plane.
@@ -1088,7 +1087,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("rollerXZ", nodes, frame, **kwargs)
 
-    def add_rollerYZ_bc(self, nodes: "Union[list[Node], NodesGroup]",  frame: "Frame"=None, **kwargs):
+    def add_rollerYZ_bc(self, nodes: "Union[list[Node], NodesGroup]", frame: "Frame" = None, **kwargs):
         """Add a :class:`compas_fea2.model.bcs.RollerBCYZ` to the given nodes.
 
         This boundary condition allows translation along the local YZ-plane.
@@ -1103,12 +1102,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("rollerYZ", nodes, frame, **kwargs)
 
-    def add_thermal_bc(
-        self,
-        nodes: "Union[list[Node], NodesGroup]",
-        temperature: "float",
-        **kwargs
-    ) -> "BoundaryConditionsField | List[BoundaryConditionsField]":
+    def add_thermal_bc(self, nodes: "Union[list[Node], NodesGroup]", temperature: "float", **kwargs) -> "BoundaryConditionsField | List[BoundaryConditionsField]":
         """Add a :class:`compas_fea2.model.bcs.ThermalBC` to the model.
 
         Parameters
@@ -1132,7 +1126,7 @@ class Model(FEAData):
         field = BoundaryConditionsField(condition=it, distribution=nodes, axes="global")
         return self.add_bcs(field, **kwargs)
 
-    def remove_bcs(self, field:"BoundaryConditionsField"):
+    def remove_bcs(self, field: "BoundaryConditionsField"):
         """Release nodes that were previously restrained.
 
         Parameters
@@ -1178,35 +1172,35 @@ class Model(FEAData):
         """
         raise NotImplementedError("This method is not implemented in the base Model class. Please use a specific model subclass.")
 
-        if not isinstance(ic_field, _InitialConditionField):
-            raise TypeError("{!r} is not an Initial Condition Field.".format(ic_field))
+        # if not isinstance(ic_field, _InitialConditionField):
+        #     raise TypeError("{!r} is not an Initial Condition Field.".format(ic_field))
 
-        for node in ic_field.distribution:
-            if not isinstance(node, Node):
-                raise TypeError("{!r} is not a Node.".format(node))
-            if not node.part:
-                raise ValueError("{!r} is not registered to any part.".format(node))
-            elif node.part not in self.parts:
-                raise ValueError("{!r} belongs to a part not registered to this model.".format(node))
-            if isinstance(node.part, RigidPart):
-                if not node.is_reference:
-                    raise ValueError("For rigid parts bundary conditions can be assigned only to the reference point")
-            node._bcs.add_members(ic_field.conditions)
+        # for node in ic_field.distribution:
+        #     if not isinstance(node, Node):
+        #         raise TypeError("{!r} is not a Node.".format(node))
+        #     if not node.part:
+        #         raise ValueError("{!r} is not registered to any part.".format(node))
+        #     elif node.part not in self.parts:
+        #         raise ValueError("{!r} belongs to a part not registered to this model.".format(node))
+        #     if isinstance(node.part, RigidPart):
+        #         if not node.is_reference:
+        #             raise ValueError("For rigid parts bundary conditions can be assigned only to the reference point")
+        #     node._bcs.add_members(ic_field.conditions)
 
-        self._ics_fields.add(ic_field)
-        ic_field._registration = self
+        # self._ics_fields.add(ic_field)
+        # ic_field._registration = self
 
-        return ic_field
+        # return ic_field
 
     def add_ics_fields(self, ics_fields: list["_InitialConditionField"]) -> list["_InitialConditionField"]:
         raise NotImplementedError("This method is not implemented in the base Model class. Please use a specific model subclass.")
-        for ics_field in ics_fields:
-            self.add_ics_field(ics_field)
-        return ics_field
+        # for ics_field in ics_fields:
+        #     self.add_ics_field(ics_field)
+        # return ics_field
 
     def add_uniform_thermal_ics_field(self, T0: float, nodes) -> InitialTemperatureField:
         raise NotImplementedError("This method is not implemented in the base Model class. Please use a specific model subclass.")
-        return self.add_ics_field(InitialTemperatureField(nodes=nodes, conditions=InitialTemperature(T0=T0)))
+        # return self.add_ics_field(InitialTemperatureField(nodes=nodes, conditions=InitialTemperature(T0=T0)))
 
     # =========================================================================
     #                           Constraints methods
@@ -1325,7 +1319,7 @@ class Model(FEAData):
     # =========================================================================
     #                           Problems methods
     # =========================================================================
-    def add_problem(self, problem: Optional["Problem"]=None, **kwargs) -> "Problem":
+    def add_problem(self, problem: Optional["Problem"] = None, **kwargs) -> "Problem":
         """Add a problem to the model.
 
         Parameters
@@ -1339,6 +1333,7 @@ class Model(FEAData):
             The added problem.
         """
         from compas_fea2.problem import Problem
+
         if not problem:
             problem = Problem(**kwargs)
         if not isinstance(problem, Problem):

@@ -2,6 +2,7 @@ from compas.geometry import Vector
 from compas.geometry import sum_vectors
 
 from compas_fea2.base import from_data
+
 from .step import _Step
 
 
@@ -28,7 +29,6 @@ class ModalAnalysis(_Perturbation):
     def __init__(self, modes=1, **kwargs):
         super(ModalAnalysis, self).__init__(**kwargs)
         self.modes = modes
-
 
     def _get_results_from_db(self, mode, **kwargs):
         """Get the results for the given members and steps.
@@ -81,9 +81,9 @@ class ModalAnalysis(_Perturbation):
     def mode_frequency(self, mode):
         return self.mode_result(mode).frequency
 
-    def mode_result(self, mode):
-        eigenvalue, eigenvector = self._get_results_from_db(mode)
-        return ModalAnalysisResult(step=self, mode=mode, eigenvalue=eigenvalue, eigenvector=eigenvector)
+    # def mode_result(self, mode):
+    #     eigenvalue, eigenvector = self._get_results_from_db(mode)
+    #     return ModalAnalysisResult(step=self, mode=mode, eigenvalue=eigenvalue, eigenvector=eigenvector)
 
     def show_mode_shape(self, mode, fast=True, opacity=1, scale_results=1, show_bcs=True, show_original=0.25, show_contour=False, show_vectors=False, **kwargs):
         """Show the mode shape of a given mode.
@@ -218,7 +218,7 @@ class LinearStaticPerturbation(_Perturbation):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         raise NotImplementedError
-    
+
 
 class SteadyStateDynamic(_Perturbation):
     """"""

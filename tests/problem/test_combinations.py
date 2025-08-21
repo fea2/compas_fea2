@@ -4,6 +4,7 @@ from compas_fea2.problem import StaticStep, ForceField
 from compas_fea2.model import Node
 from compas_fea2.problem.loads import VectorLoad
 
+
 class TestLoadFieldsCombination(unittest.TestCase):
     def setUp(self):
         self.n1 = Node(name="node1", xyz=[0.0, 0.0, 0.0])
@@ -81,10 +82,10 @@ class TestLoadFieldsCombination(unittest.TestCase):
     def test_asce_factory_basic(self):
         comb = LoadFieldsCombination.asce7_lrfd_basic()
         f = comb.case_factor_dict
-        self.assertEqual(f.get("LL"), {'primary': 1.6, 'secondary': 1.6, 'tertiary': 1.6, 'default': 1.6})
-        self.assertEqual(f.get("Lr"), {'primary': 0.5, 'secondary': 0.5, 'tertiary': 0.5, 'default': 0.5})
-        self.assertEqual(f.get("S"), {'primary': 0.5, 'secondary': 0.5, 'tertiary': 0.5, 'default': 0.5})
-        self.assertEqual(f.get("R"), {'primary': 0.5, 'secondary': 0.5, 'tertiary': 0.5, 'default': 0.5})
+        self.assertEqual(f.get("LL"), {"primary": 1.6, "secondary": 1.6, "tertiary": 1.6, "default": 1.6})
+        self.assertEqual(f.get("Lr"), {"primary": 0.5, "secondary": 0.5, "tertiary": 0.5, "default": 0.5})
+        self.assertEqual(f.get("S"), {"primary": 0.5, "secondary": 0.5, "tertiary": 0.5, "default": 0.5})
+        self.assertEqual(f.get("R"), {"primary": 0.5, "secondary": 0.5, "tertiary": 0.5, "default": 0.5})
         self.assertTrue(any(k in f for k in ("D", "DL", "SDL")))
 
     def test_combine_for_step(self):
@@ -101,6 +102,7 @@ class TestLoadFieldsCombination(unittest.TestCase):
                 self.assertEqual(field.loads[0].x, 1.0 * 2.0)
                 found = True
         self.assertTrue(found)
+
 
 if __name__ == "__main__":
     unittest.main()

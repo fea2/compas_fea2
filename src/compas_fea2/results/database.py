@@ -1,11 +1,14 @@
+import sqlite3
+from typing import TYPE_CHECKING
 from typing import Optional
 
-import sqlite3
-from pathlib import Path
-
 from compas_fea2.base import FEAData
-from compas_fea2.base import from_data
 from compas_fea2.base import Registry
+from compas_fea2.base import from_data
+
+if TYPE_CHECKING:
+    from compas_fea2.problem import Problem
+
 
 class ResultsDatabase(FEAData):
     """Base class for results databases.
@@ -219,12 +222,12 @@ class SQLiteResultsDatabase(ResultsDatabase):
 
     def __init__(self, problem, **kwargs):
         super().__init__(problem=problem, **kwargs)
-        
+
     @property
     def db_uri(self):
         """Return the database URI."""
         return self.problem.path / f"{self.name}-results.db"
-    
+
     @property
     def __data__(self):
         """Return the data representation of the SQLiteResultsDatabase."""
@@ -235,16 +238,16 @@ class SQLiteResultsDatabase(ResultsDatabase):
             }
         )
         return base
-    
+
     @from_data
     @classmethod
     def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate=True) -> "Problem":
         if not registry:
             raise ValueError("A registry is required to create a Part from data.")
-        problem = registry.add_from_data(data.get('problem'), duplicate=duplicate)
+        problem = registry.add_from_data(data.get("problem"), duplicate=duplicate)
         db = cls(problem)
         return db
-    
+
     def db_connection(self):
         """
         Create and return a connection to the SQLite database.

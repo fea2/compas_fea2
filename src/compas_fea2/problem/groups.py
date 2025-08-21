@@ -1,17 +1,15 @@
 from typing import TYPE_CHECKING
-from typing import Any
 from typing import Iterable
 from typing import Set
-from typing import TypeVar
 
 from compas_fea2.model.groups import _Group
 
-
 # Type-checking imports to avoid circular dependencies at runtime
 if TYPE_CHECKING:
-    from compas_fea2.problem.loads import _Load
     from compas_fea2.problem.displacements import GeneralDisplacement
-    from compas_fea2.problem.fields import DisplacementField, ForceField
+    from compas_fea2.problem.fields import DisplacementField
+    from compas_fea2.problem.fields import ForceField
+    from compas_fea2.problem.loads import _Load
 
 
 class LoadsGroup(_Group["_Load"]):
@@ -49,6 +47,7 @@ class LoadsFieldGroup(_Group["DisplacementField | ForceField"]):
 
     def __init__(self, members: "Iterable[DisplacementField | ForceField] | DisplacementField | ForceField", **kwargs) -> None:
         from compas_fea2.problem.fields import _BaseLoadField
+
         if not isinstance(members, Iterable):
             members = [members]
         super().__init__(members=members, member_class=_BaseLoadField, **kwargs)
@@ -56,4 +55,3 @@ class LoadsFieldGroup(_Group["DisplacementField | ForceField"]):
     @property
     def fields(self) -> "Iterable[DisplacementField | ForceField]":
         return self._members
-

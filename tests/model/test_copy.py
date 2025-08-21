@@ -7,8 +7,6 @@ from compas.geometry import Translation  # type: ignore
 from compas_fea2.model.model import Model  # explicit import
 from compas_fea2.model.parts import Part  # type: ignore
 from compas_fea2.model.nodes import Node  # type: ignore
-from compas_fea2.model.materials.steel import Steel  # type: ignore
-from compas_fea2.model.sections import GenericBeamSection  # type: ignore
 
 
 class TestFEADataCopy(unittest.TestCase):

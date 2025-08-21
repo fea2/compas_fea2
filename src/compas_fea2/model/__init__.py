@@ -119,7 +119,6 @@ from .ics import (
 
 from .fields import (
     InitialTemperatureField,
-    InitialStressField,
 )
 
 from .interfaces import (

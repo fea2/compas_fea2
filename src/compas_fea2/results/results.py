@@ -90,7 +90,7 @@ class VectorResult(Result):
     Parameters
     ----------
     """
-    
+
     pass
 
 
@@ -115,7 +115,7 @@ class NodeResult(Result):
         The zz component of the result vector.
     **kwargs : dict, optional
         Additional keyword arguments for the Result class.
-        
+
 
     Attributes
     ----------
@@ -219,7 +219,7 @@ class DisplacementResult(NodeResult):
         The zz component of the result vector.
     **kwargs : dict, optional
         Additional keyword arguments for the Result class.
-        
+
 
     Attributes
     ----------
@@ -328,7 +328,7 @@ class VelocityResult(NodeResult):
         The zz component of the result vector.
     **kwargs : dict, optional
         Additional keyword arguments for the Result class.
-        
+
 
     Attributes
     ----------

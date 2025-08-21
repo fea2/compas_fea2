@@ -2,6 +2,7 @@ from compas_fea2.problem.fields import TemperatureField
 
 from .step import _Step
 
+
 # TODO: Change to inherit from GeneralStep
 class HeatTransferStep(_Step):
     """HeatTransfer for use in a heat transfer analysis.

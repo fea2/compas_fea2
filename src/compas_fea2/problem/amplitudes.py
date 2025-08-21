@@ -1,5 +1,4 @@
 from compas_fea2.base import FEAData
-from compas_fea2.base import Registry
 from compas_fea2.base import from_data
 
 

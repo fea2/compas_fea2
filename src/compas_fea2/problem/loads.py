@@ -1,11 +1,12 @@
 from typing import Optional
 
-from compas.geometry import Frame, Vector
+from compas.geometry import Frame
+from compas.geometry import Vector
 
 from compas_fea2.base import FEAData
+from compas_fea2.base import Frameable
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-from compas_fea2.base import Frameable
 
 
 class _Load(FEAData):
@@ -41,7 +42,7 @@ class _Load(FEAData):
     def __init__(self, amplitude=None, **kwargs):
         super().__init__(**kwargs)
         self._amplitude = amplitude
-        
+
     @property
     def __data__(self):
         data = super().__data__
@@ -180,15 +181,17 @@ class VectorLoad(_Load, Frameable):
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "x": self.x,
-            "y": self.y,
-            "z": self.z,
-            "xx": self.xx,
-            "yy": self.yy,
-            "zz": self.zz,
-            "frame": self._frame_data(),
-        })
+        data.update(
+            {
+                "x": self.x,
+                "y": self.y,
+                "z": self.z,
+                "xx": self.xx,
+                "yy": self.yy,
+                "zz": self.zz,
+                "frame": self._frame_data(),
+            }
+        )
         return data
 
     @from_data
@@ -258,8 +261,12 @@ class VectorLoad(_Load, Frameable):
         if not isinstance(other, VectorLoad):
             return NotImplemented
         clone = VectorLoad(
-            x=other.x, y=other.y, z=other.z,
-            xx=other.xx, yy=other.yy, zz=other.zz,
+            x=other.x,
+            y=other.y,
+            z=other.z,
+            xx=other.xx,
+            yy=other.yy,
+            zz=other.zz,
             frame=other._frame,
             amplitude=other.amplitude,
         )
@@ -284,6 +291,7 @@ class VectorLoad(_Load, Frameable):
         if triplet is None or all(c is None for c in triplet):
             return (None, None, None)
         from compas.geometry import Vector
+
         lx, ly, lz = (c if c is not None else 0.0 for c in triplet)
         vec = Vector(lx, ly, lz)
         if self.has_local_frame:
@@ -363,5 +371,3 @@ class VectorLoad(_Load, Frameable):
             "force": self.force_magnitude,
             "moment": self.moment_magnitude,
         }
-
-

@@ -13,8 +13,10 @@ from compas_fea2.base import from_data
 if TYPE_CHECKING:
     pass
 
+
 class GeneralDisplacement(FEAData, Frameable):
     """General imposed displacement."""
+
     __doc__ = __doc__ or ""
 
     DOF_MASK: Dict[str, bool] | None = None

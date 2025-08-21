@@ -81,7 +81,7 @@ class InputFile(FEAData):
         if not path:
             raise ValueError("A path to the folder for the input file must be provided")
         file_path = os.path.join(path, self.file_name)
-        content = self.jobdata 
+        content = self.jobdata
         if not content:
             raise ValueError("No content to write to the input file.")
         with open(file_path, "w") as f:

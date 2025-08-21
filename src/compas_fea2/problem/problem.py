@@ -1,7 +1,6 @@
-import os
-import sys
-import shutil
 import logging
+import os
+import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import List
@@ -10,25 +9,22 @@ from typing import Union
 
 from compas_fea2.base import FEAData
 from compas_fea2.base import from_data
-
 from compas_fea2.job.input_file import InputFile
-
 from compas_fea2.results.database import ResultsDatabase
-
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from compas_fea2.base import Registry
     from compas_fea2.model.model import Model
-    from compas_fea2.problem.steps import _Step
-    from compas_fea2.problem.steps import StaticStep
     from compas_fea2.problem.steps import DynamicStep
     from compas_fea2.problem.steps import HeatTransferStep
+    from compas_fea2.problem.steps import LinearStaticPerturbation
+    from compas_fea2.problem.steps import StaticStep
 
 StepType = Union["StaticStep", "DynamicStep", "HeatTransferStep"]
-    
-    
+
+
 class Problem(FEAData):
     """A Problem is a collection of analysis steps (:class:`compas_fea2.problem._Step)
     applied in a specific sequence.
@@ -134,7 +130,6 @@ class Problem(FEAData):
         """Set the path to the analysis folder where all the files will be saved."""
         self._path = value if isinstance(value, Path) else Path(value)
 
-
     @property
     def rdb(self) -> ResultsDatabase:
         """Return the results database associated with the problem.
@@ -193,6 +188,7 @@ class Problem(FEAData):
             name of a Step already defined in the Problem.
         """
         from compas_fea2.problem.steps import _Step
+
         if not isinstance(step, _Step):
             raise TypeError("{!r} is not a Step".format(step))
         if self._steps:
@@ -222,6 +218,7 @@ class Problem(FEAData):
         :class:`compas_fea2.problem._Step`
         """
         from compas_fea2.problem.steps import _Step
+
         if not isinstance(step, _Step):
             raise TypeError("You must provide a valid compas_fea2 Step object")
         if self.is_step_in_problem(step):
@@ -266,9 +263,10 @@ class Problem(FEAData):
         :class:`compas_fea2.problem._Step`
         """
         from compas_fea2.problem.steps import StaticStep
+
         step = StaticStep(**kwargs)
         return self.add_step(step)
-    
+
     def add_linear_static_perturbation_step(self, lp_step: "LinearStaticPerturbation", base_step: str):
         """Add a linear perturbation step to a previously defined step.
 
@@ -390,7 +388,7 @@ Analysis folder path : {self.path or "N/A"}
         # Prepare the main and analysis paths
         if not self.model:
             raise ValueError(f"{self!r} is trying to access the model path but it is not registered to any model.")
-        
+
         # Model folder and problem subfolder
         self.model._path = path
         self._path = self.model._path.joinpath(self.name)
@@ -414,10 +412,7 @@ Analysis folder path : {self.path or "N/A"}
                 if erase_data == "armageddon":
                     _delete_folder_contents(self._path)
                 elif erase_data is True:
-                    raise ValueError(
-                        f"Folder {self._path} is not recognized as an FEA2 results folder. "
-                        "Refusing to erase contents without 'armageddon'."
-                    )
+                    raise ValueError(f"Folder {self._path} is not recognized as an FEA2 results folder. Refusing to erase contents without 'armageddon'.")
                 else:
                     logger.debug("Existing non-FEA2 folder kept at %s", self._path)
         else:

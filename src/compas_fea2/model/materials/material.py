@@ -50,7 +50,6 @@ class _Material(FEAData):
     def model(self):
         return self._registration
 
-
     @property
     def __data__(self):
         data = super().__data__

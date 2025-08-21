@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 
 from compas.geometry import Frame
 
@@ -7,9 +6,7 @@ from .conftest import load_module_from_path, problem_src_dir
 
 
 def _mod():
-    return load_module_from_path(
-        "compas_fea2.problem.loads_test", problem_src_dir() / "loads.py"
-    )
+    return load_module_from_path("compas_fea2.problem.loads_test", problem_src_dir() / "loads.py")
 
 
 def test_scalar_load_init_and_value():

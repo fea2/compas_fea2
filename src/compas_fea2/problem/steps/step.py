@@ -1,37 +1,31 @@
 from typing import TYPE_CHECKING
 from typing import Iterable
-from typing import Union
 from typing import Set
-
-from compas.geometry import Point
-from compas.geometry import Vector
-from compas.geometry import centroid_points_weighted
-from compas.geometry import sum_vectors
+from typing import Union
 
 from compas_fea2.base import FEAData
-from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-
 from compas_fea2.model.groups import NodesGroup
-from compas_fea2.model.nodes import Node
-
+from compas_fea2.problem.combinations import LoadFieldsCombination
+from compas_fea2.problem.combinations import StepsCombination
 from compas_fea2.problem.fields import DisplacementField
 from compas_fea2.problem.fields import ForceField
 from compas_fea2.problem.fields import GravityLoadField
 from compas_fea2.problem.fields import TemperatureField
-from compas_fea2.problem.groups import LoadsGroup, LoadsFieldGroup
-from compas_fea2.problem.combinations import LoadFieldsCombination, StepsCombination
-
-from compas_fea2.results import TemperatureFieldResults
+from compas_fea2.problem.groups import LoadsFieldGroup
 from compas_fea2.results import DisplacementFieldResults
+from compas_fea2.results import TemperatureFieldResults
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
     from compas_fea2.model import NodesGroup
+    from compas_fea2.problem import DisplacementField
+    from compas_fea2.problem import ForceField
+    from compas_fea2.problem import LoadFieldsCombination
     from compas_fea2.problem import Problem
-    from compas_fea2.problem import DisplacementField, ForceField, TemperatureField
+    from compas_fea2.problem import StepsCombination
+    from compas_fea2.problem import TemperatureField
     from compas_fea2.problem.groups import LoadsFieldGroup
-    from compas_fea2.problem import LoadFieldsCombination, StepsCombination
 
 FieldType = Union["DisplacementField", "ForceField"]
 ComboType = Union["LoadFieldsCombination", "StepsCombination"]
@@ -74,14 +68,16 @@ class _Step(FEAData):
         super(_Step, self).__init__(**kwargs)
         self._field_outputs = set()
         self._history_outputs = set()
-        
+
     @property
     def __data__(self):
         data = super().__data__
-        data.update({
-            "field_outputs": [output.__data__ for output in self._field_outputs],
-            "history_outputs": [output.__data__ for output in self._history_outputs],
-        })
+        data.update(
+            {
+                "field_outputs": [output.__data__ for output in self._field_outputs],
+                "history_outputs": [output.__data__ for output in self._history_outputs],
+            }
+        )
         return data
 
     @property
@@ -94,12 +90,12 @@ class _Step(FEAData):
     def model(self) -> "Model | None":
         if self.problem:
             return self.problem.model
-        
+
     @property
     def field_outputs(self):
         """Return the field outputs requested for the step."""
         return self._field_outputs
-    
+
     @property
     def history_outputs(self):
         """Return the history outputs requested for the step."""
@@ -122,8 +118,7 @@ class _Step(FEAData):
         self._field_outputs.add(field_output)
         field_output._registration = self
         return field_output
-        
-        
+
     # # ==========================================================================
     # #                             Results methods
     # # ==========================================================================
@@ -241,8 +236,6 @@ class GeneralStep(_Step):
 
         self._fields: "LoadsFieldGroup | None" = None
         self._combination: ComboType | None = None
-        
-        
 
     @property
     def __data__(self):
@@ -324,8 +317,8 @@ class GeneralStep(_Step):
     def load_cases(self) -> Set[str] | None:
         """Return the load cases associated with the step."""
         if self._fields:
-            return set(field.load_case for field in self._fields if field.load_case) 
-    
+            return set(field.load_case for field in self._fields if field.load_case)
+
     @property
     def amplitudes(self):
         """Return the amplitudes associated with the step."""
@@ -392,7 +385,6 @@ class GeneralStep(_Step):
     @restart.setter
     def restart(self, value):
         self._restart = value
-
 
     # ==============================================================================
     #                               Load Fields
@@ -497,7 +489,7 @@ class GeneralStep(_Step):
 
         # field = UniformSurfaceLoadField(load=[load], surface=surface, load_case=load_case, **kwargs)
 
-        return self.add_field(field)
+        # return self.add_field(field)
 
     def add_surface_field(self, surface, load_case=None, x=None, y=None, z=None, xx=None, yy=None, zz=None, axes="global", **kwargs):
         """Add a :class:`compas_fea2.problem.PointLoad` subclass object to the
@@ -544,7 +536,7 @@ class GeneralStep(_Step):
         # load = VectorLoad(**components, axes=axes)
         # field = UniformSurfaceLoadField(load=load, surface=surface, load_case=load_case, **kwargs)
 
-        return self.add_field(field)
+        # return self.add_field(field)
 
     def add_gravity_fied(self, g=9810, x=0.0, y=0.0, z=-1.0, distribution=None, load_case=None, **kwargs):
         """Add a :class:`compas_fea2.problem.GravityLoad` load to the ``Step``
@@ -574,6 +566,7 @@ class GeneralStep(_Step):
         model!
         """
         from compas_fea2.problem.fields import GravityLoadField
+
         if not self.model and not distribution:
             raise AttributeError("Step is not registered to a Model.")
         distribution = distribution or self.model.elements
@@ -623,14 +616,14 @@ class GeneralStep(_Step):
             If `nodes` is not a list, tuple, or NodesGroup.
         """
         raise NotImplementedError("This method is not implemented yet.")
-        from compas_fea2.problem.fields import DisplacementField
+        # from compas_fea2.problem.fields import DisplacementField
 
-        if not isinstance(nodes, (list, tuple, NodesGroup)):
-            raise TypeError(f"nodes must be a list, tuple, or NodesGroup, not {type(nodes)}")
-        nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
+        # if not isinstance(nodes, (list, tuple, NodesGroup)):
+        #     raise TypeError(f"nodes must be a list, tuple, or NodesGroup, not {type(nodes)}")
+        # nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
 
-        displacement = GeneralDisplacement(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes, **kwargs)
-        return self.add_field(DisplacementField(displacement, nodes))
+        # displacement = GeneralDisplacement(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, axes=axes, **kwargs)
+        # return self.add_field(DisplacementField(displacement, nodes))
 
     # ==============================================================================
     #                             Combinations
@@ -638,7 +631,7 @@ class GeneralStep(_Step):
 
     def add_combination(self, combination: ComboType):
         """Add a combination to the Step.
-        
+
         Parameters
         ----------
         combination : :class:`compas_fea2.problem.combinations.ComboType`
@@ -655,7 +648,6 @@ class GeneralStep(_Step):
             raise ValueError("A combination is already assigned to this step.")
         combination._registration = self
         return combination
-
 
     # ==========================================================================
     #                         Results methods - fields

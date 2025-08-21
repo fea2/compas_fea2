@@ -1,13 +1,20 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, Mapping, Optional, Union
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Dict
+from typing import Iterable
+from typing import Iterator
+from typing import Mapping
+from typing import Optional
+from typing import Union
 
-from compas_fea2.base import FEAData, from_data
+from compas_fea2.base import FEAData
+from compas_fea2.base import from_data
 from compas_fea2.problem.groups import LoadsFieldGroup
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
     from compas_fea2.problem import Problem
     from compas_fea2.problem import _Step
-    from compas_fea2.model.nodes import Node
 
 # Eurocode default combination factors (typical for buildings; override for your project as needed).
 _EC_PSI0_DEFAULT: Dict[str, float] = {

@@ -134,9 +134,10 @@ class TestProblemFields(unittest.TestCase):
 
     def test_scalar_multiplication_non_numeric_returns_not_implemented(self):
         with patch("compas_fea2.problem.fields.NodesGroup", new=DummyNodesGroup):
-            f = TemperatureField([10.0], cast(Any, [DummyNode("n")] ))
+            f = TemperatureField([10.0], cast(Any, [DummyNode("n")]))
             self.assertIs(f.__mul__(cast(Any, "a")), NotImplemented)
             self.assertIs(f.__rmul__(cast(Any, "a")), NotImplemented)
+
             # Python
             class TestAdditionalProblemFields(unittest.TestCase):
                 def test_temperature_field_broadcast_single_value(self):
@@ -192,6 +193,7 @@ class TestProblemFields(unittest.TestCase):
                         L = f3.loads[0]
                         self.assertEqual((L.x, L.y, L.z), (3, 0, 0))
                         self.assertEqual(L.amplitude, 5.0)
+
 
 if __name__ == "__main__":
     unittest.main()

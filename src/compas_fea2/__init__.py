@@ -5,6 +5,7 @@ from compas.geometry import Frame
 from contextlib import contextmanager
 from contextvars import ContextVar
 from importlib import import_module
+
 try:
     from importlib.metadata import entry_points
 except Exception:
@@ -12,6 +13,7 @@ except Exception:
 
 # Add logging and plugin discovery constants
 import logging
+
 logger = logging.getLogger(__name__)
 BACKENDS_ENTRYPOINT_GROUP = "compas_fea2.backends"
 _LOADED_ENTRYPOINTS = False
@@ -93,6 +95,7 @@ def implements(*bases):
     def _wrap(cls):
         cls.__implements__ = bases if len(bases) > 1 else bases[0]
         return cls
+
     return _wrap
 
 

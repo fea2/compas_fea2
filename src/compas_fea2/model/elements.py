@@ -377,7 +377,7 @@ class _Element(FEAData, Frameable):
     def mass(self) -> float | None:
         """Return the mass of the element."""
         if self.section and self.section.material and self.volume and self.section.material.density:
-            return [self.volume * self.section.material.density]*6
+            return [self.volume * self.section.material.density] * 6
         return None
 
     @property

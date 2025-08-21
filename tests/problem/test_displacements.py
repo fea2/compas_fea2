@@ -10,7 +10,7 @@ class TestGeneralDisplacement(unittest.TestCase):
         frame = Frame((0, 0, 0), (0, 1, 0), (-1, 0, 0))
         bc = GeneralDisplacement(x=True, y=False, z=False, frame=frame)
         self.assertFalse(bc.X)  # global X not fully restrained
-        self.assertTrue(bc.Y)   # global Y aligned with local x
+        self.assertTrue(bc.Y)  # global Y aligned with local x
         self.assertFalse(bc.Z)
 
     def test_general_displacement_addition_and_frame_mismatch(self):
