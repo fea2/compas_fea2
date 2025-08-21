@@ -24,8 +24,8 @@ class TestLoadFieldsCombination(unittest.TestCase):
         self.assertEqual(comb2.case_factor_dict, comb.case_factor_dict)
 
     def test_combine_fields_scalar(self):
-        ff1 = ForceField(name="force_field_1", loads=[self.v1], nodes=[self.n1], load_case="G")
-        ff2 = ForceField(name="force_field_2", loads=[self.v2], nodes=[self.n2], load_case="Q_IMP")
+        ff1 = ForceField(name="force_field_1", loads=[self.v1], distribution=[self.n1], load_case="G")
+        ff2 = ForceField(name="force_field_2", loads=[self.v2], distribution=[self.n2], load_case="Q_IMP")
         comb = LoadFieldsCombination(case_factor_dict={"G": 1.35, "Q_IMP": 1.5})
         group = comb.combine_fields([ff1, ff2])
         self.assertEqual(len(group), 2)
@@ -64,7 +64,7 @@ class TestLoadFieldsCombination(unittest.TestCase):
             self.assertIsInstance(f["W"], dict)
 
     def test_combine_with_ec_case(self):
-        ff = ForceField(name="force_field", loads=[self.v1], nodes=[self.n1], load_case="Q")
+        ff = ForceField(name="force_field", loads=[self.v1], distribution=[self.n1], load_case="Q")
         # ff.combination_rank = 1
         comb = LoadFieldsCombination.ec_sls_characteristic()
         group = comb.combine_fields([ff])
@@ -88,7 +88,7 @@ class TestLoadFieldsCombination(unittest.TestCase):
         self.assertTrue(any(k in f for k in ("D", "DL", "SDL")))
 
     def test_combine_for_step(self):
-        ff = ForceField(name="force_field", loads=[self.v1], nodes=[self.n1], load_case="X")
+        ff = ForceField(name="force_field", loads=[self.v1], distribution=[self.n1], load_case="X")
         step = StaticStep(name="static_step_1")
         step.add_field(ff)
         comb = LoadFieldsCombination(case_factor_dict={"X": 2.0})

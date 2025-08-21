@@ -96,6 +96,7 @@ class Problem(FEAData):
                 "description": self.description,
                 "path": str(self.path) if self.path else None,
                 "steps": [s.__data__ for s in self._steps] if self._steps else None,
+                "rdb": self.rdb.__data__ if self._rdb else None,
             }
         )
         return base
@@ -110,6 +111,7 @@ class Problem(FEAData):
         problem._path = data.get("path", None)
         for step_data in data.get("steps", []):
             problem.add_step(registry.add_from_data(step_data, duplicate=duplicate))
+        problem._rdb = registry.add_from_data(data.get("rdb"), duplicate=duplicate) if data.get("rdb") else None
         return problem
 
     @property
@@ -131,48 +133,18 @@ class Problem(FEAData):
     def path(self, value: Union[str, Path]):
         """Set the path to the analysis folder where all the files will be saved."""
         self._path = value if isinstance(value, Path) else Path(value)
-        # Keep the results database (if already created) in sync with the new path
-        if self._rdb and hasattr(self._rdb, "db_uri"):
-            self._rdb.db_uri = self.path_db
 
-    @property
-    def path_db(self) -> Optional[Path]:
-        """Path to the SQLite database where the results are stored."""
-        if not self._path:
-            return None
-        return Path(self._path) / f"{self.name}-results.db"
 
     @property
     def rdb(self) -> ResultsDatabase:
         """Return the results database associated with the problem.
         Defaults to the SQLite implementation, cached on first access.
         """
-        # Ensure we have a valid DB path before instantiating
-        if not self.path_db:
+        if not self.path:
             raise ValueError("Problem path is not set. Set Problem.path or run analysis/extraction before accessing the results database.")
-        # (Re)create the DB wrapper if it doesn't exist or if the path changed
-        if self._rdb is None or getattr(self._rdb, "db_uri", None) != self.path_db:
+        if self._rdb is None:
             self._rdb = ResultsDatabase.sqlite(self)
         return self._rdb
-
-    @rdb.setter
-    def rdb(self, value: Union[str, ResultsDatabase]):
-        """Set the results database associated with the problem.
-        Pass one of the available factories on ResultsDatabase, e.g. "sqlite", "hdf5", "json",
-        or provide an already-instantiated ResultsDatabase.
-        """
-        # Accept a ready instance
-        if isinstance(value, ResultsDatabase):
-            self._rdb = value
-            # Ensure the instance has the current db path, if applicable
-            if hasattr(self._rdb, "db_uri"):
-                self._rdb.db_uri = self.path_db
-            return
-        # Accept a factory name
-        if isinstance(value, str) and hasattr(ResultsDatabase, value):
-            self._rdb = getattr(ResultsDatabase, value)(self)
-            return
-        raise ValueError("Invalid ResultsDatabase option")
 
     @property
     def input_file(self) -> InputFile:

@@ -1,23 +1,28 @@
+from typing import Optional
 from typing import TYPE_CHECKING
+
+import logging
+import csv
+from itertools import groupby
+from typing import Iterable
+
+from compas.geometry import Frame
+from compas.geometry import Transformation
+from compas.geometry import Vector
+
+from compas_fea2.base import FEAData
+from compas_fea2.base import from_data
+from compas_fea2.base import Registry
+
+# Use the abstract DB interface to avoid hard-coupling to SQLite
+from .database import ResultsDatabase
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
     from compas_fea2.problem import Problem
     from compas_fea2.problem import _Step
 
-import logging
-from itertools import groupby
-from typing import Iterable
-from compas.geometry import Frame
-from compas.geometry import Transformation
-from compas.geometry import Vector
 
-from compas_fea2.base import FEAData
-
-# Use the abstract DB interface to avoid hard-coupling to SQLite
-from .database import ResultsDatabase
-
-import csv
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +45,7 @@ class FieldResults(FEAData):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
 
     @property
     def sqltable_schema(self):
@@ -80,7 +86,7 @@ class FieldResults(FEAData):
 
     @property
     def problem(self) -> "Problem":
-        if not self.step.problem:
+        if not self.step:
             raise ValueError("The step is not registered to a problem.")
         return self.step.problem
 
@@ -301,7 +307,14 @@ class NodeFieldResults(FieldResults):
         self._results_func = "find_node_by_key"
         self._field_name = None
         self._result_cls = None
+        
 
+    @from_data
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+        """Create a NodeFieldResults instance from data."""
+        return cls()
+    
     @property
     def components_names(self):
         return ["x", "y", "z", "rx", "ry", "rz"]

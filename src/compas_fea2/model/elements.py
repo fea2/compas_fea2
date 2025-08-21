@@ -160,7 +160,7 @@ class _Element(FEAData, Frameable):
                 "ndim": self._ndim,
                 "faces": [face.__data__ for face in self._faces],
                 "edges": [edge.__data__ for edge in self._edges],
-                "face_indices": {face.__data__: indices for face, indices in self._face_indices.items()},
+                "face_indices": self._face_indices,
                 "length": self._length,
             }
         )
@@ -173,9 +173,9 @@ class _Element(FEAData, Frameable):
             registry = Registry()
         node_list = []
         for node_data in data.get("nodes", []):
-            node_list.append(registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate))  # type: ignore[name-defined]
+            node_list.append(registry.add_from_data(node_data, duplicate=duplicate))  # type: ignore[name-defined]
         nodes = node_list
-        section = registry.add_from_data(data.get("section"), "compas_fea2.model.sections", duplicate) if data.get("section") else None  # type: ignore[name-defined]
+        section = registry.add_from_data(data.get("section"), duplicate=duplicate) if data.get("section") else None  # type: ignore[name-defined]
         frame_data = data.get("frame")
         frame: Frame | None = Frame.__from_data__(frame_data) if frame_data else None  # type: ignore[assignment]
         uid_str = data.get("uid")
@@ -199,7 +199,7 @@ class _Element(FEAData, Frameable):
         if rp := data.get("reference_point"):
             element._reference_point = Point.__from_data__(rp)  # type: ignore
         if shape_data := data.get("shape"):
-            element._shape = registry.add_from_data(shape_data, "compas_fea2.model.shapes", duplicate)  # type: ignore[name-defined]
+            element._shape = registry.add_from_data(shape_data, duplicate=duplicate)  # type: ignore[name-defined]
         element._ndim = data.get("ndim", 0)
         element._length = data.get("length", 0.0)
         return element
@@ -916,12 +916,12 @@ class Face(FEAData):
             {
                 "nodes": [node.__data__ for node in self.nodes],
                 "tag": self.tag,
-                "element": self.element.__data__ if self.element else None,
                 "plane": self.plane.__data__ if self.plane else None,
             }
         )
         return data
 
+    @from_data
     @classmethod
     def __from_data__(cls, data: dict, registry: Optional[Registry] = None, duplicate: bool = True) -> "Face":
         if registry is None:
@@ -931,7 +931,7 @@ class Face(FEAData):
             return registry.get(uid)  # type: ignore
         node_list = []
         for node_data in data.get("nodes", []):
-            node_list.append(registry.add_from_data(node_data, "compas_fea2.model.nodes", duplicate))
+            node_list.append(registry.add_from_data(node_data, duplicate=duplicate))
         nodes = node_list
         tag = data.get("tag", "")
         face = cls(nodes=nodes, tag=tag, uid=UUID(uid) if uid else None, name=data.get("name", ""))

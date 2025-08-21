@@ -74,6 +74,15 @@ class _Step(FEAData):
         super(_Step, self).__init__(**kwargs)
         self._field_outputs = set()
         self._history_outputs = set()
+        
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update({
+            "field_outputs": [output.__data__ for output in self._field_outputs],
+            "history_outputs": [output.__data__ for output in self._history_outputs],
+        })
+        return data
 
     @property
     def problem(self) -> "Problem":
@@ -237,8 +246,8 @@ class GeneralStep(_Step):
 
     @property
     def __data__(self):
-        base = super().__data__
-        base.update(
+        data = super().__data__
+        data.update(
             {
                 "fields": [field.__data__ for field in self._fields] if self._fields else None,
                 "combination": self._combination.__data__ if self._combination else None,
@@ -252,7 +261,7 @@ class GeneralStep(_Step):
                 "restart": self._restart,
             }
         )
-        return base
+        return data
 
     @from_data
     @classmethod
@@ -270,8 +279,12 @@ class GeneralStep(_Step):
             restart=data.get("restart", False),
             name=data.get("name"),
         )
-        for field_data in data.get("load_fields", []):
+        for field_data in data.get("fields", []):
             step.add_field(registry.add_from_data(field_data, duplicate=duplicate))
+        for output_data in data.get("field_outputs", []):
+            step.add_field_output(registry.add_from_data(output_data, duplicate=duplicate))
+        for history_data in data.get("history_outputs", []):
+            step._history_outputs.add(registry.add_from_data(history_data, duplicate=duplicate))
         step._combination = registry.add_from_data(data.get("combination"), duplicate=duplicate) if data.get("combination") else None
         return step
 
@@ -304,7 +317,7 @@ class GeneralStep(_Step):
         subgroups = self.effective_fields.group_by(key=lambda f: type(f))
         combined_fields = {}
         for kind, group in subgroups.items():
-            combined_fields[kind] = sum([field for field in group.fields], start=ForceField(name="combined_field", loads=[], nodes=[]))
+            combined_fields[kind] = sum([field for field in group.fields], start=ForceField(name="combined_field", loads=[], distribution=[]))
         return combined_fields
 
     @property
@@ -461,7 +474,7 @@ class GeneralStep(_Step):
             raise TypeError("nodes must be a list, tuple or NodesGroup, not {}".format(type(nodes)))
         nodes = NodesGroup(nodes) if not isinstance(nodes, NodesGroup) else nodes
         load = VectorLoad(x=x, y=y, z=z, xx=xx, yy=yy, zz=zz, amplitude=amplitude)
-        field = ForceField(loads=load, nodes=nodes, load_case=load_case, **kwargs)
+        field = ForceField(loads=load, distribution=nodes, load_case=load_case, **kwargs)
 
         return self.add_field(field)
 
@@ -533,7 +546,7 @@ class GeneralStep(_Step):
 
         return self.add_field(field)
 
-    def add_gravity_fied(self, parts=None, g=9810, x=0.0, y=0.0, z=-1.0, load_case=None, **kwargs):
+    def add_gravity_fied(self, g=9810, x=0.0, y=0.0, z=-1.0, distribution=None, load_case=None, **kwargs):
         """Add a :class:`compas_fea2.problem.GravityLoad` load to the ``Step``
 
         Parameters
@@ -561,10 +574,10 @@ class GeneralStep(_Step):
         model!
         """
         from compas_fea2.problem.fields import GravityLoadField
-        if not self.model:
+        if not self.model and not distribution:
             raise AttributeError("Step is not registered to a Model.")
-        parts = parts or self.model.parts
-        gravity = GravityLoadField(g=g, parts=parts, direction=[x, y, z], load_case=load_case, **kwargs)
+        distribution = distribution or self.model.elements
+        gravity = GravityLoadField(g=g, distribution=distribution, direction=[x, y, z], load_case=load_case, **kwargs)
         self.add_field(gravity)
         return gravity
 

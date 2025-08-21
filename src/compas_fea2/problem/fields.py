@@ -24,9 +24,6 @@ if TYPE_CHECKING:
     from compas_fea2.problem.loads import _Load
     from compas_fea2.problem.steps import _Step
 
-# TODO implement __*__ magic method for combination
-
-
 # --- Base Field classes----------------------------------------------
 class _BaseLoadField(FEAData):
     """Abstract base class for load / boundary condition fields.
@@ -44,10 +41,11 @@ class _BaseLoadField(FEAData):
     **kwargs : dict, optional
         Additional keyword arguments forwarded to :class:`FEAData` (e.g. name).
     """
+
     def __init__(self, *, loads, distribution, load_case: str | None = None, combination_rank: int = 1, **kwargs):
         super().__init__(**kwargs)
         self._loads = loads if isinstance(loads, list) else [loads]
-        if len(self._loads) ==1:
+        if len(self._loads) == 1:
             self._loads = self._loads * len(distribution)
         if len(self._loads) != len(distribution):
             raise ValueError("Number of loads must be 1 or match the number of distribution elements.")
@@ -57,16 +55,41 @@ class _BaseLoadField(FEAData):
         self.combination_rank = combination_rank  # validates via setter
 
     @property
-    def problem(self) -> "_Problem | None":
+    def __data__(self):
+        data = super().__data__
+        data.update(
+            {
+                "loads": [L.__data__ if hasattr(L, "__data__") else L for L in self._loads],
+                "distribution": getattr(self._distribution, "__data__", None),
+                "load_case": self._load_case,
+                "combination_rank": self._combination_rank,
+            }
+        )
+        return data
+
+    @from_data
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+        """Create a _BaseLoadField instance from data."""
+        if registry is None:
+            raise ValueError("Registry is required to create _BaseLoadField from data.")
+        loads = registry.add_from_data(data.get("loads", None), duplicate=duplicate)
+        distribution = registry.add_from_data(data.get("distribution", None), duplicate=duplicate)
+
+        field = cls(loads=loads, distribution=distribution, load_case=data.get("load_case", None), combination_rank=data.get("combination_rank", 1))
+        return field
+
+    @property
+    def problem(self) -> "Problem | None":
         if self._registration:
             return self._registration.problem
-        
+
     @property
     def model(self) -> "Model | None":
         """Model: The model to which this field belongs."""
         if self.problem:
             return self.problem.model
-    
+
     @property
     def load_case(self) -> str | None:
         """str | None: Load case identifier to which this field belongs."""
@@ -87,20 +110,6 @@ class _BaseLoadField(FEAData):
     def distribution(self):
         """Any: Normalised distribution object (e.g. NodesGroup or list of elements)."""
         return self._distribution
-
-    @property
-    def __data__(self):
-        data = super().__data__
-        data.update(
-            {
-                "dtype": self.__class__.__name__,
-                "load_case": self._load_case,
-                "combination_rank": self._combination_rank,
-                "distribution": getattr(self._distribution, "__data__", None),
-                "loads": [L.__data__ if hasattr(L, "__data__") else L for L in self._loads],
-            }
-        )
-        return data
 
     @property
     def combination_rank(self) -> int:
@@ -181,8 +190,12 @@ class _BaseLoadField(FEAData):
         """Create a non-mutated copy of a VectorLoad, preserving local components/frame."""
         frame = src._frame if getattr(src, "has_local_frame", False) and src.has_local_frame else None
         return VectorLoad(
-            x=src.x, y=src.y, z=src.z,
-            xx=src.xx, yy=src.yy, zz=src.zz,
+            x=src.x,
+            y=src.y,
+            z=src.z,
+            xx=src.xx,
+            yy=src.yy,
+            zz=src.zz,
             frame=frame,
             amplitude=src.amplitude if amplitude_override is None else amplitude_override,
         )
@@ -191,6 +204,7 @@ class _BaseLoadField(FEAData):
         for i, n in enumerate(self._distribution):
             if n == location:
                 return self._loads[i]
+
 
 class _NodesLoadField(_BaseLoadField):
     """Field with a node-based distribution.
@@ -215,11 +229,10 @@ class _NodesLoadField(_BaseLoadField):
         of nodes in the distribution.
     """
 
-    def __init__(self, loads, nodes: "Node | Iterable[Node] | NodesGroup", *, load_case: str | None = None, **kwargs):
-        if not isinstance(nodes, NodesGroup):
-            nodes = NodesGroup(nodes)
-        super().__init__(loads=loads, distribution=nodes, load_case=load_case, **kwargs)
-
+    def __init__(self, loads, distribution: "Node | Iterable[Node] | NodesGroup", load_case: str | None = None, combination_rank: int = 1, **kwargs):
+        if not isinstance(distribution, NodesGroup):
+            distribution = NodesGroup(distribution)
+        super().__init__(loads=loads, distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
     @property
     def nodes(self):
@@ -304,8 +317,8 @@ class _ElementsLoadField(_BaseLoadField):
         1 and does not match the number of elements.
     """
 
-    def __init__(self, loads, distribution, *, load_case: str | None = None, **kwargs):
-        super().__init__(loads=loads, distribution=distribution,load_case=load_case, **kwargs)
+    def __init__(self, loads, distribution, *, load_case: str | None = None, combination_rank: int = 1, **kwargs):
+        super().__init__(loads=loads, distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
         if isinstance(distribution, ElementsGroup):
             distribution = distribution
         else:
@@ -373,22 +386,12 @@ class _ElementsLoadField(_BaseLoadField):
             return NotImplemented
         return other.__add__(self * -1)
 
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(_ElementsLoadField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     if registry:
-    #         elements = [registry.get(uid) for uid in data.get("element_uids", []) if registry.get(uid)]  # type: ignore
-    #         obj._distribution = elements
-    #     obj._loads = _rebuild_loads(data.get("loads", []), registry)
-    #     return obj
-
 
 # --- Node Scalar / Vector -----------------------------------------------------
 class _NodeScalarField(_NodesLoadField):
     """Scalar load field over nodes."""
 
-    def __init__(self, scalars, nodes, load_case: str | None = None, *, wrap: bool = False, amplitude=None, **kwargs):
+    def __init__(self, scalars, distribution, load_case: str | None = None, *, wrap: bool = False, amplitude=None, combination_rank: int = 1, **kwargs):
         if not isinstance(scalars, Iterable):
             scalars = [scalars]
         scalars_list = list(scalars)
@@ -400,59 +403,35 @@ class _NodeScalarField(_NodesLoadField):
                 else:
                     wrapped.append(ScalarLoad(scalar_load=s, amplitude=amplitude))
             scalars_list = wrapped
-        super().__init__(loads=scalars_list, nodes=nodes, load_case=load_case, **kwargs)
-
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(_NodeScalarField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     return obj
+        super().__init__(loads=scalars_list, distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
 
 class _NodeVectorField(_NodesLoadField):
     """Vector load field over nodes."""
 
-    def __init__(self, vectors, distribution, load_case: str | None = None, **kwargs):
+    def __init__(self, vectors, distribution, load_case: str | None = None, combination_rank: int = 1, **kwargs):
         if not isinstance(vectors, Iterable):
             vectors = [vectors]
-        super().__init__(loads=list(vectors), nodes=distribution, load_case=load_case, **kwargs)
-
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(_NodeVectorField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     return obj
+        super().__init__(loads=list(vectors), distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
 
 # --- Element Scalar / Vector --------------------------------------------------
 class _ElementScalarField(_ElementsLoadField):
     """Scalar load field over elements."""
 
-    def __init__(self, scalars, distribution, load_case: str | None = None, **kwargs):
+    def __init__(self, scalars, distribution, load_case: str | None = None, combination_rank: int = 1, **kwargs):
         if not isinstance(scalars, Iterable):
             scalars = [scalars]
-        super().__init__(loads=list(scalars), distribution=distribution, load_case=load_case, **kwargs)
-
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(_ElementScalarField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     return obj
+        super().__init__(loads=list(scalars), distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
 
 class _ElementVectorField(_ElementsLoadField):
     """Vector load field over elements."""
 
-    def __init__(self, vectors, distribution, load_case: str | None = None, **kwargs):
+    def __init__(self, vectors, distribution, load_case: str | None = None, combination_rank: int = 1, **kwargs):
         if not isinstance(vectors, Iterable) or isinstance(vectors, (str, bytes)):
             vectors = [vectors]
-        super().__init__(loads=list(vectors), distribution=distribution, load_case=load_case, **kwargs)
-
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(_ElementVectorField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     return obj
+        super().__init__(loads=list(vectors), distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
 
 # --- Users Fields -------------------------------------------------
@@ -467,14 +446,9 @@ class DisplacementField(_NodeVectorField):
     combination_rank : int, optional
         1=primary, 2=secondary, 3=tertiary. Defaults to 1.
     """
-    def __init__(self, displacements: Iterable["GeneralDisplacement"], nodes: Iterable["Node"], load_case=None, **kwargs):
-        super().__init__(vectors=displacements, distribution=nodes, load_case=load_case, **kwargs)
 
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(DisplacementField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     return obj
+    def __init__(self, displacements: Iterable["GeneralDisplacement"], distribution: Iterable["Node"], load_case=None, combination_rank: int = 1, **kwargs):
+        super().__init__(vectors=displacements, distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
     @property
     def displacements(self):
@@ -496,30 +470,25 @@ class ForceField(_NodeVectorField):
     combination_rank : int, optional
         1=primary, 2=secondary, 3=tertiary. Defaults to 1.
     """
-    def __init__(self, loads: Iterable["VectorLoad"], nodes: Iterable["Node"], load_case: str | None = None, **kwargs):
-        super().__init__(vectors=loads, distribution=nodes, load_case=load_case, **kwargs)
 
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(ForceField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     return obj
+    def __init__(self, loads: Iterable["VectorLoad"], distribution: Iterable["Node"], load_case: str | None = None, combination_rank: int = 1, **kwargs):
+        super().__init__(vectors=loads, distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
     @property
     def node_load(self):
         return zip(self._distribution, self._loads)
 
     @classmethod
-    def from_points_and_loads(cls, loads: Iterable["VectorLoad"], points: Iterable["Point"], model, load_case: str | None = None, **kwargs):
+    def from_points_and_loads(cls, loads: Iterable["VectorLoad"], points: Iterable["Point"], model, load_case: str | None = None, combination_rank: int = 1, **kwargs):
         nodes = []
         for pt in points:
             n = model.find_closest_node_to_point(pt, single=True)
             nodes.append(n)
-        return cls(loads=loads, nodes=nodes, load_case=load_case, **kwargs)
+        return cls(loads=loads, distribution=nodes, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
 
 class UniformSurfaceLoadField(_NodeVectorField):
-    def __init__(self, load: float, surface: "FacesGroup", direction: list[float] | None = None, **kwargs):
+    def __init__(self, load: float, surface: "FacesGroup", direction: list[float] | None = None, load_case: str | None = None, combination_rank: int = 1, **kwargs):
         from compas_fea2.problem.loads import VectorLoad
 
         distribution = surface.nodes
@@ -529,7 +498,7 @@ class UniformSurfaceLoadField(_NodeVectorField):
         share = area / len(distribution) if distribution else 0.0
         components = [i * load * share for i in direction]
         loads = [VectorLoad(*components, amplitude=amplitude) for _ in distribution]
-        super().__init__(loads=loads, nodes=distribution, **kwargs)
+        super().__init__(loads=loads, nodes=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
         self._surface = surface
         self._direction = direction
         self._load_value = load
@@ -546,11 +515,13 @@ class UniformSurfaceLoadField(_NodeVectorField):
         )
         return data
 
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-
-    #     return obj
+    @from_data
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+        """Create a UniformSurfaceLoadField instance from data."""
+        if registry is None:
+            raise ValueError("Registry is required to create UniformSurfaceLoadField from data.")
+        raise NotImplementedError("UniformSurfaceLoadField.__from_data__ is not implemented yet.")
 
     @property
     def surface(self):
@@ -572,69 +543,57 @@ class GravityLoadField(_ElementVectorField):
     ----------
     g : float
     direction : tuple[float, float, float]
-    parts : Iterable[Any] | None
     nodes : Iterable[Node] | None
     load_case : str | None
     combination_rank : int, optional
         Typically 1 for permanent, unless you want to force a different rank.
     """
-    def __init__(self, g=9.81, direction=(0, 0, -1), parts=None, load_case=None, **kwargs):
+
+    def __init__(self, g=9.81, direction=(0, 0, -1), distribution=None, load_case=None, combination_rank: int = 1, **kwargs):
         from compas_fea2.problem.loads import VectorLoad
 
         self._g = g
         self._direction = direction
-        self._parts = parts
         components: List[float] = [g * v for v in direction]
         loads = []
-        nodes_list=[]
-        for part in parts:
-            for element in part.elements:
-                nodes_list.append(element)
-                force_components = [element.mass[i] * components[i] for i in range(len(components))]
-                loads.append(VectorLoad(*force_components, load_case=load_case))
-        
-        super().__init__(vectors=loads, distribution=nodes_list, load_case=load_case, **kwargs)
+        for element in distribution:
+            force_components = [element.mass[i] * components[i] for i in range(len(components))]
+            loads.append(VectorLoad(*force_components, load_case=load_case))
+
+        super().__init__(vectors=loads, distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
+
+    @property
+    def __data__(self):
+        data = super().__data__
+        data.update({"g": self._g, "direction": self._direction})
+        return data
+
+    @from_data
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+        """Create a GravityLoadField instance from data."""
+        if registry is None:
+            raise ValueError("Registry is required to create _BaseLoadField from data.")
+        g = data.get("g")
+        direction = data.get("direction")
+        distribution = registry.add_from_data(data.get("distribution", None), duplicate=duplicate)
+        field = cls(g=g, direction=direction, distribution=distribution, load_case=data.get("load_case", None), combination_rank=data.get("combination_rank", 1))
+        return field
 
     @property
     def g(self):
         """float: Gravitational acceleration (default 9.81 m/s²)."""
         return self._g
-    
+
     @property
     def direction(self):
         """tuple[float, float, float]: Direction of the gravity load vector."""
         return self._direction
-    
-    @property
-    def __data__(self):
-        data = super().__data__
-        data.update({"g": self._g, "direction": list(self._direction)})
-        return data
-    
+
     @property
     def parts(self):
         """Iterable[Any]: Parts over which the gravity load is distributed."""
         return self._parts
-
-
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(GravityLoadField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     obj._g = data.get("g", 9.81)
-    #     obj._direction = tuple(data.get("direction", (0, 0, -1)))
-    #     # Recompute loads if distribution present & nodes available
-    #     if obj._distribution and all(hasattr(n, 'mass') for n in obj._distribution):
-    #         components = [obj._g * v for v in obj._direction]
-    #         new_loads = []
-    #         for n in obj._distribution:
-    #             try:
-    #                 force_components = [n.mass[i] * components[i] for i in range(len(components))]
-    #                 new_loads.append(VectorLoad(*force_components, name='gravity_load', load_case=obj._load_case))
-    #             except Exception:
-    #                 new_loads.append(0.0)
-    #         obj._loads = new_loads
-    #     return obj
 
 
 class TemperatureField(_NodeScalarField):
@@ -648,14 +607,14 @@ class TemperatureField(_NodeScalarField):
     combination_rank : int, optional
         1=primary, 2=secondary, 3=tertiary. Defaults to 1.
     """
-    def __init__(self, temperature: float | Iterable[float], nodes: Iterable["Node"], **kwargs):
-        super().__init__(scalars=temperature, nodes=nodes, wrap=False, **kwargs)
 
-    # @from_data
-    # @classmethod
-    # def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
-    #     obj = super(TemperatureField, cls).__from_data__(data, registry=registry, duplicate=duplicate)  # type: ignore
-    #     return obj
+    def __init__(self, temperature: float | Iterable[float], distribution: Iterable["Node"], load_case: str | None = None, combination_rank: int = 1, **kwargs):
+        super().__init__(scalars=temperature, distribution=distribution, wrap=False, load_case=load_case, combination_rank=combination_rank, **kwargs)
+
+    @from_data
+    @classmethod
+    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
+        raise NotImplementedError("TemperatureField.__from_data__ is not implemented yet.")
 
     @property
     def temperatures(self):

@@ -1,8 +1,11 @@
+from typing import Optional
+
 import sqlite3
 from pathlib import Path
 
 from compas_fea2.base import FEAData
-
+from compas_fea2.base import from_data
+from compas_fea2.base import Registry
 
 class ResultsDatabase(FEAData):
     """Base class for results databases.
@@ -216,12 +219,32 @@ class SQLiteResultsDatabase(ResultsDatabase):
 
     def __init__(self, problem, **kwargs):
         super().__init__(problem=problem, **kwargs)
-
-        self.db_uri = problem.path_db
-        # Defer opening connections; open per-operation for robustness
-        self.connection = None
-        self.cursor = None
-
+        
+    @property
+    def db_uri(self):
+        """Return the database URI."""
+        return self.problem.path / f"{self.name}-results.db"
+    
+    @property
+    def __data__(self):
+        """Return the data representation of the SQLiteResultsDatabase."""
+        base = super().__data__
+        base.update(
+            {
+                "problem": self.problem.__data__,
+            }
+        )
+        return base
+    
+    @from_data
+    @classmethod
+    def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate=True) -> "Problem":
+        if not registry:
+            raise ValueError("A registry is required to create a Part from data.")
+        problem = registry.add_from_data(data.get('problem'), duplicate=duplicate)
+        db = cls(problem)
+        return db
+    
     def db_connection(self):
         """
         Create and return a connection to the SQLite database.
@@ -231,19 +254,10 @@ class SQLiteResultsDatabase(ResultsDatabase):
         sqlite3.Connection
             The database connection.
         """
-        uri = self.db_uri
-        try:
-            if isinstance(uri, Path):
-                uri = str(uri)
-        except Exception:
-            pass
-        if not isinstance(uri, str):
-            uri = str(uri)
-        if not uri.endswith(".db"):
-            uri = uri + ".db"
         if not self.problem.path:
             raise ValueError("Problem path is not set. Please provide a valid problem path.")
-        return sqlite3.connect(uri)
+        # print(f"Connecting to database at {self.db_uri}")
+        return sqlite3.connect(self.db_uri)
 
     def execute_query(self, query, params=None):
         """
