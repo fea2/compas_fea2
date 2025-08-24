@@ -165,12 +165,12 @@ class _Part(FEAData):
         part._ndm = data.get("ndm")
         part._ndf = data.get("ndf")
 
-        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry) if data["nodes"] else None  # type: ignore
+        nodes = NodesGroup.__from_data__(data["nodes"], registry=registry, duplicate=duplicate) if data["nodes"] else None  # type: ignore
         if nodes:
             part.add_nodes(nodes)
             part._nodes._uid = data.get("nodes", {}).get("uid", None)  # change the uid of the nodes group
 
-        elements = ElementsGroup.__from_data__(data["elements"], registry=registry) if data["elements"] else None  # type: ignore
+        elements = ElementsGroup.__from_data__(data["elements"], registry=registry, duplicate=duplicate) if data["elements"] else None  # type: ignore
         if elements:
             part.add_elements(elements)  # type: ignore
             part._elements._uid = data.get("elements", {}).get("uid", None)  # change the uid of the nodes group
@@ -330,8 +330,17 @@ class _Part(FEAData):
     @classmethod
     def from_gmsh(cls, section, **kwargs):
         """
-        Creates a 'lightweight' Part from Gmsh using direct group assignment.
-        The connectivity graph is built separately on-demand.
+        Creates a Part from Ggmsh.
+        
+        Parameters
+        ----------
+        section : Union[SolidSection, ShellSection]
+            The section type (`SolidSection` or `ShellSection`).
+            
+        Returns
+        -------
+        _Part
+            The part.
         """
         print("-> Starting gmsh convertion to compas_fea2 Part...")
         import gmsh
@@ -576,7 +585,8 @@ class _Part(FEAData):
                 exit()
 
             gmsh.model.occ.synchronize()
-            print("Healing the geometry...")
+            if compas_fea2.VERBOSE:
+                print("Healing the geometry...")
             healing_tolerance = 1
             gmsh.model.occ.healShapes(tolerance=healing_tolerance)
             gmsh.model.occ.synchronize()
@@ -635,16 +645,6 @@ class _Part(FEAData):
     # =========================================================================
     #                       Properties
     # =========================================================================
-    @property
-    def registration(self) -> Optional["Model"]:
-        """Get the object where this object is registered to."""
-        return self._registration
-
-    @registration.setter
-    def registration(self, value: "Model") -> None:
-        """Set the object where this object is registered to."""
-        self._registration = value
-
     @property
     def graph(self):
         """The connectivity graph of the part."""
@@ -898,6 +898,7 @@ class _Part(FEAData):
                 self._volume += element.volume
         return self._volume
 
+    # FIXME: this should be mass?
     @property
     def weight(self) -> float:
         """The total weight of the part."""

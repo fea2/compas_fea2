@@ -226,7 +226,7 @@ class SQLiteResultsDatabase(ResultsDatabase):
     @property
     def db_uri(self):
         """Return the database URI."""
-        return self.problem.path / f"{self.name}-results.db"
+        return self.problem.path / f"{self.problem.name}-results.db"
 
     @property
     def __data__(self):
@@ -241,7 +241,7 @@ class SQLiteResultsDatabase(ResultsDatabase):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate=True) -> "Problem":
+    def __from_data__(cls, data, registry: Optional["Registry"] = None, duplicate=True) -> "SQLiteResultsDatabase":
         if not registry:
             raise ValueError("A registry is required to create a Part from data.")
         problem = registry.add_from_data(data.get("problem"), duplicate=duplicate)

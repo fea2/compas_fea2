@@ -217,6 +217,10 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         """Generate the job data for the backend-specific input file."""
         raise NotImplementedError("This function is not available in the selected plugin.")
 
+    # ==========================================================================
+    # Copy and Serialization
+    # ==========================================================================
+    
     @property
     def __data__(self) -> Dict[str, Union[Any, List[Any]]]:
         """Return the minimum data representation of the object."""
@@ -231,13 +235,8 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             "uid": str(self._uid),
             "key": self._key,
             "registration": registration_data,
+            "module": self.__class__.__module__,
         }
-        base.update(
-            {
-                "module": self.__class__.__module__,
-                "class": self.__class__.__name__,
-            }
-        )
         return base
 
     @from_data
@@ -283,12 +282,8 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             If the data in the file is not a :class:`compas.data.Data`.
 
         """
-        registry = Registry()
-        return cls.__from_data__(compas.json_load(filepath), registry)  # type: ignore[return-value, no-any-return]
-
-    # ==========================================================================
-    # Copy and Serialization
-    # ==========================================================================
+        print(f"Loading {cls.__name__} from {filepath}")
+        return cls.__from_data__(compas.json_load(filepath))  # type: ignore[return-value, no-any-return]
 
     def copy(self, duplicate: bool = False):
         """
@@ -320,21 +315,15 @@ class FEAData(Data, metaclass=DimensionlessMeta):
             raise RuntimeError(f"Failed to copy object: {e}")
         return obj
 
-    def to_json(self, filepath: str, pretty: bool = False, compact: bool = False, minimal: bool = False) -> None:
+    def to_json(self, filepath: str) -> None:
         """Convert an object to its native data representation and save it to a JSON file.
 
         Parameters
         ----------
         filepath : str
             The path to the JSON file.
-        pretty : bool, optional
-            If True, format the output with newlines and indentation.
-        compact : bool, optional
-            If True, format the output without any whitespace.
-        minimal : bool, optional
-            If True, exclude the GUID from the JSON output.
-
         """
+        print(f"Saving {self.__class__.__name__} to {filepath}")
         json.dump(self.__data__, open(filepath, "w"), indent=4)
 
 

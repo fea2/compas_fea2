@@ -148,7 +148,6 @@ class Node(FEAData):
         )
         node._on_boundary = data.get("on_boundary")
         node._is_reference = data.get("is_reference")
-        # node._connected_elements = set(registry.add_from_data(elem_data, "compas_fea2.model.elements", duplicate=duplicate) for elem_data in data.get("connected_elements", []))  # type: ignore
         return node
 
     @classmethod
