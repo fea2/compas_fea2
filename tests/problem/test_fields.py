@@ -22,7 +22,6 @@ class DummyNode:
         return hash(self.name)
 
 
-# Lightweight stand-in for NodesGroup to satisfy isinstance checks in fields.py
 class DummyNodesGroup(list):
     def __init__(self, it):
         super().__init__(it)

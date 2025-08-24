@@ -100,6 +100,38 @@ class PartPartInterface(_Interface):
 
     def __init__(self, master, slave, behavior, **kwargs):
         super().__init__(master=master, slave=slave, behavior=behavior, **kwargs)
+        
+    @classmethod
+    def from_parts_and_plane(cls, part_master, part_slave, plane, behavior, **kwargs):
+        """Create a PartPartInterface from two parts and a plane that separates them.
+
+        Parameters
+        ----------
+        part_master : :class:`compas_fea2.model.Part`
+            The part that will be assigned as master.
+        part_slave : :class:`compas_fea2.model.Part`
+            The part that will be assigned as slave.
+        plane : :class:`compas.geometry.Plane`
+            The plane that separates the two parts. The normal of the plane
+            should point from the master to the slave.
+        behavior : :class:`compas_fea2.model._Interaction`
+            behavior type between master and slave.
+        """
+        from compas_fea2.model import FacesGroup
+
+        tol = 1e-3
+        master_faces = part_master.find_faces_on_plane(plane, tol=tol)
+        slave_faces = part_slave.find_faces_on_plane(plane, tol=tol)
+
+        if not master_faces:
+            raise ValueError(f"No faces found on master part '{part_master.name}' for the given plane.")
+        if not slave_faces:
+            raise ValueError(f"No faces found on slave part '{part_slave.name}' for the given plane.")
+
+        master_fg = FacesGroup(master_faces, name=f"{part_master.name}_to_{part_slave.name}_master", part=part_master)
+        slave_fg = FacesGroup(slave_faces, name=f"{part_master.name}_to_{part_slave.name}_slave", part=part_slave)
+
+        return cls(master=master_fg, slave=slave_fg, behavior=behavior, **kwargs)
 
 
 class BoundaryInterface(_Interface):

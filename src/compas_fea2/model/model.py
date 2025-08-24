@@ -292,7 +292,7 @@ class Model(FEAData):
     @property
     def materials(self) -> "MaterialsGroup":
         """Return a set of all materials in the model."""
-        return MaterialsGroup(members=[k for k in self.elements.group_by(lambda x: x.material).keys()], name="ALL_MATERIALS")
+        return MaterialsGroup(members=set(self.elements.group_by(lambda x: x.material).keys()), name="ALL_MATERIALS")
 
     @property
     def part_materials(self) -> "Dict[_Part, Set[_Material]]":
@@ -302,7 +302,7 @@ class Model(FEAData):
     @property
     def sections(self) -> "SectionsGroup":
         """Return a set of all sections in the model."""
-        return SectionsGroup(members=[k for k in self.elements.group_by(key=lambda x: x.section).keys()], name="ALL_SECTIONS")
+        return SectionsGroup(members= set(self.elements.group_by(key=lambda x: x.section).keys()), name="ALL_SECTIONS")
 
     @property
     def part_sections(self) -> "Dict[_Part, Set[_Section]]":
@@ -588,7 +588,7 @@ class Model(FEAData):
             The new, copied part.
 
         """
-        new_part = part.copy()
+        new_part = part.copy(duplicate=False)
         new_part.transform(transformation)
         return self.add_part(new_part)
 
