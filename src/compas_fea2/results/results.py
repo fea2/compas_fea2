@@ -29,7 +29,7 @@ class Result(FEAData):
     _invariants_names = []  # names of the invariants
 
     def __init__(self, **kwargs):
-        super(Result, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._field_name = self.__class__._field_name
         self._results_func = self.__class__._results_func
         self._results_func_output = self.__class__._results_func_output
@@ -140,7 +140,7 @@ class NodeResult(Result):
     """
 
     def __init__(self, node, x=None, y=None, z=None, xx=None, yy=None, zz=None, **kwargs):
-        super(NodeResult, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._registration = node
         self._x = x
         self._y = y
@@ -250,7 +250,7 @@ class DisplacementResult(NodeResult):
     _invariants_names = ["magnitude"]
 
     def __init__(self, node, x=0.0, y=0.0, z=0.0, xx=0.0, yy=0.0, zz=0.0, **kwargs):
-        super(DisplacementResult, self).__init__(node, x, y, z, xx, yy, zz, **kwargs)
+        super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
 
 
 class AccelerationResult(NodeResult):
@@ -304,7 +304,7 @@ class AccelerationResult(NodeResult):
     _invariants_names = ["magnitude"]
 
     def __init__(self, node, x=0.0, y=0.0, z=0.0, xx=0.0, yy=0.0, zz=0.0, **kwargs):
-        super(AccelerationResult, self).__init__(node, x, y, z, xx, yy, zz, **kwargs)
+        super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
 
 
 class VelocityResult(NodeResult):
@@ -359,7 +359,7 @@ class VelocityResult(NodeResult):
     _invariants_names = ["magnitude"]
 
     def __init__(self, node, x=0.0, y=0.0, z=0.0, xx=0.0, yy=0.0, zz=0.0, **kwargs):
-        super(VelocityResult, self).__init__(node, x, y, z, xx, yy, zz, **kwargs)
+        super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
 
 
 class ReactionResult(NodeResult):
@@ -409,8 +409,44 @@ class ReactionResult(NodeResult):
     _invariants_names = ["magnitude"]
 
     def __init__(self, node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
-        super(ReactionResult, self).__init__(node, x, y, z, xx, yy, zz, **kwargs)
+        super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
 
+class ContactForcesResult(NodeResult):
+    """ContactForcesResult object.
+
+    Parameters
+    ----------
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    cf1 : float
+        The x component of the contact force vector.
+    cf2 : float
+        The y component of the contact force vector.
+    cf3 : float
+        The z component of the contact force vector.
+
+    Attributes
+    ----------
+    location : :class:`compas_fea2.model.Node`
+        The location of the result.
+    node : :class:`compas_fea2.model.Node`
+        The location of the result.
+    components : dict
+
+        A dictionary with {"component name": component value} for each component of the result.
+    invariants : dict
+        A dictionary with {"invariant name": invariant value} for each invariant of the result.
+    cf1 : float
+        The x component of the contact force vector. 
+    """
+    _field_name = "cf"
+    _results_func = "find_node_by_key"
+    _results_func_output = "find_node_by_inputkey"
+    _components_names = ["x", "y", "z", "xx", "yy", "zz"]
+    _invariants_names = ["magnitude"]
+
+    def __init__(self, node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
+        super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
 
 class TemperatureResult(NodeResult):
     """TemperatureResult object.
@@ -464,7 +500,7 @@ class ElementResult(Result):
     """Element1DResult object."""
 
     def __init__(self, element, **kwargs):
-        super(ElementResult, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._registration = element
 
     @property
@@ -528,7 +564,7 @@ class SectionForcesResult(ElementResult):
     _invariants_names = ["magnitude"]
 
     def __init__(self, element, Fx_1=0, Fy_1=0, Fz_1=0, Mx_1=0, My_1=0, Mz_1=0, Fx_2=0, Fy_2=0, Fz_2=0, Mx_2=0, My_2=0, Mz_2=0, **kwargs):
-        super(SectionForcesResult, self).__init__(element, **kwargs)
+        super().__init__(element, **kwargs)
         self._Fx_1 = Fx_1
         self._Fy_1 = Fy_1
         self._Fz_1 = Fz_1
@@ -1332,7 +1368,7 @@ class StressResult(ElementResult):
 
 class MembraneStressResult(StressResult):
     def __init__(self, element, s11=0, s12=0, s22=0, **kwargs):
-        super(MembraneStressResult, self).__init__(element, s11=s11, s12=s12, s13=0, s22=s22, s23=0, s33=0, **kwargs)
+        super().__init__(element, s11=s11, s12=s12, s13=0, s22=s22, s23=0, s33=0, **kwargs)
         self._title = "s2d"
 
 
@@ -1366,7 +1402,7 @@ class ShellStressResult(Result):
     _invariants_names = ["magnitude"]
 
     def __init__(self, element, s11=0, s22=0, s12=0, sb11=0, sb22=0, sb12=0, tq1=0, tq2=0, **kwargs):
-        super(ShellStressResult, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._s11 = s11
         self._s22 = s22
         self._s12 = s12
@@ -1440,7 +1476,7 @@ class ShellStressResult(Result):
 # TODO: double inheritance StressResult and Element3DResult
 class SolidStressResult(StressResult):
     def __init__(self, element, s11, s12, s13, s22, s23, s33, **kwargs):
-        super(SolidStressResult, self).__init__(element=element, s11=s11, s12=s12, s13=s13, s22=s22, s23=s23, s33=s33, **kwargs)
+        super().__init__(element=element, s11=s11, s12=s12, s13=s13, s22=s22, s23=s23, s33=s33, **kwargs)
         self._title = "s3d"
 
 

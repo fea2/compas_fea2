@@ -89,6 +89,10 @@ def from_data(method=None, *, duplicate=True, register: bool = True):
             if duplicate:
                 setattr(obj, "_uid", uuid.UUID(uid) if uid else None)
                 setattr(obj, "_name", data.get("name", None))
+            else:
+                name = data.get("name", None)
+                if name:
+                    setattr(obj, "_name", name + "_c")
             # Register
             if register and uid:
                 registry.add(uid, obj)

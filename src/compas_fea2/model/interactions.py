@@ -195,10 +195,6 @@ class HardContactFrictionPenalty(Contact):
     def tol(self):
         return self._tol
 
-    @tol.setter
-    def tol(self, value):
-        self._tol = value
-
 
 class LinearContactFrictionPenalty(Contact):
     """Contact interaction property with linear softnening and friction using a

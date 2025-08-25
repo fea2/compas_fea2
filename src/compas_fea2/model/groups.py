@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from compas_fea2.model.parts import _Part
     from compas_fea2.model.releases import _BeamEndRelease
     from compas_fea2.model.sections import _Section
+    from compas.datastructures import Mesh
 
 
 # Define a generic type for members of _Group
@@ -578,6 +579,55 @@ class FacesGroup(_Group["Face"]):
             avg_normal = [sum(components) / len(normals) for components in zip(*normals)]
             return normalize_vector(avg_normal)
         raise AttributeError("Could not calculate the average normal vector, no faces in the group.")
+    
+    @property
+    def centroid(self) -> List[float]:
+        """Calculate the centroid of the faces in the group."""
+        from compas.geometry import centroid_points
+
+        all_face_centroids = [face.centroid for face in self.faces]
+        if all_face_centroids:
+            return centroid_points(all_face_centroids)
+        raise AttributeError("Could not calculate the centroid, no faces in the group.")
+    
+    @property
+    def mesh(self) -> "Mesh":
+        """Return a COMPAS mesh representing the faces in the group."""
+        from compas.datastructures import Mesh
+        from compas_fea2.model.elements import Face
+
+        vertices = []
+        faces = []
+        vertex_index = {}
+        index = 0
+
+        for face in self.faces:
+            if not isinstance(face, Face):
+                raise TypeError("All members must be of type Face to create a mesh.")
+            face_vertex_indices = []
+            for node in face.nodes:
+                if node.key not in vertex_index:
+                    vertex_index[node.key] = index
+                    vertices.append(node.xyz)
+                    index += 1
+                face_vertex_indices.append(vertex_index[node.key])
+            faces.append(face_vertex_indices)
+
+        return Mesh.from_vertices_and_faces(vertices, faces)
+    
+    @property
+    def boundary(self):
+        from compas.geometry import Polygon
+        pts = []
+        vertices = []
+        for e in self.mesh.edges_on_boundary():
+            for v in e:
+                if v not in vertices:
+                    vertices.append(v)
+                    pts.append(self.mesh.vertex_coordinates(v))
+        
+        return Polygon(pts)
+            
 
 
 class PartsGroup(_Group["_Part"]):
