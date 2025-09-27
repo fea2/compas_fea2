@@ -21,6 +21,7 @@ from compas.geometry import Transformation
 from compas.geometry import Vector
 
 import compas_fea2
+from .registration import _IMPLS
 from compas_fea2.config import settings
 
 from .utilities._devtools import normalize_string
@@ -139,7 +140,7 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         """Try to get the backend plug-in implementation, otherwise use the base
         one.
         """
-        imp = compas_fea2._get_backend_implementation(cls)
+        imp = _IMPLS.get(cls)
         if not imp:
             return super(FEAData, cls).__new__(cls)  # type: ignore
         return super(FEAData, imp).__new__(imp)  # type: ignore

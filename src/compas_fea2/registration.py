@@ -1,58 +1,39 @@
-"""Backend registration for compas_fea2 (minimal, single-backend).
+"""Backend registration for compas_fea2.
 
 - Entry point group: "compas_fea2.backends".
-- Plugins expose an entry-point callable that either:
-  1) accepts a register function and calls it with {BaseClass: ImplClass}, or
-  2) returns that mapping directly.
-- set_backend(name) locates the entry point by name and activates it by replacing the registry.
+- Plugins expose an entry-point callable that returns a mapping `{BaseClass: ImplClass}`.
+- `set_backend(name)` locates the entry point by name and activates it by replacing the registry IMPLS.
 """
 
-BACKENDS_ENTRYPOINT_GROUP = "compas_fea2.backends"
-_IMPLS = {}
+from importlib.metadata import entry_points
+from typing import Dict, Mapping, Type
 
+_IMPLS: Dict[Type, Type] = {}  # Mapping of base classes to active implementation classes
 
-def register_backend(mapping, *, backend_name=None):
+def _register_backend(mapping: Mapping[Type, Type]):
     """Install the given mapping as the single active backend."""
     _IMPLS.clear()
-    _IMPLS.update(mapping)
+    _IMPLS.update(dict(mapping))
 
 
 def set_backend(plugin):
     """Activate a backend by its entry-point name."""
-    from importlib.metadata import entry_points
 
-    eps = list(entry_points(group=BACKENDS_ENTRYPOINT_GROUP)) if entry_points else []
+    if _IMPLS:
+        raise RuntimeError("A backend is already active; switching backends at runtime is not allowed.")
 
-    def name_of(ep):
-        return getattr(ep, "name", None) or getattr(ep, "key", None)
-
-    match = next((ep for ep in eps if name_of(ep) == plugin), None)
+    eps = entry_points(group="compas_fea2.backends")
+    epmap = {getattr(e, "name", None) or getattr(e, "key", None): e for e in eps}
+    match = epmap.get(plugin)
     if not match:
-        available = [name_of(e) for e in eps]
-        raise RuntimeError(f"Backend entry point '{plugin}' not found. Available: {available}")
-
+        raise RuntimeError(f"Backend entry point '{plugin}' not found. Available: {list(epmap)}")
     loader = match.load()
-
-    try:
-        result = loader(register_backend)
-    except TypeError:
-        result = loader()
-
-    if isinstance(result, dict):
-        register_backend(result)
-    elif not _IMPLS:
-        raise RuntimeError(
-            f"Backend loader '{plugin}' did not return a mapping or register anything.")
+    result = loader()
+    if not isinstance(result, dict):
+        raise RuntimeError(f"Backend loader '{plugin}' must return a mapping {{BaseClass: ImplClass}}.")
+    _register_backend(result)
 
 
-def _get_backend_implementation(base):
-    """Return the implementation class for the given base type, or None."""
-    return _IMPLS.get(base)
+def list_backends() -> list[str]:
+    return [getattr(e, "name", None) or getattr(e, "key", None) for e in entry_points(group="compas_fea2.backends")]
 
-
-__all__ = [
-    "BACKENDS_ENTRYPOINT_GROUP",
-    "register_backend",
-    "set_backend",
-    "_get_backend_implementation",
-]
