@@ -22,8 +22,8 @@ from compas.geometry import Vector
 
 import compas_fea2
 
-from .utilities._utils import normalize_string
-from .utilities._utils import to_dimensionless
+from .utilities._devtools import normalize_string
+from .utilities._devtools import to_dimensionless
 
 if TYPE_CHECKING:
     from pathlib import Path

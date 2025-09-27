@@ -44,8 +44,8 @@ from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import Part
 from compas_fea2.model.parts import RigidPart
 from compas_fea2.model.parts import _Part
-from compas_fea2.utilities._utils import get_docstring
-from compas_fea2.utilities._utils import part_method
+from compas_fea2.utilities._devtools import get_docstring
+from compas_fea2.utilities._devtools import part_method
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -496,7 +496,7 @@ class Model(FEAData):
         :class:`compas_fea2.model.Part`
 
         """
-        from compas_fea2.utilities._utils import normalize_string
+        from compas_fea2.utilities._devtools import normalize_string
 
         name = normalize_string(name)
         for part in self.parts:
