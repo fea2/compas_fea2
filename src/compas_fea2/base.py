@@ -21,6 +21,7 @@ from compas.geometry import Transformation
 from compas.geometry import Vector
 
 import compas_fea2
+from compas_fea2.config import settings
 
 from .utilities._devtools import normalize_string
 from .utilities._devtools import to_dimensionless
@@ -404,10 +405,7 @@ class Frameable:
     @property
     def frame(self) -> Frame:
         """Get the local frame of the object."""
-        # Local import to avoid circular import at module load.
-        import compas_fea2  # type: ignore
-
-        return self._frame or compas_fea2.GLOBAL_FRAME
+        return self._frame or settings.GLOBAL_FRAME
 
     @frame.setter
     def frame(self, value: Frame | None):
@@ -431,7 +429,7 @@ class Frameable:
 
         import compas_fea2  # type: ignore
 
-        T = Transformation.from_frame_to_frame(self.frame, compas_fea2.GLOBAL_FRAME)
+        T = Transformation.from_frame_to_frame(self.frame, settings.GLOBAL_FRAME)
         # Extract rotation part and compare to identity.
         for i in range(3):
             for j in range(3):
@@ -449,13 +447,13 @@ class Frameable:
         """Get the transformation from local frame to global frame."""
         import compas_fea2  # type: ignore
 
-        return Transformation.from_frame_to_frame(self.frame, compas_fea2.GLOBAL_FRAME)
+        return Transformation.from_frame_to_frame(self.frame, settings.GLOBAL_FRAME)
 
     def _T_global_to_local(self) -> Transformation:
         """Get the transformation from global frame to local frame."""
         import compas_fea2  # type: ignore
 
-        return Transformation.from_frame_to_frame(compas_fea2.GLOBAL_FRAME, self.frame)
+        return Transformation.from_frame_to_frame(settings.GLOBAL_FRAME, self.frame)
 
     def to_local_point(self, pt: Point) -> Point:
         """Convert a global point to the local frame."""

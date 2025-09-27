@@ -1,9 +1,10 @@
 import unittest
 from compas.geometry import Frame, Vector, Point
-from compas_fea2 import GLOBAL_FRAME
+from compas_fea2.config import settings
 from compas_fea2.model.elements import BeamElement, ShellElement, TetrahedronElement
 from compas_fea2.model import Node, Steel, RectangularSection, ShellSection, SolidSection  # added SolidSection
 
+GLOBAL_FRAME = settings.GLOBAL_FRAME
 
 class TestBeamElement(unittest.TestCase):
     def test_initialization_and_frame(self):

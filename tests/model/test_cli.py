@@ -5,24 +5,6 @@ import shutil
 from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
 
-from compas_fea2.cli import (
-    main,
-    one_o_one,
-    change_setting,
-    list_backends,
-    backend_info,
-    project,
-    model,
-    results,
-    config,
-    tools,
-    docs,
-    examples,
-    version,
-    validate_backend_name,
-    validate_setting_name,
-)
-
 
 class TestValidationFunctions(unittest.TestCase):
     """Test validation functions for CLI inputs."""

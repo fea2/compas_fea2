@@ -33,17 +33,19 @@ class Settings:
         VERBOSE (bool): Runtime verbosity flag (not persisted by default).
         GLOBAL_FRAME (Frame): Global reference frame (runtime only).
     """
-    def __init__(self, config_dir,  temp=None):
+
+    def __init__(self, config_dir, temp=None):
         self.config_dir = config_dir
         self.config_file = os.path.join(config_dir, "config.json")
         self.HOME = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
         self.DATA = os.path.abspath(os.path.join(self.HOME, "data"))
         self.DOCS = os.path.abspath(os.path.join(self.HOME, "docs"))
         self.TEMP = temp or os.path.abspath(os.path.join(self.HOME, "temp"))
-    
+
         self.VERBOSE = False
         self.GLOBAL_FRAME = Frame.worldXY()
-                
+        self.PRECISION = 2  # decimal places for output formatting
+
     @classmethod
     def from_config(cls, config_dir):
         """Load settings from a config directory.
@@ -67,7 +69,7 @@ class Settings:
             with open(config_file, "r", encoding="utf-8") as fh:
                 data = json.load(fh)
         return cls(**data) if isinstance(data, dict) else settings()
-        
+
     def to_config(self) -> None:
         """Persist the current configuration to config.json.
 
@@ -95,7 +97,7 @@ class Settings:
         self.TEMP = os.path.abspath(os.path.join(self.HOME, "temp"))
         self.VERBOSE = False
         self.GLOBAL_FRAME = Frame.worldXY()
-        
+
         if persist:
             self.to_config()
 

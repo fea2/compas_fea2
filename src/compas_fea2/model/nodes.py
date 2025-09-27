@@ -9,6 +9,7 @@ from compas.geometry import transform_points
 from compas.tolerance import TOL
 
 import compas_fea2
+from compas_fea2.config import settings
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
@@ -253,7 +254,7 @@ class Node(FEAData):
     @property
     def gkey(self) -> str | None:
         if TOL:
-            return TOL.geometric_key(self.xyz, precision=compas_fea2.PRECISION)
+            return TOL.geometric_key(self.xyz, precision=settings.PRECISION)
 
     # @property
     # def dof(self) -> Dict[str, bool]:
