@@ -1,65 +1,58 @@
-try:
-    from importlib.metadata import entry_points
-except Exception:
-    entry_points = None
+"""Backend registration for compas_fea2 (minimal, single-backend).
 
-BACKENDS_ENTRYPOINTS = "compas_fea2.backends"
+- Entry point group: "compas_fea2.backends".
+- Plugins expose an entry-point callable that either:
+  1) accepts a register function and calls it with {BaseClass: ImplClass}, or
+  2) returns that mapping directly.
+- set_backend(name) locates the entry point by name and activates it by replacing the registry.
+"""
+
+BACKENDS_ENTRYPOINT_GROUP = "compas_fea2.backends"
 _IMPLS = {}
-_ACTIVE_BACKEND = None
 
 
 def register_backend(mapping, *, backend_name=None):
-    """Replace the active backend implementations with the given mapping."""
-    global _ACTIVE_BACKEND
+    """Install the given mapping as the single active backend."""
     _IMPLS.clear()
     _IMPLS.update(mapping)
-    if backend_name:
-        _ACTIVE_BACKEND = backend_name
 
 
 def set_backend(plugin):
-    """Load exactly one backend by entry point name and make it active."""
-    eps = list(entry_points(group=BACKENDS_ENTRYPOINTS)) if entry_points else []  # type: ignore[arg-type]
+    """Activate a backend by its entry-point name."""
+    from importlib.metadata import entry_points
 
-    # Find the matching entry point by name/key
-    match = None
-    for ep in eps:
-        name = getattr(ep, "name", None) or getattr(ep, "key", None)
-        if name == plugin:
-            match = ep
-            break
+    eps = list(entry_points(group=BACKENDS_ENTRYPOINT_GROUP)) if entry_points else []
+
+    def name_of(ep):
+        return getattr(ep, "name", None) or getattr(ep, "key", None)
+
+    match = next((ep for ep in eps if name_of(ep) == plugin), None)
     if not match:
-        available = [getattr(e, "name", None) or getattr(e, "key", None) for e in eps]
+        available = [name_of(e) for e in eps]
         raise RuntimeError(f"Backend entry point '{plugin}' not found. Available: {available}")
 
-    # Load the backend loader callable
     loader = match.load()
 
-    # Call loader: either accepts register function or returns a mapping
-    global _ACTIVE_BACKEND
     try:
         result = loader(register_backend)
     except TypeError:
         result = loader()
 
     if isinstance(result, dict):
-        register_backend(result, backend_name=plugin)
-    elif _ACTIVE_BACKEND is None:
-        _ACTIVE_BACKEND = plugin
-
-
-def get_active_backend():
-    return _ACTIVE_BACKEND
+        register_backend(result)
+    elif not _IMPLS:
+        raise RuntimeError(
+            f"Backend loader '{plugin}' did not return a mapping or register anything.")
 
 
 def _get_backend_implementation(base):
+    """Return the implementation class for the given base type, or None."""
     return _IMPLS.get(base)
 
 
 __all__ = [
-    "BACKENDS_ENTRYPOINTS",
+    "BACKENDS_ENTRYPOINT_GROUP",
     "register_backend",
     "set_backend",
-    "get_active_backend",
     "_get_backend_implementation",
 ]
