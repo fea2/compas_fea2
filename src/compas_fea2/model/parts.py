@@ -30,6 +30,7 @@ from compas.tolerance import TOL
 from scipy.spatial import KDTree
 
 import compas_fea2
+from compas_fea2.config import settings
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
@@ -84,7 +85,6 @@ if TYPE_CHECKING:
     from compas_fea2.model.sections import _Section
     from compas_fea2.model.sections import _Section2D
     from compas_fea2.model.sections import _Section3D
-
 
 GroupType = Union["NodesGroup", "ElementsGroup", "FacesGroup", "MaterialsGroup", "SectionsGroup", "InterfacesGroup", "InteractionsGroup"]
 
@@ -585,7 +585,7 @@ class _Part(FEAData):
                 exit()
 
             gmsh.model.occ.synchronize()
-            if compas_fea2.VERBOSE:
+            if settings.VERBOSE:
                 print("Healing the geometry...")
             healing_tolerance = 1
             gmsh.model.occ.healShapes(tolerance=healing_tolerance)
@@ -1292,7 +1292,7 @@ class _Part(FEAData):
         for node in self._nodes:
             if node.key == key:
                 return node
-        if compas_fea2.VERBOSE:
+        if settings.VERBOSE:
             print(f"No nodes found with key {key}")
         return None
 
@@ -1348,7 +1348,7 @@ class _Part(FEAData):
             and distances if report=True.
         """
         if number_of_nodes > len(self.nodes):
-            if compas_fea2.VERBOSE:
+            if settings.VERBOSE:
                 print(f"The number of nodes to find exceeds the available nodes. Capped to {len(self.nodes)}")
             number_of_nodes = len(self.nodes)
         if number_of_nodes < 0:
@@ -1552,7 +1552,7 @@ class _Part(FEAData):
                 self._nodes.add_member(node)
                 node._part_key = len(self._nodes) - 1
         node._registration = self
-        if compas_fea2.VERBOSE:
+        if settings.VERBOSE:
             print("Node {!r} registered to {!r}.".format(node, self))
         return node
 
@@ -1597,7 +1597,7 @@ class _Part(FEAData):
             if node.gkey is not None:
                 self.gkey_node.pop(node.gkey)
             node._registration = None
-            if compas_fea2.VERBOSE:
+            if settings.VERBOSE:
                 print(f"Node {node!r} removed from {self!r}.")
 
     def remove_nodes(self, nodes: List[Node]) -> None:
@@ -1748,7 +1748,7 @@ class _Part(FEAData):
         #     self.graph.add_node(node, type="node")
         #     self.graph.add_edge(element, node, relation="connects")
 
-        if compas_fea2.VERBOSE:
+        if settings.VERBOSE:
             print(f"Element {element!r} registered to {self!r}.")
 
         return element
@@ -1783,7 +1783,7 @@ class _Part(FEAData):
             element._registration = None
             for node in element.nodes:
                 node.connected_elements.remove(element)
-            if compas_fea2.VERBOSE:
+            if settings.VERBOSE:
                 print(f"Element {element!r} removed from {self!r}.")
 
     def remove_elements(self, elements: List[_Element]) -> None:

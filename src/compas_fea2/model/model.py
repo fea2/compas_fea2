@@ -16,6 +16,7 @@ from compas.geometry import centroid_points
 from compas.geometry import centroid_points_weighted
 
 import compas_fea2
+from compas_fea2.config import settings
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
@@ -549,7 +550,7 @@ class Model(FEAData):
             raise TypeError("{!r} is not a part.".format(part))
 
         part._registration = self
-        if compas_fea2.VERBOSE:
+        if settings.VERBOSE:
             print("{!r} registered to {!r}.".format(part, self))
 
         part._key = len(self._parts)

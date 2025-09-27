@@ -11,13 +11,13 @@ from typing import Optional
 import click
 import dotenv
 
-from compas_fea2 import HOME
-from compas_fea2 import VERBOSE
+from compas_fea2.config import HOME
+from compas_fea2.config import settings
 
 try:
     from fea2_extension.main import init_plugin  # type: ignore
 except ImportError as e:
-    if VERBOSE:
+    if settings.VERBOSE:
         print(f"WARNING: fea2_extension module not installed: {e}")
 
 

@@ -9,7 +9,7 @@ from time import perf_counter
 from typing import Generator
 from typing import Optional
 
-from compas_fea2 import VERBOSE
+from compas_fea2.config import settings
 
 
 def with_spinner(message="Running"):
@@ -55,7 +55,7 @@ def timer(_func=None, *, message=None):
             value = func(*args, **kwargs)
             end_time = perf_counter()  # 2
             run_time = end_time - start_time  # 3
-            if VERBOSE:
+            if settings.VERBOSE:
                 m = message or "Finished {!r} in".format(func.__name__)
                 print("{} {:.4f} secs".format(m, run_time))
             return value

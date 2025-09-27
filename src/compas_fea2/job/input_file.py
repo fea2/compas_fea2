@@ -5,7 +5,7 @@ from typing import Any
 from typing import Optional
 from typing import Union
 
-from compas_fea2 import VERBOSE
+from compas_fea2.config import settings
 from compas_fea2.base import FEAData
 
 if TYPE_CHECKING:
@@ -86,7 +86,7 @@ class InputFile(FEAData):
             raise ValueError("No content to write to the input file.")
         with open(file_path, "w") as f:
             f.writelines(content)
-        if VERBOSE:
+        if settings.VERBOSE:
             print("Input file generated in the following location: {}".format(file_path))
         return content
 

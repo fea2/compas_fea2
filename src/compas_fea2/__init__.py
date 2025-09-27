@@ -25,40 +25,6 @@ __email__ = "francesco.ranaudo@gmail.com"
 __version__ = "0.3.1"
 
 
-def init_fea2(verbose=False, point_overlap=True, global_tolerance=1, precision=3):
-    """Create a default environment file if it doesn't exist and loads its variables.
-
-    Parameters
-    ----------
-    verbose : bool, optional
-        Be verbose when printing output, by default False
-    point_overlap : bool, optional
-        Allow two nodes to be at the same location, by default True
-    global_tolerance : int, optional
-        Tolerance for the model, by default 1
-    precision : str, optional
-        Values approximation, by default '3'.
-        See `compas.tolerance.Tolerance.precision` for more information.
-    part_nodes_limit : int, optional
-        Limit of nodes for a part, by default 100000.
-    """
-    env_path = os.path.abspath(os.path.join(HERE, ".env"))
-    if not os.path.exists(env_path):
-        with open(env_path, "x") as f:
-            f.write(
-                "\n".join(
-                    [
-                        "VERBOSE={}".format(verbose),
-                        "POINT_OVERLAP={}".format(point_overlap),
-                        "GLOBAL_TOLERANCE={}".format(global_tolerance),
-                        "PRECISION={}".format(precision),
-                    ]
-                )
-            )
-    # Always load the .env we manage without overriding existing env
-    load_dotenv(env_path, override=False)
-
-
 # pluggable function to be implemented in the plucgin
 def _register_backend():
     """Create the class registry for the plugin.
@@ -177,25 +143,6 @@ def _get_backend_implementation(cls):
     registry = BACKENDS.get(active, {})
     return registry.get(cls)
 
-
-HERE = os.path.dirname(__file__)
-
-HOME = os.path.abspath(os.path.join(HERE, "../../"))
-DATA = os.path.abspath(os.path.join(HOME, "data"))
-UMAT = os.path.abspath(os.path.join(DATA, "umat"))
-DOCS = os.path.abspath(os.path.join(HOME, "docs"))
-TEMP = os.path.abspath(os.path.join(HOME, "temp"))
-
-# Load our .env explicitly from this package folder; create if missing
-if not load_dotenv(os.path.join(HERE, ".env")):
-    init_fea2()
-
-VERBOSE = os.getenv("VERBOSE", "false").lower() == "true"
-POINT_OVERLAP = os.getenv("POINT_OVERLAP", "true").lower() == "true"
-GLOBAL_TOLERANCE = float(os.getenv("GLOBAL_TOLERANCE", "1"))
-GLOBAL_FRAME = Frame.worldXY()
-PRECISION = int(os.getenv("PRECISION", "3"))
-
 # ensure these exist
 try:
     BACKENDS  # type: ignore
@@ -209,4 +156,3 @@ except NameError:
 
 CURRENT_BACKEND: ContextVar[str] = ContextVar("CURRENT_BACKEND", default=BACKEND)
 
-__all__ = ["HOME", "DATA", "DOCS", "TEMP"]
