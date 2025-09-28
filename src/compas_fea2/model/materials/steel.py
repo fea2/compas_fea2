@@ -2,8 +2,7 @@ from typing import Optional
 
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-from compas_fea2.units import UnitRegistry
-from compas_fea2.units import units as u
+from compas_fea2.units import units_io
 
 from .material import ElasticIsotropic
 
@@ -50,6 +49,7 @@ class Steel(ElasticIsotropic):
         Parameters for modelling the compression side of the stress-strain curve.
     """
 
+    @units_io(types_in=("stress", None, "density", "stress", "stress", None), types_out=None)
     def __init__(self, *, E, v, density, fy, fu, eu, **kwargs):
         super().__init__(E=E, v=v, density=density, **kwargs)
 
@@ -131,7 +131,7 @@ ep : {:.2f}
 
     # TODO check values and make unit independent
     @classmethod
-    def S355(cls, units=None):
+    def S355(cls):
         """Steel S355.
 
         Returns
@@ -139,9 +139,4 @@ ep : {:.2f}
         :class:`compas_fea2.model.material.Steel`
             The precompiled steel material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
-
-        return cls(fy=355 * units.MPa, fu=None, eu=20, E=210 * units.GPa, v=0.3, density=7850 * units("kg/m**3"), name=None)
+        return cls(fy=355, fu=None, eu=20, E=210, v=0.3, density=7850, name=None)

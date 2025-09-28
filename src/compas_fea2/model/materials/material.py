@@ -3,6 +3,7 @@ from typing import Optional
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.units import units_io
 
 
 class _Material(FEAData):
@@ -41,10 +42,32 @@ class _Material(FEAData):
 
     """
 
+    @units_io(types_in=("density", None), types_out=None)
     def __init__(self, density: Optional[float] = None, expansion: Optional[float] = None, **kwargs):
         super().__init__(**kwargs)
-        self.density = density
-        self.expansion = expansion
+        self._density = density
+        self._expansion = expansion
+
+    @property
+    @units_io(types_in=(), types_out="density")
+    def density(self) -> Optional[float]:
+        """float: Density of the material."""
+        return self._density
+
+    @density.setter
+    @units_io(types_in=("density", None), types_out=None)
+    def density(self, value: Optional[float]):
+        self._density = value
+
+    @property
+    def expansion(self) -> Optional[float]:
+        """float: Thermal expansion coefficient."""
+        return self._expansion
+
+    @expansion.setter
+    def expansion(self, value: Optional[float]):
+        """Set the thermal expansion coefficient."""
+        self._expansion = value
 
     @property
     def model(self):
@@ -55,8 +78,8 @@ class _Material(FEAData):
         data = super().__data__
         data.update(
             {
-                "density": self.density,
-                "expansion": self.expansion,
+                "density": self._density,
+                "expansion": self._expansion,
             }
         )
         return data
@@ -77,7 +100,7 @@ name        : {}
 density     : {}
 expansion   : {}
 """.format(
-            self.__class__.__name__, len(self.__class__.__name__) * "-", self.name, self.density, self.expansion
+            self.__class__.__name__, len(self.__class__.__name__) * "-", self.name, self._density, self._expansion
         )
 
     def __html__(self) -> str:
@@ -240,8 +263,8 @@ Gzx : {}
             self.__class__.__name__,
             len(self.__class__.__name__) * "-",
             self.name,
-            self.density,
-            self.expansion,
+            self._density,
+            self._expansion,
             self.Ex,
             self.Ey,
             self.Ez,
@@ -276,18 +299,39 @@ class ElasticIsotropic(_Material):
 
     """
 
+    @units_io(types_in=("stress", None, "density", None), types_out=None)
     def __init__(self, E: float, v: float, density: float, expansion: Optional[float] = None, **kwargs):
         super().__init__(density=density, expansion=expansion, **kwargs)
-        self.E = E
-        self.v = v
+        self._E = E
+        self._v = v
+
+    @property
+    @units_io(types_in=(), types_out="stress")
+    def E(self) -> float:
+        """float: Young's modulus E."""
+        return self._E
+    
+    @E.setter
+    @units_io(types_in=("stress", None), types_out=None)
+    def E(self, value: float):
+        self._E = value
+
+    @property
+    def v(self) -> float:
+        """float: Poisson's ratio v."""
+        return self._v
+    
+    @v.setter
+    def v(self, value: float):
+        self._v = value
 
     @property
     def __data__(self):
         data = super().__data__
         data.update(
             {
-                "E": self.E,
-                "v": self.v,
+                "E": self._E,
+                "v": self._v,
             }
         )
         return data
@@ -310,12 +354,12 @@ E : {}
 v : {}
 G : {}
 """.format(
-            self.name, self.density, self.expansion, self.E, self.v, self.G
+            self.name, self._density, self._expansion, self._E, self._v, self.G
         )
 
     @property
     def G(self) -> float:
-        return 0.5 * self.E / (1 + self.v)
+        return 0.5 * self._E / (1 + self._v)
 
 
 class Stiff(_Material):
@@ -388,7 +432,7 @@ G  : {}
 
 strain_stress : {}
 """.format(
-            self.name, self.density, self.expansion, self.E, self.v, self.G, self.strain_stress
+            self.name, self._density, self._expansion, self._E, self._v, self.G, self.strain_stress
         )
 
 
@@ -469,7 +513,7 @@ G : {}
 k : {}
 c : {}
 """.format(
-            self.name, self.density, self.expansion, self.E, self.v, self.G, self.k, self.c
+            self.name, self._density, self._expansion, self._E, self._v, self.G, self.k, self.c
         )
 
     @property

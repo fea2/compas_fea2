@@ -131,7 +131,7 @@ def get_docstring(cls):
 
     def _decorator(func):
         func_name = func.__qualname__.split(".")[-1]
-        doc_parts = getattr(cls, func_name).original.__doc__.split("Returns")
+        doc_parts = getattr(cls, func_name).__doc__.split("Returns")
         note = """
         Returns
         -------
@@ -234,15 +234,26 @@ def problem_method(f):
     return wrapper
 
 
-def to_dimensionless(func):
-    """Decorator to convert pint Quantity objects to dimensionless in the base units."""
+def _to_base_magnitude(x):
+    """Convert a Pint Quantity (scalar or ndarray) to base units magnitude.
+    Leave everything else untouched."""
+    # Pint Quantities expose to_base_units() and .m (or .magnitude)
+    if hasattr(x, "to_base_units") and hasattr(x, "m"):
+        return x.to_base_units().m
+    return x
 
+def to_base_magnitudes(func):
+    """Decorator that converts any Pint Quantity in *args/**kwargs* to base-unit magnitudes."""
+    @wraps(func)
     def wrapper(*args, **kwargs):
-        new_args = [a.to_base_units().magnitude if hasattr(a, "to_base_units") else a for a in args]
-        new_kwargs = {k: v.to_base_units().magnitude if hasattr(v, "to_base_units") else v for k, v in kwargs.items()}
-        return func(*new_args, **new_kwargs)
+        # Preserve self/cls in position 0; if it's a Quantity (it shouldn't be), _to_base_magnitude is a no-op
+        if args:
+            new_args = (args[0],) + tuple(_to_base_magnitude(a) for a in args[1:])
+        else:
+            new_args = ()
 
-    wrapper.original = func  # Preserve the original function
+        new_kwargs = {k: _to_base_magnitude(v) for k, v in kwargs.items()}
+        return func(*new_args, **new_kwargs)
     return wrapper
 
 

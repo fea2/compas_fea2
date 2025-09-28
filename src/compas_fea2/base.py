@@ -25,29 +25,28 @@ from .registration import _IMPLS
 from compas_fea2.config import settings
 
 from .utilities._devtools import normalize_string
-from .utilities._devtools import to_dimensionless
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
-class DimensionlessMeta(type):
-    """Metaclass for converting pint Quantity objects to dimensionless."""
+# class DimensionlessMeta(type):
+#     """Metaclass for converting pint Quantity objects to dimensionless."""
 
-    def __new__(cls: Type[type], name: str, bases: tuple, class_dict: Dict[str, Any]) -> type:
-        # Decorate each method
-        for attributeName, attribute in class_dict.items():
-            if callable(attribute) or isinstance(attribute, (classmethod, staticmethod)):
-                # Unwrap classmethod/staticmethod to decorate the underlying function
-                if isinstance(attribute, (classmethod, staticmethod)):
-                    original_func = attribute.__func__
-                    decorated_func = to_dimensionless(original_func)
-                    # Re-wrap classmethod/staticmethod
-                    attribute = type(attribute)(decorated_func)
-                else:
-                    attribute = to_dimensionless(attribute)
-                class_dict[attributeName] = attribute
-        return type.__new__(cls, name, bases, class_dict)
+#     def __new__(cls: Type[type], name: str, bases: tuple, class_dict: Dict[str, Any]) -> type:
+#         # Decorate each method
+#         for attributeName, attribute in class_dict.items():
+#             if callable(attribute) or isinstance(attribute, (classmethod, staticmethod)):
+#                 # Unwrap classmethod/staticmethod to decorate the underlying function
+#                 if isinstance(attribute, (classmethod, staticmethod)):
+#                     original_func = attribute.__func__
+#                     decorated_func = to_dimensionless(original_func)
+#                     # Re-wrap classmethod/staticmethod
+#                     attribute = type(attribute)(decorated_func)
+#                 else:
+#                     attribute = to_dimensionless(attribute)
+#                 class_dict[attributeName] = attribute
+#         return type.__new__(cls, name, bases, class_dict)
 
 
 T = TypeVar("T", bound="FEAData")
@@ -111,7 +110,7 @@ def from_data(method=None, *, duplicate=True, register: bool = True):
     return decorator(method)
 
 
-class FEAData(Data, metaclass=DimensionlessMeta):
+class FEAData(Data):
     """Base class for all FEA model objects.
 
     This base class inherits the serialisation infrastructure
@@ -135,7 +134,6 @@ class FEAData(Data, metaclass=DimensionlessMeta):
         The mother object where this object is registered to.
 
     """
-
     def __new__(cls: Type[T], *args: Any, **kwargs: Any) -> T:
         """Try to get the backend plug-in implementation, otherwise use the base
         one.

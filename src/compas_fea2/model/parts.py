@@ -1843,7 +1843,6 @@ class _Part(FEAData):
     # =========================================================================
     #                           Faces methods
     # =========================================================================
-
     def find_faces_on_plane(self, plane: Plane, tol: float = 1) -> FacesGroup:
         """Find the faces of the elements that belong to a given plane, if any.
 
