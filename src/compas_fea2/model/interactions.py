@@ -4,15 +4,18 @@ from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
 from compas_fea2.problem.loads import ScalarLoad
+from compas_fea2.units import units_io
 
 
 class _Interaction(FEAData):
     """Base class for all interactions.
 
-    Note
-    ----
-    Interactions are registered to a :class:`compas_fea2.model.Model` and can be
-    assigned to multiple interfaces."""
+    Notes
+    -----
+    Interactions are registered to a :class:`compas_fea2.model.Model`.
+    All physical parameters (friction, stiffness, tolerance, heat transfer, etc.)
+    are expressed in the active unit system. See :mod:`compas_fea2.units`.
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -103,25 +106,27 @@ class HardContactNoFriction(Contact):
 
     Parameters
     ----------
-    mu : float
-        Friction coefficient for tangential behaviour.
-    tollerance : float
-        Slippage tollerance during contact.
+    tol : float
+        Slippage tollerance during contact, expressed as a length in active units.
 
     Attributes
     ----------
     name : str
         Automatically generated id. You can change the name if you want a more
         human readable input file.
-    mu : float
-        Friction coefficient for tangential behaviour.
-    tollerance : float
-        Slippage tollerance during contact.
+    tol : float
+        Slippage tollerance during contact, expressed as a length in active units.
     """
 
+    @units_io(types_in=("length",), types_out=None)
     def __init__(self, tol, **kwargs) -> None:
         super().__init__(normal="HARD", tangent=None, **kwargs)
         self._tol = tol
+
+    @property
+    @units_io(types_in=(), types_out="length")
+    def tol(self):
+        return self._tol
 
     @property
     def __data__(self):
@@ -149,9 +154,9 @@ class HardContactFrictionPenalty(Contact):
     Parameters
     ----------
     mu : float
-        Friction coefficient for tangential behaviour.
-    tollerance : float
-        Slippage tollerance during contact.
+        Friction coefficient for tangential behaviour (dimensionless).
+    tol : float
+        Slippage tollerance during contact, expressed as a length in active units.
 
     Attributes
     ----------
@@ -159,14 +164,25 @@ class HardContactFrictionPenalty(Contact):
         Automatically generated id. You can change the name if you want a more
         human readable input file.
     mu : float
-        Friction coefficient for tangential behaviour.
-    tollerance : float
-        Slippage tollerance during contact.
+        Friction coefficient for tangential behaviour (dimensionless).
+    tol : float
+        Slippage tollerance during contact, expressed as a length in active units.
     """
 
+    @units_io(types_in=("coefficient_of_friction", "length"), types_out=None)
     def __init__(self, mu, tol, **kwargs) -> None:
         super().__init__(normal="HARD", tangent=mu, **kwargs)
         self._tol = tol
+
+    @property
+    @units_io(types_in=(), types_out="coefficient_of_friction")
+    def mu(self):
+        return self._tangent
+
+    @property
+    @units_io(types_in=(), types_out="length")
+    def tol(self):
+        return self._tol
 
     @property
     def __data__(self):
@@ -187,14 +203,6 @@ class HardContactFrictionPenalty(Contact):
         interaction = cls(mu, tol)
         return interaction
 
-    @property
-    def mu(self):
-        return self._tangent
-
-    @property
-    def tol(self):
-        return self._tol
-
 
 class LinearContactFrictionPenalty(Contact):
     """Contact interaction property with linear softnening and friction using a
@@ -203,11 +211,11 @@ class LinearContactFrictionPenalty(Contact):
     Parameters
     ----------
     stiffness : float
-        Stiffness of the the contact in the normal direction.
+        Stiffness of the the contact in the normal direction (translational_stiffness).
     mu : float
-        Friction coefficient for tangential behaviour.
-    tollerance : float
-        Slippage tollerance during contact.
+        Friction coefficient for tangential behaviour (dimensionless).
+    tolerance : float
+        Slippage tollerance during contact, expressed as a length in active units.
 
     Attributes
     ----------
@@ -215,15 +223,34 @@ class LinearContactFrictionPenalty(Contact):
         Automatically generated id. You can change the name if you want a more
         human readable input file.
     mu : float
-        Friction coefficient for tangential behaviour.
-    tollerance : float
-        Slippage tollerance during contact.
+        Friction coefficient for tangential behaviour (dimensionless).
+    tolerance : float
+        Slippage tollerance during contact, expressed as a length in active units.
     """
 
+    @units_io(types_in=("translational_stiffness", "coefficient_of_friction", "length"), types_out=None)
     def __init__(self, stiffness, mu, tolerance, **kwargs) -> None:
         super().__init__(normal="Linear", tangent=mu, **kwargs)
         self._tolerance = tolerance
         self._stiffness = stiffness
+
+    @property
+    @units_io(types_in=(), types_out="translational_stiffness")
+    def stiffness(self):
+        return self._stiffness
+
+    @stiffness.setter
+    def stiffness(self, value):
+        self._stiffness = value
+
+    @property
+    @units_io(types_in=(), types_out="length")
+    def tolerance(self):
+        return self._tolerance
+
+    @tolerance.setter
+    def tolerance(self, value):
+        self._tolerance = value
 
     @property
     def __data__(self):
@@ -246,22 +273,6 @@ class LinearContactFrictionPenalty(Contact):
         interaction = cls(stiffness, mu, tol)
         return interaction
 
-    @property
-    def stiffness(self):
-        return self._stiffness
-
-    @stiffness.setter
-    def stiffness(self, value):
-        self._stiffness = value
-
-    @property
-    def tolerance(self):
-        return self._tolerance
-
-    @tolerance.setter
-    def tolerance(self, value):
-        self._tolerance = value
-
 
 class HardContactRough(Contact):
     """Hard contact interaction property with indefinite friction (rough surfaces).
@@ -276,10 +287,7 @@ class HardContactRough(Contact):
     name : str
         Automatically generated id. You can change the name if you want a more
         human readable input file.
-    mu : float
-        Friction coefficient for tangential behaviour.
-    tollerance : float
-        Slippage tollerance during contact.
+    This interaction has infinite friction and no numeric parameters.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -326,9 +334,15 @@ class ThermalInteraction(_Interaction):
 
     """
 
+    @units_io(types_in=("temperature", None), types_out=None)
     def __init__(self, temperature_value, temperature_amplitude=None, **kwargs):
         super(_Interaction, self).__init__(**kwargs)
         self._temperature = ScalarLoad(scalar_load=temperature_value, amplitude=temperature_amplitude)
+
+    @property
+    @units_io(types_in=(), types_out="temperature")
+    def temperature(self):
+        return self._temperature
 
     @property
     def __data__(self):
@@ -348,10 +362,6 @@ class ThermalInteraction(_Interaction):
         interaction = cls(temperature)
         return interaction
 
-    @property
-    def temperature(self):
-        return self._temperature
-
 
 class Convection(ThermalInteraction):
     """Convection.
@@ -362,7 +372,7 @@ class Convection(ThermalInteraction):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     h : float
-        Convection coefficient.
+        Heat transfer coefficient.
     temperature_value : float
         Temperature value.
     temperature_amplitude : Amplitude, optionnal
@@ -374,15 +384,21 @@ class Convection(ThermalInteraction):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     h : float
-        Convection coefficient.
+        Heat transfer coefficient.
     temperature : ScalarLoad
         Constant temperature load or transient temperature load.
 
     """
 
+    @units_io(types_in=("heat_transfer_coefficient", "temperature", None), types_out=None)
     def __init__(self, h, temperature_value, temperature_amplitude, **kwargs):
         super().__init__(temperature_value=temperature_value, temperature_amplitude=temperature_amplitude, **kwargs)
         self._h = h
+
+    @property
+    @units_io(types_in=(), types_out="heat_transfer_coefficient")
+    def h(self):
+        return self._h
 
     @property
     def __data__(self):
@@ -405,10 +421,6 @@ class Convection(ThermalInteraction):
         interaction = cls(surface, h, temperature)
         return interaction
 
-    @property
-    def h(self):
-        return self._h
-
 
 class Radiation(ThermalInteraction):
     """Radiation.
@@ -419,7 +431,7 @@ class Radiation(ThermalInteraction):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     eps : float
-        Radiation coefficient.
+        Emissivity coefficient (dimensionless).
     temperature_value : float
         Temperature value.
     temperature_amplitude : Amplitude, optionnal
@@ -431,15 +443,21 @@ class Radiation(ThermalInteraction):
         Uniqe identifier. If not provided it is automatically generated. Set a
         name if you want a more human-readable input file.
     eps : float
-        Radiation coefficient.
+        Emissivity coefficient (dimensionless).
     temperature : ScalarLoad
         Constant temperature load or transient temperature load.
 
     """
 
+    @units_io(types_in=("emissivity", "temperature", None), types_out=None)
     def __init__(self, eps, temperature_value, temperature_amplitude, **kwargs):
         super().__init__(temperature_value=temperature_value, temperature_amplitude=temperature_amplitude, **kwargs)
         self._eps = eps
+
+    @property
+    @units_io(types_in=(), types_out="emissivity")
+    def eps(self):
+        return self._eps
 
     @property
     def __data__(self):
@@ -461,7 +479,3 @@ class Radiation(ThermalInteraction):
         surface = registry.add_from_data(data.get("surface"), "compas_fea2.model.groups", duplicate=duplicate)  # type: ignore[no-any-return]
         interaction = cls(surface, eps, temperature)
         return interaction
-
-    @property
-    def eps(self):
-        return self._eps

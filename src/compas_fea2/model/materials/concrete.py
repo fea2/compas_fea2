@@ -6,6 +6,9 @@ from matplotlib import pyplot as plt
 
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.units import MPa
+from compas_fea2.units import kg_per_m3
+from compas_fea2.units import units_io
 
 from .material import _Material
 
@@ -54,11 +57,13 @@ class Concrete(_Material):
     The concrete model is based on Eurocode 2 up to fck=90 MPa.
     """
 
+    @units_io(types_in=("stress", "density"), types_out=())
     def __init__(self, fck, density=None, **kwargs):
         super().__init__(density=density, **kwargs)
         self.v = 0.17
 
         # (Eurocode 2, Table 3.1) --- All calculations are done in MPa!
+        # TODO use units correctly
         fcm = fck + 8.0  # MPa
         self.fcm = fcm * 1e6  # Pa
 
@@ -123,6 +128,7 @@ class Concrete(_Material):
         self.compression = {"f": self.fc[1:], "e": self.ec}
 
     @property
+    @units_io(types_in=(), types_out=("stress"))
     def G(self):
         return 0.5 * self.E / (1 + self.v)
 
@@ -171,9 +177,7 @@ v   : {}
 G   : {}
 fck : {}
 fr  : {}
-""".format(
-            self.name, self.density, self.E, self.v, self.G, self.fck, self.fr
-        )
+""".format(self.name, self.density, self.E, self.v, self.G, self.fck, self.fr)
 
     @property
     def __data__(self):
@@ -278,6 +282,7 @@ class ConcreteSmearedCrack(_Material):
         self.compression = {"f": fc, "e": ec}
 
     @property
+    @units_io(types_in=(), types_out=("stress"))
     def G(self):
         return 0.5 * self.E / (1 + self.v)
 
@@ -296,9 +301,7 @@ ec : {}
 ft : {}
 et : {}
 fr : {}
-""".format(
-            self.name, self.density, self.E, self.v, self.G, self.fc, self.ec, self.ft, self.et, self.fr
-        )
+""".format(self.name, self.density, self.E, self.v, self.G, self.fc, self.ec, self.ft, self.et, self.fr)
 
     @property
     def __data__(self):
@@ -392,6 +395,7 @@ class ConcreteDamagedPlasticity(_Material):
         self.stiffening = stiffening
 
     @property
+    @units_io(types_in=(), types_out=("stress"))
     def G(self):
         return 0.5 * self.E / (1 + self.v)
 

@@ -30,25 +30,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-# class DimensionlessMeta(type):
-#     """Metaclass for converting pint Quantity objects to dimensionless."""
-
-#     def __new__(cls: Type[type], name: str, bases: tuple, class_dict: Dict[str, Any]) -> type:
-#         # Decorate each method
-#         for attributeName, attribute in class_dict.items():
-#             if callable(attribute) or isinstance(attribute, (classmethod, staticmethod)):
-#                 # Unwrap classmethod/staticmethod to decorate the underlying function
-#                 if isinstance(attribute, (classmethod, staticmethod)):
-#                     original_func = attribute.__func__
-#                     decorated_func = to_dimensionless(original_func)
-#                     # Re-wrap classmethod/staticmethod
-#                     attribute = type(attribute)(decorated_func)
-#                 else:
-#                     attribute = to_dimensionless(attribute)
-#                 class_dict[attributeName] = attribute
-#         return type.__new__(cls, name, bases, class_dict)
-
-
 T = TypeVar("T", bound="FEAData")
 
 
@@ -134,6 +115,7 @@ class FEAData(Data):
         The mother object where this object is registered to.
 
     """
+
     def __new__(cls: Type[T], *args: Any, **kwargs: Any) -> T:
         """Try to get the backend plug-in implementation, otherwise use the base
         one.
@@ -224,7 +206,7 @@ class FEAData(Data):
     # ==========================================================================
     # Copy and Serialization
     # ==========================================================================
-    
+
     @property
     def __data__(self) -> Dict[str, Union[Any, List[Any]]]:
         """Return the minimum data representation of the object."""

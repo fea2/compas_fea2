@@ -15,7 +15,25 @@ if TYPE_CHECKING:
 
 
 class GeneralDisplacement(FEAData, Frameable):
-    """General imposed displacement."""
+    """General imposed displacement.
+
+    Represents imposed displacements or restraints on degrees of freedom
+    in a local coordinate frame. Supports translation and rotation components.
+
+    Parameters
+    ----------
+    x, y, z : bool, optional
+        Translational displacement restraints along local x, y, z axes.
+    xx, yy, zz : bool, optional
+        Rotational displacement restraints about local x, y, z axes.
+    frame : Frame or None, optional
+        Local coordinate frame for the displacement.
+
+    Notes
+    -----
+    This class only handles boolean restraint flags and an optional local frame.
+    There are no numeric magnitudes to unit-normalize here, so no units decorator is applied.
+    """
 
     __doc__ = __doc__ or ""
 
@@ -76,7 +94,23 @@ class GeneralDisplacement(FEAData, Frameable):
         return bc
 
     def __add__(self, other: "GeneralDisplacement") -> "GeneralDisplacement":
-        """Combine two boundary conditions by OR-ing their component restraints."""
+        """Combine two boundary conditions by OR-ing their component restraints.
+
+        Parameters
+        ----------
+        other : GeneralDisplacement
+            Another GeneralDisplacement instance to combine with.
+
+        Returns
+        -------
+        GeneralDisplacement
+            Combined displacement with OR-ed restraint components.
+
+        Raises
+        ------
+        ValueError
+            If the frames of the two displacements differ.
+        """
         if not isinstance(other, GeneralDisplacement):
             return NotImplemented
         if self.frame != other.frame:
@@ -124,12 +158,24 @@ class GeneralDisplacement(FEAData, Frameable):
 
     @property
     def components(self) -> Dict[str, Any]:
-        """Return the local restraint booleans."""
+        """Return the local restraint booleans.
+
+        Returns
+        -------
+        dict
+            Dictionary of local restraint booleans keyed by component names.
+        """
         return {c: getattr(self, c) for c in ["x", "y", "z", "xx", "yy", "zz"]}
 
     @property
     def global_components(self) -> Dict[str, bool]:
-        """Return the global (uppercase) restraint booleans."""
+        """Return the global (uppercase) restraint booleans.
+
+        Returns
+        -------
+        dict
+            Dictionary of global restraint booleans keyed by component names.
+        """
         return {c: getattr(self, c) for c in ["X", "Y", "Z", "XX", "YY", "ZZ"]}
 
     def _global_axis_restrained(self, axis: str, tol: float = 1e-12) -> bool:
@@ -189,6 +235,16 @@ class GeneralDisplacement(FEAData, Frameable):
         Each equation corresponds to a local restrained translational DOF.
         Equation format: ( { 'UX': a, 'UY': b, 'UZ': c }, 0.0 ) meaning
         a*UX + b*UY + c*UZ = 0.
+
+        Returns
+        -------
+        list of tuple of (dict, float)
+            List of tuples each containing a dictionary mapping global DOF names to coefficients,
+            and a float representing the right-hand side (always zero).
+
+        Notes
+        -----
+        The coefficients are unitless as they represent direction cosines.
         Rotational mapping can be extended similarly when needed.
         """
         eqs: list[tuple[Dict[str, float], float]] = []

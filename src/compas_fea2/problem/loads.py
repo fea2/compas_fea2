@@ -7,6 +7,7 @@ from compas_fea2.base import FEAData
 from compas_fea2.base import Frameable
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.units import units_io
 
 
 class _Load(FEAData):
@@ -88,7 +89,7 @@ class ScalarLoad(_Load):
     Parameters
     ----------
     scalar_load : float
-        Scalar value of the load.
+        Scalar value of the load, interpreted in the active force unit system.
 
     amplitude :  :class:`compas_fea2.problem.Amplitude`
         Amplitude associated to the load, optionnal.
@@ -96,12 +97,13 @@ class ScalarLoad(_Load):
     Attributes
     ----------
     scalar_load : float
-        Scalar value of the load
+        Scalar value of the load, in force units consistent with the active unit system.
 
     amplitude :  :class:`compas_fea2.problem.Amplitude`
         Amplitude associated to the load, optionnal.
     """
 
+    @units_io(types_in=("force", None), types_out=None)
     def __init__(self, scalar_load, amplitude=None, **kwargs):
         super().__init__(amplitude=amplitude, **kwargs)
         if not (isinstance(scalar_load, (int, float))):
@@ -109,6 +111,7 @@ class ScalarLoad(_Load):
         self._scalar_load = scalar_load
 
     @property
+    @units_io(types_in=(), types_out="force")
     def scalar_load(self):
         return self._scalar_load
 
@@ -153,9 +156,9 @@ class VectorLoad(_Load, Frameable):
     Parameters
     ----------
     x, y, z : float, optional
-        Local force components along the local frame axes.
+        Local force components along the local frame axes, interpreted in force units consistent with the active unit system.
     xx, yy, zz : float, optional
-        Local moment components about the local frame axes.
+        Local moment components about the local frame axes, interpreted in moment units consistent with the active unit system.
     frame : :class:`compas.geometry.Frame`, optional
         Local reference frame. If None, global frame is assumed (local == global).
     amplitude : :class:`compas_fea2.problem.Amplitude`, optional
@@ -166,8 +169,10 @@ class VectorLoad(_Load, Frameable):
     - Lowercase (x, y, z, xx, yy, zz) are ALWAYS stored as LOCAL components.
     - Uppercase (X, Y, Z, XX, YY, ZZ) expose the corresponding GLOBAL components
       obtained via the base Frameable transformations.
+    - All force and moment values are interpreted and returned in units consistent with the active unit system.
     """
 
+    @units_io(types_in=("force","force","force","moment","moment","moment",None,None), types_out=None)
     def __init__(self, x=None, y=None, z=None, xx=None, yy=None, zz=None, frame=None, **kwargs):
         _Load.__init__(self, **kwargs)
         Frameable.__init__(self, frame)
@@ -300,27 +305,33 @@ class VectorLoad(_Load, Frameable):
 
     # Global force components
     @property
+    @units_io(types_in=(), types_out="force")
     def X(self):
         return self._locals_to_global((self.x, self.y, self.z))[0]
 
     @property
+    @units_io(types_in=(), types_out="force")
     def Y(self):
         return self._locals_to_global((self.x, self.y, self.z))[1]
 
     @property
+    @units_io(types_in=(), types_out="force")
     def Z(self):
         return self._locals_to_global((self.x, self.y, self.z))[2]
 
     # Global moment components
     @property
+    @units_io(types_in=(), types_out="moment")
     def XX(self):
         return self._locals_to_global((self.xx, self.yy, self.zz))[0]
 
     @property
+    @units_io(types_in=(), types_out="moment")
     def YY(self):
         return self._locals_to_global((self.xx, self.yy, self.zz))[1]
 
     @property
+    @units_io(types_in=(), types_out="moment")
     def ZZ(self):
         return self._locals_to_global((self.xx, self.yy, self.zz))[2]
 
@@ -337,30 +348,38 @@ class VectorLoad(_Load, Frameable):
 
     # --- convenience vectors and magnitudes (GLOBAL) -------------------
     @property
+    @units_io(types_in=(), types_out=("force","force","force"))
     def force_vector(self) -> Optional[Vector]:
-        """Global force vector (X, Y, Z) or None if all force components are None."""
+        """Global force vector (X, Y, Z) or None if all force components are None.
+        Returned vector components are in force units consistent with the active unit system.
+        """
         gx, gy, gz = self._locals_to_global((self.x, self.y, self.z))
         if gx is None and gy is None and gz is None:
             return None
         return Vector(gx if gx is not None else 0.0, gy if gy is not None else 0.0, gz if gz is not None else 0.0)
 
     @property
+    @units_io(types_in=(), types_out=("moment","moment","moment"))
     def moment_vector(self) -> Optional[Vector]:
-        """Global moment vector (XX, YY, ZZ) or None if all moment components are None."""
+        """Global moment vector (XX, YY, ZZ) or None if all moment components are None.
+        Returned vector components are in moment units consistent with the active unit system.
+        """
         mx, my, mz = self._locals_to_global((self.xx, self.yy, self.zz))
         if mx is None and my is None and mz is None:
             return None
         return Vector(mx if mx is not None else 0.0, my if my is not None else 0.0, mz if mz is not None else 0.0)
 
     @property
+    @units_io(types_in=(), types_out="force")
     def force_magnitude(self) -> Optional[float]:
-        """Euclidean norm of the global force components."""
+        """Euclidean norm of the global force components, in force units consistent with the active unit system."""
         v = self.force_vector
         return None if v is None else v.length
 
     @property
+    @units_io(types_in=(), types_out="moment")
     def moment_magnitude(self) -> Optional[float]:
-        """Euclidean norm of the global moment components."""
+        """Euclidean norm of the global moment components, in moment units consistent with the active unit system."""
         v = self.moment_vector
         return None if v is None else v.length
 

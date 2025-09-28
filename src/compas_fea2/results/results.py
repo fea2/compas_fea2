@@ -411,6 +411,7 @@ class ReactionResult(NodeResult):
     def __init__(self, node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
         super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
 
+
 class ContactForcesResult(NodeResult):
     """ContactForcesResult object.
 
@@ -437,8 +438,9 @@ class ContactForcesResult(NodeResult):
     invariants : dict
         A dictionary with {"invariant name": invariant value} for each invariant of the result.
     cf1 : float
-        The x component of the contact force vector. 
+        The x component of the contact force vector.
     """
+
     _field_name = "cf"
     _results_func = "find_node_by_key"
     _results_func_output = "find_node_by_inputkey"
@@ -447,6 +449,7 @@ class ContactForcesResult(NodeResult):
 
     def __init__(self, node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
         super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
+
 
 class TemperatureResult(NodeResult):
     """TemperatureResult object.

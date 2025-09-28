@@ -6,6 +6,7 @@ from compas_fea2.model import Node, Steel, RectangularSection, ShellSection, Sol
 
 GLOBAL_FRAME = settings.GLOBAL_FRAME
 
+
 class TestBeamElement(unittest.TestCase):
     def test_initialization_and_frame(self):
         node1 = Node([0, 0, 0])

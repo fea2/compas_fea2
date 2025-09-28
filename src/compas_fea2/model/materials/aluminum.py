@@ -1,6 +1,9 @@
 from typing import Optional
 from uuid import UUID
 
+from compas_fea2.units import MPa
+from compas_fea2.units import units_io
+
 from .material import _Material
 
 
@@ -9,5 +12,5 @@ class Aluminum(_Material):
 
     def __init__(self, name: Optional[str] = None, uuid: Optional[UUID] = None):
         super().__init__(name=name, uuid=uuid)
-        self.youngs_modulus = 70e9
+        self.youngs_modulus = 70 * MPa
         raise NotImplementedError("Aluminum material properties not fully implemented yet.")

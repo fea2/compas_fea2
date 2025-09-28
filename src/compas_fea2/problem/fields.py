@@ -12,6 +12,8 @@ from compas_fea2.model.groups import NodesGroup
 from compas_fea2.problem.loads import ScalarLoad
 from compas_fea2.problem.loads import VectorLoad
 
+from compas_fea2.units import units_io
+
 if TYPE_CHECKING:
     from compas.geometry import Point
 
@@ -488,6 +490,29 @@ class ForceField(_NodeVectorField):
 
 
 class UniformSurfaceLoadField(_NodeVectorField):
+    """Uniform surface load distributed to nodes.
+
+    Parameters
+    ----------
+    load : float
+        Surface load intensity (pressure) in the active unit system ("pressure" = "stress").
+    surface : FacesGroup
+        Target surface over which the load is applied.
+    direction : list[float], optional
+        Unit vector direction of the applied load (dimensionless). Defaults to surface normal.
+    load_case : str | None, optional
+        Load case identifier.
+    combination_rank : int, optional
+        1=primary, 2=secondary, 3=tertiary. Defaults to 1.
+
+    Notes
+    -----
+    The load vector at each node is computed as: **F_node = p * A_share * direction**.
+    Here **p** is the pressure, **A_share** the surface area divided by number of nodes,
+    and **direction** is dimensionless. Resulting components are in force units.
+    """
+
+    @units_io(types_in=("pressure", None, None, None, None), types_out=None)
     def __init__(self, load: float, surface: "FacesGroup", direction: list[float] | None = None, load_case: str | None = None, combination_rank: int = 1, **kwargs):
         from compas_fea2.problem.loads import VectorLoad
 
@@ -542,13 +567,16 @@ class GravityLoadField(_ElementVectorField):
     Parameters
     ----------
     g : float
+        Gravitational acceleration magnitude ("gravity").
     direction : tuple[float, float, float]
+        Unit vector indicating gravity direction (dimensionless).
     nodes : Iterable[Node] | None
     load_case : str | None
     combination_rank : int, optional
         Typically 1 for permanent, unless you want to force a different rank.
     """
 
+    @units_io(types_in=("gravity", None, None, None, None), types_out=None)
     def __init__(self, g=9.81, direction=(0, 0, -1), distribution=None, load_case=None, combination_rank: int = 1, **kwargs):
         from compas_fea2.problem.loads import VectorLoad
 
@@ -557,8 +585,11 @@ class GravityLoadField(_ElementVectorField):
         components: List[float] = [g * v for v in direction]
         loads = []
         for element in distribution:
-            force_components = [element.mass[i] * components[i] for i in range(len(components))]
-            loads.append(VectorLoad(*force_components, load_case=load_case))
+            m = getattr(element, "mass", None)
+            if m is None:
+                continue
+            force_components = [m * c for c in components]
+            loads.append(VectorLoad(*force_components, amplitude=None))
 
         super().__init__(vectors=loads, distribution=distribution, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
@@ -581,8 +612,9 @@ class GravityLoadField(_ElementVectorField):
         return field
 
     @property
+    @units_io(types_in=(), types_out="gravity")
     def g(self):
-        """float: Gravitational acceleration (default 9.81 m/s²)."""
+        """Gravitational acceleration in the active unit system (e.g., m/s²)."""
         return self._g
 
     @property
@@ -602,12 +634,14 @@ class TemperatureField(_NodeScalarField):
     Parameters
     ----------
     temperature : float | Iterable[float]
+        Temperature magnitudes (active unit system).
     nodes : Iterable[Node]
     load_case : str | None
     combination_rank : int, optional
         1=primary, 2=secondary, 3=tertiary. Defaults to 1.
     """
 
+    @units_io(types_in=("temperature", None, None, None), types_out=None)
     def __init__(self, temperature: float | Iterable[float], distribution: Iterable["Node"], load_case: str | None = None, combination_rank: int = 1, **kwargs):
         super().__init__(scalars=temperature, distribution=distribution, wrap=False, load_case=load_case, combination_rank=combination_rank, **kwargs)
 
@@ -617,6 +651,7 @@ class TemperatureField(_NodeScalarField):
         raise NotImplementedError("TemperatureField.__from_data__ is not implemented yet.")
 
     @property
+    @units_io(types_in=(), types_out="temperature")
     def temperatures(self):
         return self._loads
 

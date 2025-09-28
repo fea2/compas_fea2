@@ -30,10 +30,11 @@ from compas.tolerance import TOL
 from scipy.spatial import KDTree
 
 import compas_fea2
-from compas_fea2.config import settings
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.config import settings
+from compas_fea2.units import units_io
 
 from .elements import BeamElement
 from .elements import HexahedronElement
@@ -204,6 +205,7 @@ class _Part(FEAData):
     #                       Constructors
     # =========================================================================
     @classmethod
+    @units_io(types_in=(None, "length", None, None, None), types_out=None)
     def from_compas_lines_discretized(cls, lines: List["Line"], targetlength: float, element_cls: type, section: "_Section2D", frame: "Union[Frame, List[float], Vector]", **kwargs):
         """Generate a discretized model from a list of :class:`compas.geometry.Line`.
 
@@ -211,9 +213,9 @@ class _Part(FEAData):
         ----------
         compas_lines : dict
             Dictionary providing for each compas line the targetlenght of the mesh, the element class, the section and frame. For example:
-            {'L1': [targetlenght1, BeamElement, section1, frame1], 'L2': [targetlenght2, BeamElement, section2, frame2]...}
-        target_length : int
-            The targetted lenght of the discretization of the lines.
+            {'L1': [targetlength1, BeamElement, section1, frame1], 'L2': [targetlength2, BeamElement, section2, frame2]...}
+        targetlength : float
+            Target element length for discretization (active length unit).
         section : :class:`compas_fea2.model.Section1D`
             The section to be assigned to the elements, by default None.
         element_model : str, optional
@@ -331,12 +333,12 @@ class _Part(FEAData):
     def from_gmsh(cls, section, **kwargs):
         """
         Creates a Part from Ggmsh.
-        
+
         Parameters
         ----------
         section : Union[SolidSection, ShellSection]
             The section type (`SolidSection` or `ShellSection`).
-            
+
         Returns
         -------
         _Part
@@ -731,8 +733,9 @@ class _Part(FEAData):
         return {hash(key): [list(map(float, element.nodes_partkey)) for element in group] for key, group in elements_group}
 
     @property
+    @units_io(types_in=(), types_out=(("length", "length", "length"),))
     def elements_centroids(self) -> List[List[float]]:
-        """The centroids of the part's elements."""
+        """The centroids of the part's elements (x, y, z in active length unit)."""
         return [list(np.mean([node.xyz for node in element.nodes], axis=0)) for element in self.elements]
 
     @property
@@ -890,8 +893,9 @@ class _Part(FEAData):
         return Plane.from_three_points(*[self.bounding_box.points[i] for i in self.bounding_box.top[:3]])
 
     @property
+    @units_io(types_in=(), types_out="volume")
     def volume(self) -> float:
-        """The total volume of the part."""
+        """The total volume of the part (active unit system)."""
         self._volume = 0.0
         for element in self.elements:
             if element.volume:
@@ -900,8 +904,9 @@ class _Part(FEAData):
 
     # FIXME: this should be mass?
     @property
+    @units_io(types_in=(), types_out="weight")
     def weight(self) -> float:
-        """The total weight of the part."""
+        """The total weight (force) of the part (active unit system)."""
         self._weight = 0.0
         for element in self.elements:
             if element.weight:
@@ -1311,6 +1316,7 @@ class _Part(FEAData):
         """
         return self.nodes.subgroup(condition=lambda x: x.name == name).members
 
+    @units_io(types_in=(None, "length"), types_out=None)
     def find_nodes_on_plane(self, plane: Plane, tol: float = 1.0) -> NodesGroup:
         """Find all nodes on a given plane.
 
@@ -1319,7 +1325,7 @@ class _Part(FEAData):
         plane : Plane
             The plane.
         tol : float, optional
-            Tolerance for the search, by default 1.0.
+            Tolerance for the search (active length unit), by default 1.0.
 
         Returns
         -------
@@ -1396,6 +1402,7 @@ class _Part(FEAData):
         """
         return self.find_closest_nodes_to_point(node.xyz, number_of_nodes, report=report, single=single)
 
+
     def find_nodes_in_polygon(self, polygon: "Polygon", tol: float = 1.1) -> "NodesGroup | None":
         """Find the nodes of the part that are contained within a planar polygon.
 
@@ -1404,7 +1411,7 @@ class _Part(FEAData):
         polygon : compas.geometry.Polygon
             The polygon for the search.
         tol : float, optional
-            Tolerance for the search, by default 1.1.
+            Tolerance for the search, by default 1.1. (10% larger than the polygon)
 
         Returns
         -------
@@ -1418,6 +1425,7 @@ class _Part(FEAData):
         polygon_xy = polygon.transformed(T)
         return nodes_on_plane.subgroup(condition=lambda x: is_point_in_polygon_xy(Point(*x.xyz).transformed(T), polygon_xy))
 
+    @units_io(types_in=(None, "length"), types_out=None)
     def find_nodes_around_point(
         self,
         point: Point,
@@ -1430,11 +1438,7 @@ class _Part(FEAData):
         point : Point
             The point to search around.
         distance : float
-            The distance from the point to search for nodes.
-        report : bool, optional
-            Whether to return distances along with the nodes.
-        single : bool, optional
-            Whether to return a single node or a group of nodes.
+            The distance from the point to search for nodes (active length unit).
 
         Returns
         -------

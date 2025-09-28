@@ -10,6 +10,7 @@ from typing import Dict, Mapping, Type
 
 _IMPLS: Dict[Type, Type] = {}  # Mapping of base classes to active implementation classes
 
+
 def _register_backend(mapping: Mapping[Type, Type]):
     """Install the given mapping as the single active backend."""
     _IMPLS.clear()
@@ -36,4 +37,3 @@ def set_backend(plugin):
 
 def list_backends() -> list[str]:
     return [getattr(e, "name", None) or getattr(e, "key", None) for e in entry_points(group="compas_fea2.backends")]
-

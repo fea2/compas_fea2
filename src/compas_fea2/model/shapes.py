@@ -24,6 +24,7 @@ from matplotlib.patches import Polygon as MplPolygon
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.units import units_io
 
 
 class Shape(Polygon, FEAData):
@@ -85,11 +86,13 @@ class Shape(Polygon, FEAData):
     # Properties
     # --------------------------------------------------------------------------
     @cached_property
+    @units_io(types_in=(), types_out="area")
     def area(self) -> float:
         """Area of the shape in the local plane (inherited from `Polygon`)."""
         return super().area
 
     @property
+    @units_io(types_in=(), types_out="area")
     def A(self) -> float:
         """Alias for area."""
         return self.area
@@ -145,6 +148,7 @@ class Shape(Polygon, FEAData):
     # Second moment of area (inertia) and related
     # --------------------------------------------------------------------------
     @cached_property
+    @units_io(types_in=(), types_out=("inertia", "inertia", "inertia"))
     def inertia_xy(self) -> Tuple[float, float, float]:
         """
         (Ixx, Iyy, Ixy) about the centroid in the local x-y plane (units: length^4).
@@ -173,37 +177,44 @@ class Shape(Polygon, FEAData):
         return (Ixx, Iyy, Ixy)
 
     @property
+    @units_io(types_in=(), types_out="inertia")
     def Ixx(self) -> float:
         """Moment of inertia about local x-axis (through centroid)."""
         return self.inertia_xy[0]
 
     @property
+    @units_io(types_in=(), types_out="inertia")
     def Iyy(self) -> float:
         """Moment of inertia about local y-axis (through centroid)."""
         return self.inertia_xy[1]
 
     @property
+    @units_io(types_in=(), types_out="inertia")
     def Ixy(self) -> float:
         """Product of inertia about local x and y axes (through centroid)."""
         return self.inertia_xy[2]
 
     @cached_property
+    @units_io(types_in=(), types_out=("length", "length"))
     def radii(self) -> Tuple[float, float]:
         """Radii of gyration about local x and y axes."""
         Ixx, Iyy, _ = self.inertia_xy
         return (sqrt(Ixx / self.area), sqrt(Iyy / self.area))
 
     @property
+    @units_io(types_in=(), types_out="length")
     def rx(self) -> float:
         """Radius of gyration about local x-axis."""
         return self.radii[0]
 
     @property
+    @units_io(types_in=(), types_out="length")
     def ry(self) -> float:
         """Radius of gyration about local y-axis."""
         return self.radii[1]
 
     @cached_property
+    @units_io(types_in=(), types_out=("inertia", "inertia", "angle"))
     def principal(self) -> Tuple[float, float, float]:
         """
         (I1, I2, theta): principal moments of inertia and
@@ -241,17 +252,20 @@ class Shape(Polygon, FEAData):
         return self.principal[2]
 
     @cached_property
+    @units_io(types_in=(), types_out=("length", "length"))
     def principal_radii(self) -> Tuple[float, float]:
         """Radii of gyration about the principal axes."""
         I1, I2, _ = self.principal
         return (sqrt(I1 / self.area), sqrt(I2 / self.area))
 
     @property
+    @units_io(types_in=(), types_out="length")
     def r1(self) -> float:
         """Radius of gyration about the first principal axis."""
         return self.principal_radii[0]
 
     @property
+    @units_io(types_in=(), types_out="length")
     def r2(self) -> float:
         """Radius of gyration about the second principal axis."""
         return self.principal_radii[1]
@@ -461,6 +475,7 @@ class Circle(Shape):
     A circular cross section defined by a radius and segmented approximation.
     """
 
+    @units_io(types_in=("length", None, None), types_out=None)
     def __init__(self, radius: float, segments: int = 360, frame: Optional[Frame] = None):
         if radius <= 0:
             raise ValueError("Radius must be a positive value.")
@@ -474,10 +489,12 @@ class Circle(Shape):
         return [Point(self._radius * math.cos(t), self._radius * math.sin(t), 0.0) for t in thetas]
 
     @property
+    @units_io(types_in=None, types_out="length")
     def radius(self) -> float:
         return self._radius
 
     @radius.setter
+    @units_io(types_in="length", types_out=None)
     def radius(self, val: float):
         self._radius = val
         self.points = self._set_points()
@@ -487,24 +504,29 @@ class Circle(Shape):
         return self._segments
 
     @property
+    @units_io(types_in=(), types_out="length")
     def diameter(self) -> float:
         return 2 * self._radius
 
     @property
+    @units_io(types_in=(), types_out="length")
     def circumference(self) -> float:
         return 2 * pi * self._radius
 
     @property
+    @units_io(types_in=(), types_out="inertia")
     def J(self) -> float:
         """Polar moment of inertia for a circular cross-section."""
         return pi * self._radius**4 / 2
 
     @property
+    @units_io(types_in=(), types_out="area")
     def Avx(self) -> float:
         """Shear area in the x-direction."""
         return 9 / 10 * self.area
 
     @property
+    @units_io(types_in=(), types_out="area")
     def Avy(self) -> float:
         """Shear area in the y-direction."""
         return 9 / 10 * self.area
@@ -543,6 +565,7 @@ class Ellipse(Shape):
     An elliptical cross section defined by two principal radii (radius_a, radius_b).
     """
 
+    @units_io(types_in=("length", "length", None, None), types_out=None)
     def __init__(self, radius_a: float, radius_b: float, segments: int = 32, frame: Optional[Frame] = None):
         self._radius_a = radius_a
         self._radius_b = radius_b
@@ -555,19 +578,23 @@ class Ellipse(Shape):
         return [Point(self._radius_a * math.cos(t), self._radius_b * math.sin(t), 0.0) for t in thetas]
 
     @property
+    @units_io(types_in=None, types_out="length")
     def radius_a(self) -> float:
         return self._radius_a
 
     @radius_a.setter
+    @units_io(types_in="length", types_out=None)
     def radius_a(self, val: float):
         self._radius_a = val
         self.points = self._set_points()
 
     @property
+    @units_io(types_in=None, types_out="length")
     def radius_b(self) -> float:
         return self._radius_b
 
     @radius_b.setter
+    @units_io(types_in="length", types_out=None)
     def radius_b(self, val: float):
         self._radius_b = val
         self.points = self._set_points()
@@ -577,6 +604,7 @@ class Ellipse(Shape):
         return self._segments
 
     @property
+    @units_io(types_in=(), types_out="inertia")
     def J(self) -> float:
         return pi * self._radius_a * self._radius_b**3 / 2
 
@@ -603,14 +631,17 @@ class Ellipse(Shape):
         return A_s_x, A_s_y
 
     @property
+    @units_io(types_in=(), types_out="area")
     def Avx(self) -> float:
         return self._calculate_shear_area()[0]
 
     @property
+    @units_io(types_in=(), types_out="area")
     def Avy(self) -> float:
         return self._calculate_shear_area()[1]
 
     @property
+    @units_io(types_in=(), types_out="length")
     def circumference(self) -> float:
         a = self._radius_a
         b = self._radius_b
@@ -651,6 +682,7 @@ class Rectangle(Shape):
     Rectangle shape specified by width (w) and height (h).
     """
 
+    @units_io(types_in=("length", "length", None), types_out=None)
     def __init__(self, w: float, h: float, frame: Optional[Frame] = None):
         if w <= 0 or h <= 0:
             raise ValueError("Width and height must be positive values.")
@@ -665,14 +697,17 @@ class Rectangle(Shape):
         super().__init__(pts, frame=frame)
 
     @property
+    @units_io(types_in=(), types_out="length")
     def w(self) -> float:
         return self._w
 
     @property
+    @units_io(types_in=(), types_out="length")
     def h(self) -> float:
         return self._h
 
     @property
+    @units_io(types_in=(), types_out="inertia")
     def J(self):
         """Torsional constant (polar moment of inertia).
         Roark's Formulas for stress & Strain, 7th Edition, Warren C. Young & Richard G. Budynas
@@ -689,10 +724,12 @@ class Rectangle(Shape):
         return J
 
     @property
+    @units_io(types_in=(), types_out="area")
     def Avx(self) -> float:
         return 5 / 6 * self.area
 
     @property
+    @units_io(types_in=(), types_out="area")
     def Avy(self) -> float:
         return 5 / 6 * self.area
 
@@ -731,6 +768,7 @@ class Rhombus(Shape):
     (the shape is basically a diamond shape).
     """
 
+    @units_io(types_in=("length", "length", None), types_out=None)
     def __init__(self, a: float, b: float, frame: Optional[Frame] = None):
         self._a = a
         self._b = b
@@ -743,10 +781,12 @@ class Rhombus(Shape):
         super().__init__(pts, frame=frame)
 
     @property
+    @units_io(types_in=(), types_out="length")
     def a(self) -> float:
         return self._a
 
     @property
+    @units_io(types_in=(), types_out="length")
     def b(self) -> float:
         return self._b
 
@@ -784,6 +824,7 @@ class UShape(Shape):
     U-shaped cross section.
     """
 
+    @units_io(types_in=("length", "length", "length", "length", "length", None, None), types_out=None)
     def __init__(self, a: float, b: float, t1: float, t2: float, t3: float, direction: str = "up", frame: Optional[Frame] = None):
         self._a = a
         self._b = b
@@ -805,22 +846,27 @@ class UShape(Shape):
         super().__init__(pts, frame=frame)
 
     @property
+    @units_io(types_in=(), types_out="length")
     def a(self) -> float:
         return self._a
 
     @property
+    @units_io(types_in=(), types_out="length")
     def b(self) -> float:
         return self._b
 
     @property
+    @units_io(types_in=(), types_out="length")
     def t1(self) -> float:
         return self._t1
 
     @property
+    @units_io(types_in=(), types_out="length")
     def t2(self) -> float:
         return self._t2
 
     @property
+    @units_io(types_in=(), types_out="length")
     def t3(self) -> float:
         return self._t3
 
@@ -862,6 +908,7 @@ class TShape(Shape):
     T-shaped cross section.
     """
 
+    @units_io(types_in=("length", "length", "length", "length", None, None), types_out=None)
     def __init__(self, a: float, b: float, t1: float, t2: float, direction: str = "up", frame: Optional[Frame] = None):
         self._a = a
         self._b = b
@@ -882,18 +929,22 @@ class TShape(Shape):
         super().__init__(pts, frame=frame)
 
     @property
+    @units_io(types_in=(), types_out="length")
     def a(self) -> float:
         return self._a
 
     @property
+    @units_io(types_in=(), types_out="length")
     def b(self) -> float:
         return self._b
 
     @property
+    @units_io(types_in=(), types_out="length")
     def t1(self) -> float:
         return self._t1
 
     @property
+    @units_io(types_in=(), types_out="length")
     def t2(self) -> float:
         return self._t2
 
@@ -934,6 +985,7 @@ class IShape(Shape):
     I-shaped (or wide-flange) cross section.
     """
 
+    @units_io(types_in=("length", "length", "length", "length", "length", None, None), types_out=None)
     def __init__(self, w: float, h: float, tw: float, tbf: float, ttf: float, direction: str = "up", frame: Optional[Frame] = None):
         if any(dim <= 0 for dim in [w, h, tw, ttf, tbf]):
             raise ValueError("All dimensions must be positive values.")
@@ -972,42 +1024,52 @@ class IShape(Shape):
         super().__init__(pts, frame=frame)
 
     @property
+    @units_io(types_in=(), types_out="length")
     def w(self) -> float:
         return self._w
 
     @property
+    @units_io(types_in=(), types_out="length")
     def h(self) -> float:
         return self._h
 
     @property
+    @units_io(types_in=(), types_out="length")
     def tw(self) -> float:
         return self._tw
 
     @property
+    @units_io(types_in=(), types_out="length")
     def hw(self) -> float:
         return self.h - self.tbf - self.ttf
 
     @property
+    @units_io(types_in=(), types_out="length")
     def tbf(self) -> float:
         return self._tbf
 
     @property
+    @units_io(types_in=(), types_out="length")
     def ttf(self) -> float:
         return self._ttf
 
     @property
+    @units_io(types_in=(), types_out="area")
     def atf(self) -> float:
         return self._ttf * self.w
 
     @property
+    @units_io(types_in=(), types_out="area")
     def abf(self) -> float:
         return self._tbf * self.w
 
     @property
+    @units_io(types_in=(), types_out="area")
     def aw(self) -> float:
         return self._tw * self.hw
 
     @property
+    @units_io(types_in=(), types_out="inertia")
     def J(self) -> float:
         """
         Torsional constant approximation for an I-beam cross-section.
@@ -1015,6 +1077,8 @@ class IShape(Shape):
         """
         return (1.0 / 3.0) * (self.w * (self.tbf**3 + self.ttf**3) + (self.h - self.tbf - self.ttf) * self.tw**3)
 
+    @property
+    @units_io(types_in=(), types_out=("area", "area"))
     def shear_area_I_beam_axes(self):
         """
         Calculate the shear area (A_s) of an I-beam cross-section along x- and y-axes,
@@ -1038,10 +1102,12 @@ class IShape(Shape):
         return A_s_x, A_s_y
 
     @property
+    @units_io(types_in=(), types_out="area")
     def Avx(self) -> float:
         return self.shear_area_I_beam_axes()[0]
 
     @property
+    @units_io(types_in=(), types_out="area")
     def Avy(self) -> float:
         return self.shear_area_I_beam_axes()[1]
 
@@ -1083,6 +1149,7 @@ class LShape(Shape):
     L-shaped cross section (angle profile).
     """
 
+    @units_io(types_in=("length", "length", "length", "length", None, None), types_out=None)
     def __init__(self, a: float, b: float, t1: float, t2: float, direction: str = "up", frame: Optional[Frame] = None):
         self._a = a
         self._b = b
@@ -1101,18 +1168,22 @@ class LShape(Shape):
         super().__init__(pts, frame=frame)
 
     @property
+    @units_io(types_in=(), types_out="length")
     def a(self) -> float:
         return self._a
 
     @property
+    @units_io(types_in=(), types_out="length")
     def b(self) -> float:
         return self._b
 
     @property
+    @units_io(types_in=(), types_out="length")
     def t1(self) -> float:
         return self._t1
 
     @property
+    @units_io(types_in=(), types_out="length")
     def t2(self) -> float:
         return self._t2
 
@@ -1153,6 +1224,7 @@ class CShape(Shape):
     C-shaped cross section (channel).
     """
 
+    @units_io(types_in=("length", "length", "length", "length", None), types_out=None)
     def __init__(self, height: float, flange_width: float, web_thickness: float, flange_thickness: float, frame: Optional[Frame] = None):
         self._height = height
         self._flange_width = flange_width
@@ -1211,6 +1283,7 @@ class CustomI(Shape):
     Custom "I"-like shape with different top/bottom flange widths.
     """
 
+    @units_io(types_in=("length", "length", "length", "length", "length", "length", None), types_out=None)
     def __init__(
         self,
         height: float,
@@ -1298,6 +1371,7 @@ class Star(Shape):
     A star-like shape, parameterized by a, b, c for demonstration.
     """
 
+    @units_io(types_in=("length", "length", "length", None), types_out=None)
     def __init__(self, a: float, b: float, c: float, frame: Optional[Frame] = None):
         self._a = a
         self._b = b
@@ -1318,28 +1392,34 @@ class Star(Shape):
         ]
 
     @property
+    @units_io(types_in=(), types_out="length")
     def a(self) -> float:
         return self._a
 
     @a.setter
+    @units_io(types_in=("length",), types_out=None)
     def a(self, val: float):
         self._a = val
         self.points = self._set_points()
 
     @property
+    @units_io(types_in=(), types_out="length")
     def b(self) -> float:
         return self._b
 
     @b.setter
+    @units_io(types_in=("length",), types_out=None)
     def b(self, val: float):
         self._b = val
         self.points = self._set_points()
 
     @property
+    @units_io(types_in=(), types_out="length")
     def c(self) -> float:
         return self._c
 
     @c.setter
+    @units_io(types_in=("length",), types_out=None)
     def c(self, val: float):
         self._c = val
         self.points = self._set_points()
@@ -1379,6 +1459,7 @@ class Hexagon(Shape):
     A regular hexagon specified by its side length.
     """
 
+    @units_io(types_in=("length", None), types_out=None)
     def __init__(self, side_length: float, frame: Optional[Frame] = None):
         self._side_length = side_length
         pts = self._set_points()
@@ -1395,10 +1476,12 @@ class Hexagon(Shape):
         ]
 
     @property
+    @units_io(types_in=(), types_out="length")
     def side_length(self) -> float:
         return self._side_length
 
     @side_length.setter
+    @units_io(types_in=("length",), types_out=None)
     def side_length(self, val: float):
         self._side_length = val
         self.points = self._set_points()
@@ -1436,6 +1519,7 @@ class Pentagon(Shape):
     A regular pentagon specified by its circumradius.
     """
 
+    @units_io(types_in=("length", None), types_out=None)
     def __init__(self, circumradius: float, frame: Optional[Frame] = None):
         self._circumradius = circumradius
         pts = self._set_points()
@@ -1485,6 +1569,7 @@ class Octagon(Shape):
     A regular octagon specified by its circumradius.
     """
 
+    @units_io(types_in=("length", None), types_out=None)
     def __init__(self, circumradius: float, frame: Optional[Frame] = None):
         self._circumradius = circumradius
         pts = self._set_points()
@@ -1534,6 +1619,7 @@ class Triangle(Shape):
     An equilateral triangle specified by its circumradius.
     """
 
+    @units_io(types_in=("length", None), types_out=None)
     def __init__(self, circumradius: float, frame: Optional[Frame] = None):
         self._circumradius = circumradius
         pts = self._set_points()
@@ -1583,6 +1669,7 @@ class Parallelogram(Shape):
     A parallelogram specified by width, height, and the angle (in radians).
     """
 
+    @units_io(types_in=("length", "length", "angle", None), types_out=None)
     def __init__(self, width: float, height: float, angle: float, frame: Optional[Frame] = None):
         self._width = width
         self._height = height
@@ -1635,6 +1722,7 @@ class Trapezoid(Shape):
     A trapezoid specified by top width, bottom width, and height.
     """
 
+    @units_io(types_in=("length", "length", "length", None), types_out=None)
     def __init__(self, top_width: float, bottom_width: float, height: float, frame: Optional[Frame] = None):
         self._top_width = top_width
         self._bottom_width = bottom_width

@@ -16,6 +16,7 @@ from compas_fea2.model.shapes import IShape
 from compas_fea2.model.shapes import LShape
 from compas_fea2.model.shapes import Rectangle
 from compas_fea2.model.shapes import Shape
+from compas_fea2.units import units_io
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
@@ -151,20 +152,21 @@ class SpringSection(FEAData):
     to elements in different Parts.
     """
 
+    @units_io(types_in=("translational_stiffness", "translational_stiffness", "rotational_stiffness"), types_out=None)
     def __init__(self, axial: float | None, lateral: float | None, rotational: float | None, **kwargs):
         super().__init__(**kwargs)
-        self.axial = axial
-        self.lateral = lateral
-        self.rotational = rotational
+        self._axial = axial
+        self._lateral = lateral
+        self._rotational = rotational
 
     @property
     def __data__(self):
         data = super().__data__ if hasattr(super(), "__data__") else {}
         data.update(
             {
-                "axial": self.axial,
-                "lateral": self.lateral,
-                "rotational": self.rotational,
+                "axial": self._axial,
+                "lateral": self._lateral,
+                "rotational": self._rotational,
             }
         )
         return data
@@ -186,9 +188,9 @@ class SpringSection(FEAData):
 Spring Section
 --------------
 Key                     : {self.key}
-axial stiffness         : {self.axial}
-lateral stiffness       : {self.lateral}
-rotational stiffness    : {self.rotational}
+axial stiffness         : {self._axial}
+lateral stiffness       : {self._lateral}
+rotational stiffness    : {self._rotational}
 """
 
     @property
@@ -197,7 +199,37 @@ rotational stiffness    : {self.rotational}
 
     @property
     def stiffness(self) -> dict:
-        return {"Axial": self.axial, "Lateral": self.lateral, "Rotational": self.rotational}
+        return {"Axial": self._axial, "Lateral": self._lateral, "Rotational": self._rotational}
+
+    @property
+    @units_io(types_in=(), types_out="translational_stiffness")
+    def axial(self) -> float | None:
+        return self._axial
+
+    @axial.setter
+    @units_io(types_in=("translational_stiffness",), types_out=None)
+    def axial(self, value: float | None):
+        self._axial = value
+
+    @property
+    @units_io(types_in=(), types_out="translational_stiffness")
+    def lateral(self) -> float | None:
+        return self._lateral
+
+    @lateral.setter
+    @units_io(types_in=("translational_stiffness",), types_out=None)
+    def lateral(self, value: float | None):
+        self._lateral = value
+
+    @property
+    @units_io(types_in=(), types_out="rotational_stiffness")
+    def rotational(self) -> float | None:
+        return self._rotational
+
+    @rotational.setter
+    @units_io(types_in=("rotational_stiffness",), types_out=None)
+    def rotational(self, value: float | None):
+        self._rotational = value
 
 
 class ConnectorSection(SpringSection):
@@ -224,6 +256,7 @@ class ConnectorSection(SpringSection):
         Rotational stiffness value.
     """
 
+    @units_io(types_in=("translational_stiffness", "translational_stiffness", "rotational_stiffness"), types_out=None)
     def __init__(self, axial: float | None = None, lateral: float | None = None, rotational: float | None = None, **kwargs):
         super().__init__(axial, lateral, rotational, **kwargs)
 
@@ -262,6 +295,7 @@ class _Section1D(_Section):
         Warping constant.
     """
 
+    @units_io(types_in=("area", "area_moment", "area_moment", "area_moment", "area", "area", "polar_moment", "warping_constant", "warping_constant"), types_out=None)
     def __init__(self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", shape: "Shape | None" = None, **kwargs):
         super().__init__(material=material, **kwargs)
         self.A = A
@@ -339,6 +373,7 @@ g0  : {self.g0}
 gw  : {self.gw}
 """
 
+    @units_io(types_in=("force", "moment", "moment", "force", "force", "length", "length"), types_out=("stress", "stress", "stress"))
     def compute_stress(self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, x: float = 0.0, y: float = 0.0) -> tuple:
         """
         Compute normal and shear stresses at a given point.
@@ -370,6 +405,7 @@ gw  : {self.gw}
         tau_y = Vy / self.Avy if self.Avy else Vy / self.A
         return sigma, tau_x, tau_y
 
+    @units_io(types_in=("force", "moment", "moment", "force", "force"), types_out=None)
     def compute_stress_distribution(self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0, Vx: float = 0.0, Vy: float = 0.0, nx: int = 50, ny: int = 50) -> tuple:
         """
         Compute stress distribution over the section.
@@ -434,6 +470,7 @@ gw  : {self.gw}
         else:
             raise ValueError("Section shape is not defined. Please set the shape before computing stress distribution.")
 
+    @units_io(types_in=("force", "moment", "moment"), types_out=("strain", "length"))
     def compute_neutral_axis(self, N: float = 0.0, Mx: float = 0.0, My: float = 0.0) -> tuple:
         """
         Compute the neutral axis slope and intercept for the section.
@@ -831,6 +868,7 @@ class AngleSection(_Section1D):
     Ixy not yet calculated.
     """
 
+    @units_io(types_in=("length", "length", "length", "length"), types_out=None)
     def __init__(self, a, b, t1, t2, direction, material, **kwargs):
         shape = LShape(a=a, b=b, t1=t1, t2=t2, direction=direction)
         super().__init__(**from_shape(shape, material, **kwargs))
@@ -927,6 +965,7 @@ class BoxSection(_Section1D):
     Ixy not yet calculated.
     """
 
+    @units_io(types_in=("length", "length", "length", "length"), types_out=None)
     def __init__(self, w, h, tw, tf, material, **kwargs):
         self.w = w
         self.h = h
@@ -1027,6 +1066,7 @@ class CircularSection(_Section1D):
         The section material.
     """
 
+    @units_io(types_in=("length",), types_out=None)
     def __init__(self, r, material, **kwargs):
         shape = Circle(r, 360)
         super().__init__(**from_shape(shape, material, **kwargs))
@@ -1596,6 +1636,7 @@ class PipeSection(_Section1D):
         The section material.
     """
 
+    @units_io(types_in=("length", "length"), types_out=None)
     def __init__(self, r, t, material, **kwargs):
         self.r = r
         self.t = t
@@ -1693,6 +1734,7 @@ class RectangularSection(_Section1D):
         The section material.
     """
 
+    @units_io(types_in=("length", "length"), types_out=None)
     def __init__(self, w, h, material, **kwargs):
         shape = Rectangle(w, h)
         super().__init__(**from_shape(shape, material, **kwargs))
@@ -1771,6 +1813,7 @@ class TrapezoidalSection(_Section1D):
     J not yet calculated.
     """
 
+    @units_io(types_in=("length", "length", "length"), types_out=None)
     def __init__(self, w1, w2, h, material, **kwargs):
         self.w1 = w1
         self.w2 = w2
@@ -1871,6 +1914,7 @@ class TrussSection(_Section1D):
         The section material.
     """
 
+    @units_io(types_in=("area",), types_out=None)
     def __init__(self, A, material, **kwargs):
         Ixx = 0
         Iyy = 0
@@ -2038,9 +2082,20 @@ class _Section2D(_Section):
         Thickness.
     """
 
+    @units_io(types_in=("length",), types_out=None)
     def __init__(self, t: float, material: "_Material", **kwargs):
         super().__init__(material=material, **kwargs)
-        self.t = t
+        self._t = t
+
+    @property
+    @units_io(types_in=(), types_out="length")
+    def t(self) -> float:
+        return self._t
+
+    @t.setter
+    @units_io(types_in=("length",), types_out=None)
+    def t(self, value: float):
+        self._t = value
 
     @property
     def __data__(self):
@@ -2085,7 +2140,8 @@ class ShellSection(_Section2D):
     material : :class:`compas_fea2.model._Material`
         The section material.
     """
-
+    
+    @units_io(types_in=("length",), types_out=None)
     def __init__(self, t, material, **kwargs):
         super(ShellSection, self).__init__(t=t, material=material, **kwargs)
 
@@ -2132,6 +2188,7 @@ class MembraneSection(_Section2D):
         The section material.
     """
 
+    @units_io(types_in=("length",), types_out=None)
     def __init__(self, t, material, **kwargs):
         super(MembraneSection, self).__init__(t=t, material=material, **kwargs)
 

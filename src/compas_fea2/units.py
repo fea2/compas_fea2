@@ -1,27 +1,20 @@
 from __future__ import annotations
 
+import contextvars
 import functools
 import inspect
-import contextvars
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Union, Iterable
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Sequence, Tuple, Union
 
 import pint
-
 
 # =============================================================================
 # Unit registry (pretty formatting)
 # =============================================================================
 
 ureg = pint.UnitRegistry()
-try:
-    # Pint ≥ 0.23 (recommended)
-    ureg.formatter.default_format = "~P"  # abbreviated units + SI prefixes (compact)
-except Exception:
-    # Older Pint compatibility
-    try:
-        ureg.default_format = "~P"
-    except Exception:
-        pass
+# Pretty/compact units (abbrev + SI prefixes, e.g. 210 MPa, 12.3 kN, 25 mm)
+# (In modern Pint, this is the recommended way to set the default)
+ureg.formatter.default_format = "~P"
 
 
 # =============================================================================
@@ -29,35 +22,344 @@ except Exception:
 # =============================================================================
 
 UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
+    # ========================================================================
+    # SI (meters, newtons, pascals, kelvin)
+    # ========================================================================
     "SI": {
-        "length":  ureg.meter,
-        "time":    ureg.second,
-        "mass":    ureg.kilogram,
-        "force":   ureg.newton,
-        "stress":  ureg.pascal,
-        "density": ureg.kilogram / ureg.meter**3,
-        "angle":   ureg.radian,
+        # --- Geometry & kinematics
+        "length": ureg.meter,
+        "area": ureg.meter**2,
+        "volume": ureg.meter**3,
+        "angle": ureg.radian,
+        "time": ureg.second,
+        "velocity": ureg.meter / ureg.second,
+        "acceleration": ureg.meter / ureg.second**2,
+        "angular_velocity": ureg.radian / ureg.second,
+        "angular_acceleration": ureg.radian / ureg.second**2,
+        # --- Forces & moments
+        "mass": ureg.kilogram,
+        "force": ureg.newton,
+        "moment": ureg.newton * ureg.meter,  # torque
+        # --- Loads
+        "line_load": ureg.newton / ureg.meter,  # F/L
+        "surface_load": ureg.newton / ureg.meter**2,  # = pressure
+        "volumetric_load": ureg.newton / ureg.meter**3,
+        # --- Stress/strain & material moduli
+        "stress": ureg.pascal,
+        "pressure": ureg.pascal,
+        "strain": ureg.dimensionless,
+        "youngs_modulus": ureg.pascal,
+        "shear_modulus": ureg.pascal,  # G
+        "bulk_modulus": ureg.pascal,  # K
+        "lame_lambda": ureg.pascal,  # λ
+        "lame_mu": ureg.pascal,  # μ (= G)
+        "poisson_ratio": ureg.dimensionless,
+        # --- Section properties (area inertia etc.)
+        "area_moment": ureg.meter**4,  # I
+        "polar_moment": ureg.meter**4,  # J_p
+        "section_modulus": ureg.meter**3,  # Z
+        "shear_area": ureg.meter**2,  # A_s (effective)
+        "warping_constant": ureg.meter**6,  # C_w (thin-walled)
+        "radius_of_gyration": ureg.meter,
+        # --- Mass inertia (rigid-body)
+        "mass_moment_inertia": ureg.kilogram * ureg.meter**2,
+        "mass_polar_inertia": ureg.kilogram * ureg.meter**2,
+        # --- Rigidities (EA/EI/GJ/kGA)
+        "axial_rigidity": ureg.newton,  # EA
+        "bending_rigidity": ureg.newton * ureg.meter**2,  # EI
+        "torsional_rigidity": ureg.newton * ureg.meter**2,  # GJ
+        "shear_rigidity": ureg.newton,  # kGA
+        # --- Stiffness (springs/foundations)
+        "translational_stiffness": ureg.newton / ureg.meter,  # k_t
+        "rotational_stiffness": (ureg.newton * ureg.meter) / ureg.radian,  # k_r
+        "foundation_modulus": ureg.newton / ureg.meter**3,  # Winkler k
+        "shear_layer_modulus": ureg.newton / ureg.meter**2,  # Pasternak k_s
+        "contact_penalty": ureg.newton / ureg.meter**3,
+        # --- Damping
+        "viscous_damping": ureg.newton * ureg.second / ureg.meter,  # c (transl.)
+        "rotational_damping": (ureg.newton * ureg.meter) * ureg.second / ureg.radian,
+        "damping_ratio": ureg.dimensionless,
+        "loss_factor": ureg.dimensionless,
+        # --- Densities & weights
+        "density": ureg.kilogram / ureg.meter**3,  # ρ
+        "specific_weight": ureg.newton / ureg.meter**3,  # γ
+        # --- Flows
+        "mass_flow": ureg.kilogram / ureg.second,
+        "volumetric_flow": ureg.meter**3 / ureg.second,
+        # --- Energy & power
+        "energy": ureg.joule,
+        "work": ureg.joule,
+        "power": ureg.watt,
+        "frequency": ureg.hertz,
+        # --- Thermal
+        "temperature": ureg.kelvin,  # absolute
+        "temperature_diff": ureg.kelvin,  # ΔT
+        "thermal_conductivity": ureg.watt / (ureg.meter * ureg.kelvin),
+        "thermal_resistivity": (ureg.meter * ureg.kelvin) / ureg.watt,
+        "thermal_resistance": ureg.kelvin / ureg.watt,
+        "thermal_capacitance": ureg.joule / ureg.kelvin,
+        "specific_heat": ureg.joule / (ureg.kilogram * ureg.kelvin),
+        "thermal_expansion": 1 / ureg.kelvin,
+        "heat_flux": ureg.watt / ureg.meter**2,
+        "heat_rate": ureg.watt,
+        "heat_source_vol": ureg.watt / ureg.meter**3,
+        "heat_source_area": ureg.watt / ureg.meter**2,
+        "heat_source_line": ureg.watt / ureg.meter,
+        "htc": ureg.watt / (ureg.meter**2 * ureg.kelvin),
+        "thermal_diffusivity": ureg.meter**2 / ureg.second,
+        "emissivity": ureg.dimensionless,
+        "absorptivity": ureg.dimensionless,
+        "view_factor": ureg.dimensionless,
+        "stefan_boltzmann": ureg.watt / (ureg.meter**2 * ureg.kelvin**4),
+        # --- Fluids
+        "viscosity_dynamic": ureg.pascal * ureg.second,  # μ
+        "viscosity_kinematic": ureg.meter**2 / ureg.second,  # ν
+        "pressure_head": ureg.meter,
+        # --- Electromagnetics (basic)
+        "voltage": ureg.volt,
+        "current": ureg.ampere,
+        "charge": ureg.coulomb,
+        "resistance": ureg.ohm,
+        "conductance": ureg.siemens,
+        "capacitance": ureg.farad,
+        "inductance": ureg.henry,
+        "resistivity": ureg.ohm * ureg.meter,  # ρ_elec
+        "conductivity": ureg.siemens / ureg.meter,  # σ
+        "permittivity": ureg.farad / ureg.meter,  # ε
+        "permeability": ureg.henry / ureg.meter,  # μ
+        "electric_field": ureg.volt / ureg.meter,  # E
+        "magnetic_field": ureg.ampere / ureg.meter,  # H
+        "magnetic_flux": ureg.weber,  # Φ
+        "magnetic_flux_density": ureg.tesla,  # B
+        # --- Misc dimensionless
+        "coefficient_of_friction": ureg.dimensionless,
     },
+    # ========================================================================
+    # SI-mm (millimeters, newtons, megapascal, kelvin)
+    # ========================================================================
     "SI-mm": {
-        "length":  ureg.millimeter,
-        "time":    ureg.second,
-        "mass":    ureg.kilogram,
-        "force":   ureg.newton,
-        "stress":  ureg.megapascal,  # common with mm
+        # Geometry & kinematics
+        "length": ureg.millimeter,
+        "area": ureg.millimeter**2,
+        "volume": ureg.millimeter**3,
+        "angle": ureg.radian,
+        "time": ureg.second,
+        "velocity": ureg.meter / ureg.second,  # keep m/s
+        "acceleration": ureg.meter / ureg.second**2,
+        "angular_velocity": ureg.radian / ureg.second,
+        "angular_acceleration": ureg.radian / ureg.second**2,
+        # Forces & moments
+        "mass": ureg.kilogram,
+        "force": ureg.newton,
+        "moment": ureg.newton * ureg.millimeter,  # N·mm
+        # Loads
+        "line_load": ureg.newton / ureg.millimeter,  # N/mm
+        "surface_load": ureg.newton / ureg.meter**2,  # Pa
+        "volumetric_load": ureg.newton / ureg.meter**3,
+        # Stress/strain & moduli
+        "stress": ureg.megapascal,  # MPa with mm
+        "pressure": ureg.pascal,
+        "strain": ureg.dimensionless,
+        "youngs_modulus": ureg.megapascal,
+        "shear_modulus": ureg.megapascal,
+        "bulk_modulus": ureg.megapascal,
+        "lame_lambda": ureg.megapascal,
+        "lame_mu": ureg.megapascal,
+        "poisson_ratio": ureg.dimensionless,
+        # Section properties
+        "area_moment": ureg.millimeter**4,
+        "polar_moment": ureg.millimeter**4,
+        "section_modulus": ureg.millimeter**3,
+        "shear_area": ureg.millimeter**2,
+        "warping_constant": ureg.millimeter**6,
+        "radius_of_gyration": ureg.millimeter,
+        # Mass inertia
+        "mass_moment_inertia": ureg.kilogram * ureg.meter**2,  # keep SI base
+        "mass_polar_inertia": ureg.kilogram * ureg.meter**2,
+        # Rigidities
+        "axial_rigidity": ureg.newton,
+        "bending_rigidity": ureg.newton * ureg.millimeter**2,
+        "torsional_rigidity": ureg.newton * ureg.millimeter**2,
+        "shear_rigidity": ureg.newton,
+        # Stiffness
+        "translational_stiffness": ureg.newton / ureg.millimeter,
+        "rotational_stiffness": (ureg.newton * ureg.millimeter) / ureg.radian,
+        "foundation_modulus": ureg.newton / ureg.millimeter**3,
+        "shear_layer_modulus": ureg.newton / ureg.millimeter**2,
+        "contact_penalty": ureg.newton / ureg.millimeter**3,
+        # Damping
+        "viscous_damping": ureg.newton * ureg.second / ureg.meter,
+        "rotational_damping": (ureg.newton * ureg.millimeter) * ureg.second / ureg.radian,
+        "damping_ratio": ureg.dimensionless,
+        "loss_factor": ureg.dimensionless,
+        # Densities & weights
         "density": ureg.kilogram / ureg.meter**3,
-        "angle":   ureg.radian,
+        "specific_weight": ureg.newton / ureg.meter**3,
+        # Flows
+        "mass_flow": ureg.kilogram / ureg.second,
+        "volumetric_flow": ureg.meter**3 / ureg.second,
+        # Energy & power
+        "energy": ureg.joule,
+        "work": ureg.joule,
+        "power": ureg.watt,
+        "frequency": ureg.hertz,
+        # Thermal
+        "temperature": ureg.kelvin,
+        "temperature_diff": ureg.kelvin,
+        "thermal_conductivity": ureg.watt / (ureg.meter * ureg.kelvin),
+        "thermal_resistivity": (ureg.meter * ureg.kelvin) / ureg.watt,
+        "thermal_resistance": ureg.kelvin / ureg.watt,
+        "thermal_capacitance": ureg.joule / ureg.kelvin,
+        "specific_heat": ureg.joule / (ureg.kilogram * ureg.kelvin),
+        "thermal_expansion": 1 / ureg.kelvin,
+        "heat_flux": ureg.watt / ureg.meter**2,
+        "heat_rate": ureg.watt,
+        "heat_source_vol": ureg.watt / ureg.meter**3,
+        "heat_source_area": ureg.watt / ureg.meter**2,
+        "heat_source_line": ureg.watt / ureg.meter,
+        "htc": ureg.watt / (ureg.meter**2 * ureg.kelvin),
+        "thermal_diffusivity": ureg.meter**2 / ureg.second,
+        "emissivity": ureg.dimensionless,
+        "absorptivity": ureg.dimensionless,
+        "view_factor": ureg.dimensionless,
+        "stefan_boltzmann": ureg.watt / (ureg.meter**2 * ureg.kelvin**4),
+        # Fluids
+        "viscosity_dynamic": ureg.pascal * ureg.second,
+        "viscosity_kinematic": ureg.meter**2 / ureg.second,
+        "pressure_head": ureg.meter,
+        # Electromagnetics
+        "voltage": ureg.volt,
+        "current": ureg.ampere,
+        "charge": ureg.coulomb,
+        "resistance": ureg.ohm,
+        "conductance": ureg.siemens,
+        "capacitance": ureg.farad,
+        "inductance": ureg.henry,
+        "resistivity": ureg.ohm * ureg.meter,
+        "conductivity": ureg.siemens / ureg.meter,
+        "permittivity": ureg.farad / ureg.meter,
+        "permeability": ureg.henry / ureg.meter,
+        "electric_field": ureg.volt / ureg.meter,
+        "magnetic_field": ureg.ampere / ureg.meter,
+        "magnetic_flux": ureg.weber,
+        "magnetic_flux_density": ureg.tesla,
+        # Dimensionless
+        "coefficient_of_friction": ureg.dimensionless,
     },
+    # ========================================================================
+    # Imperial (inches, pound-force, psi, °F; ft/s for velocity)
+    # ========================================================================
     "Imperial": {
-        "length":  ureg.inch,
-        "time":    ureg.second,
-        "mass":    ureg.slug,                # consistent with lbf
-        "force":   ureg.pound_force,
-        "stress":  ureg.psi,
+        # Geometry & kinematics
+        "length": ureg.inch,
+        "area": ureg.inch**2,
+        "volume": ureg.inch**3,
+        "angle": ureg.radian,
+        "time": ureg.second,
+        "velocity": ureg.foot / ureg.second,  # ft/s
+        "acceleration": ureg.foot / ureg.second**2,
+        "angular_velocity": ureg.radian / ureg.second,
+        "angular_acceleration": ureg.radian / ureg.second**2,
+        # Forces & moments
+        "mass": ureg.slug,
+        "force": ureg.pound_force,  # lbf
+        "moment": ureg.pound_force * ureg.inch,  # lbf·in
+        # Loads
+        "line_load": ureg.pound_force / ureg.foot,  # lbf/ft
+        "surface_load": ureg.pound_force / ureg.foot**2,  # psf
+        "volumetric_load": ureg.pound_force / ureg.foot**3,
+        # Stress/strain & moduli
+        "stress": ureg.psi,  # lbf/in²
+        "pressure": ureg.psi,
+        "strain": ureg.dimensionless,
+        "youngs_modulus": ureg.psi,
+        "shear_modulus": ureg.psi,
+        "bulk_modulus": ureg.psi,
+        "lame_lambda": ureg.psi,
+        "lame_mu": ureg.psi,
+        "poisson_ratio": ureg.dimensionless,
+        # Section properties
+        "area_moment": ureg.inch**4,
+        "polar_moment": ureg.inch**4,
+        "section_modulus": ureg.inch**3,
+        "shear_area": ureg.inch**2,
+        "warping_constant": ureg.inch**6,
+        "radius_of_gyration": ureg.inch,
+        # Mass inertia
+        "mass_moment_inertia": ureg.slug * ureg.foot**2,
+        "mass_polar_inertia": ureg.slug * ureg.foot**2,
+        # Rigidities
+        "axial_rigidity": ureg.pound_force,
+        "bending_rigidity": ureg.pound_force * ureg.inch**2,
+        "torsional_rigidity": ureg.pound_force * ureg.inch**2,
+        "shear_rigidity": ureg.pound_force,
+        # Stiffness
+        "translational_stiffness": ureg.pound_force / ureg.inch,  # lbf/in
+        "rotational_stiffness": (ureg.pound_force * ureg.inch) / ureg.radian,
+        "foundation_modulus": ureg.pound_force / ureg.foot**3,
+        "shear_layer_modulus": ureg.pound_force / ureg.foot**2,
+        "contact_penalty": ureg.pound_force / ureg.inch**3,
+        # Damping
+        "viscous_damping": ureg.pound_force * ureg.second / ureg.inch,
+        "rotational_damping": (ureg.pound_force * ureg.inch) * ureg.second / ureg.radian,
+        "damping_ratio": ureg.dimensionless,
+        "loss_factor": ureg.dimensionless,
+        # Densities & weights
         "density": ureg.slug / ureg.foot**3,
-        "angle":   ureg.degree,
+        "specific_weight": ureg.pound_force / ureg.foot**3,
+        # Flows
+        "mass_flow": ureg.slug / ureg.second,
+        "volumetric_flow": ureg.foot**3 / ureg.second,
+        # Energy & power
+        "energy": ureg.Btu,  # BTU (energy)
+        "work": ureg.pound_force * ureg.foot,  # lbf·ft
+        "power": ureg.horsepower,
+        "frequency": ureg.hertz,
+        # Thermal
+        "temperature": ureg.degF,            # absolute (use degR if needed)
+        "temperature_diff": ureg.delta_degF, # differences
+        "thermal_conductivity": ureg.Btu / (ureg.hour * ureg.foot * ureg.delta_degF),
+        "thermal_resistivity": (ureg.foot * ureg.delta_degF) / (ureg.Btu / ureg.hour),
+        "thermal_resistance": ureg.delta_degF / (ureg.Btu / ureg.hour),
+        "thermal_capacitance": ureg.Btu / ureg.delta_degF,
+        "specific_heat": ureg.Btu / (ureg.pound * ureg.delta_degF),
+        "thermal_expansion": 1 / ureg.delta_degF,
+        "heat_flux": ureg.Btu / (ureg.hour * ureg.foot**2),
+        "heat_rate": ureg.Btu / ureg.hour,
+        "heat_source_vol": (ureg.Btu / ureg.hour) / ureg.foot**3,
+        "heat_source_area": (ureg.Btu / ureg.hour) / ureg.foot**2,
+        "heat_source_line": (ureg.Btu / ureg.hour) / ureg.foot,
+        "htc": ureg.Btu / (ureg.hour * ureg.foot**2 * ureg.delta_degF),
+        "thermal_diffusivity": ureg.foot**2 / ureg.second,
+        "emissivity": ureg.dimensionless,
+        "absorptivity": ureg.dimensionless,
+        "view_factor": ureg.dimensionless,
+        # Keep canonical SI unit for σ in Stefan–Boltzmann; Pint converts as needed.
+        "stefan_boltzmann": ureg.watt / (ureg.meter**2 * ureg.kelvin**4),
+        # Fluids
+        "viscosity_dynamic": ureg.pascal * ureg.second,  # SI base for μ (common in data)
+        "viscosity_kinematic": ureg.foot**2 / ureg.second,
+        "pressure_head": ureg.foot,
+        # Electromagnetics
+        "voltage": ureg.volt,
+        "current": ureg.ampere,
+        "charge": ureg.coulomb,
+        "resistance": ureg.ohm,
+        "conductance": ureg.siemens,
+        "capacitance": ureg.farad,
+        "inductance": ureg.henry,
+        "resistivity": ureg.ohm * ureg.meter,  # canonical; Pint will convert
+        "conductivity": ureg.siemens / ureg.meter,
+        "permittivity": ureg.farad / ureg.meter,
+        "permeability": ureg.henry / ureg.meter,
+        "electric_field": ureg.volt / ureg.meter,
+        "magnetic_field": ureg.ampere / ureg.meter,
+        "magnetic_flux": ureg.weber,
+        "magnetic_flux_density": ureg.tesla,
+        # Dimensionless
+        "coefficient_of_friction": ureg.dimensionless,
     },
 }
-
 
 # =============================================================================
 # Context state: active unit system & display mode; call depth for internals
@@ -67,11 +369,10 @@ _CURRENT_SYSTEM: contextvars.ContextVar[Union[str, Dict[str, pint.Unit]]] = cont
     "cfea2_unit_system", default="SI"
 )
 _DISPLAY_MODE: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "cfea2_display_mode", default="quantity"  # top-level returns Quantity by default
+    "cfea2_display_mode",
+    default="quantity",  # top-level returns Quantity by default
 )
-_CALL_DEPTH: contextvars.ContextVar[int] = contextvars.ContextVar(
-    "cfea2_call_depth", default=0
-)
+_CALL_DEPTH: contextvars.ContextVar[int] = contextvars.ContextVar("cfea2_call_depth", default=0)
 
 
 # =============================================================================
@@ -97,12 +398,32 @@ def current_unit_system() -> Mapping[str, pint.Unit]:
     return UNIT_SYSTEMS[sel] if isinstance(sel, str) else sel
 
 
-def current_unit_for(type_key: str) -> pint.Unit:
+def current_unit_for(type_key: Union[str, Sequence[str]]) -> Union[pint.Unit, Tuple[pint.Unit, ...]]:
+    """
+    Return the concrete unit(s) for a given type key under the active system.
+
+    Supports:
+      - str -> unit (e.g. "length" -> meter)
+      - tuple/list[str] -> tuple of units element-wise (e.g. ("length","length","length"))
+    """
     system = current_unit_system()
+
+    # Vectorized keys
+    if isinstance(type_key, (tuple, list)):
+        try:
+            return tuple(system[k] for k in type_key)
+        except KeyError as e:
+            raise KeyError(
+                f"Type '{type_key}' not defined in current unit system. Known: {list(system)}"
+            ) from e
+
+    # Scalar key
     try:
         return system[type_key]
-    except KeyError:
-        raise KeyError(f"Type '{type_key}' not defined in current unit system. Known: {list(system)}")
+    except KeyError as e:
+        raise KeyError(
+            f"Type '{type_key}' not defined in current unit system. Known: {list(system)}"
+        ) from e
 
 
 def set_output_magnitudes(enabled: bool) -> None:
@@ -124,8 +445,10 @@ class output_magnitudes:
         if self._token is not None:
             _DISPLAY_MODE.reset(self._token)
 
+
 def no_units(fn: Callable) -> Callable:
     """Decorator: for this call, force top-level returns to be magnitudes (no Quantities)."""
+
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         token = _DISPLAY_MODE.set("magnitude")
@@ -133,7 +456,9 @@ def no_units(fn: Callable) -> Callable:
             return fn(*args, **kwargs)
         finally:
             _DISPLAY_MODE.reset(token)
+
     return wrapper
+
 
 # =============================================================================
 # Internal utilities
@@ -143,33 +468,91 @@ def _is_qty(x: Any) -> bool:
     # Pint Quantity has .to (convert) and .m (magnitude)
     return hasattr(x, "to") and hasattr(x, "m")
 
-def _to_magnitude_in_system(val: Any, unit: pint.Unit, *, strict: bool) -> Any:
-    """Convert Quantity to given unit and return magnitude; or accept numeric (strict=False)."""
+
+def _to_magnitude_in_system(
+    val: Any,
+    unit: Union[pint.Unit, Sequence[pint.Unit]],
+    *,
+    strict: bool,
+) -> Any:
+    """
+    Convert Quantity or sequence of Quantities to magnitudes in the given unit(s).
+
+    - If `unit` is a single unit:
+        * Quantity -> convert to that unit and return .m
+        * numeric -> if strict False, return as-is (assumed already in system units)
+    - If `unit` is a tuple/list of units:
+        * `val` must be a sequence of the same length; convert element-wise and
+          preserve the original container type (list/tuple).
+    """
+    # Pass-through None (optional parameters)
+    if val is None:
+        return None
+
+    # Collapse singleton unit sequences to scalar
+    if isinstance(unit, (tuple, list)) and len(unit) == 1:
+        unit = unit[0]
+
+    # Vectorized branch
+    if isinstance(unit, (tuple, list)):
+        if not isinstance(val, (list, tuple)):
+            raise TypeError(f"Expected a sequence value for units {unit}, got {type(val).__name__}")
+        if len(val) != len(unit):
+            raise ValueError(f"Value length {len(val)} does not match units length {len(unit)}")
+        out = [_to_magnitude_in_system(v_i, u_i, strict=strict) for v_i, u_i in zip(val, unit)]
+        return tuple(out) if isinstance(val, tuple) else out
+
+    # Scalar branch
     if _is_qty(val):
         return val.to(unit).m
     if strict:
         raise TypeError(f"Expected a Quantity compatible with '{unit}'.")
     return val
 
-def _wrap_as_quantity(val: Any, unit: Union[pint.Unit, Tuple[pint.Unit, ...]]) -> Any:
-    """Wrap numeric magnitudes as Quantity/Quantities, then to_compact() for pretty output."""
-    if isinstance(val, tuple):
-        if not isinstance(unit, tuple):
-            raise TypeError("units_out is not a tuple but function returns a tuple.")
+
+def _wrap_as_quantity(
+    val: Any,
+    unit: Union[pint.Unit, Tuple[pint.Unit, ...]],
+) -> Any:
+    """
+    Wrap magnitudes as Pint Quantity/Quantities in the provided unit(s) and apply to_compact()
+    for pretty output. Preserves list/tuple container types.
+    """
+    # Pass-through None
+    if val is None:
+        return None
+
+    # Collapse singleton unit sequences to scalar
+    if isinstance(unit, (tuple, list)) and len(unit) == 1:
+        unit = unit[0]
+
+    # Vectorized return
+    if isinstance(unit, (tuple, list)):
+        if not isinstance(val, (list, tuple)):
+            raise TypeError("Function returned a non-sequence, but units_out is a sequence.")
         if len(val) != len(unit):
-            raise ValueError("Tuple length of return values and units_out must match.")
-        return tuple(_wrap_as_quantity(v, u) for v, u in zip(val, unit))
+            raise ValueError("Tuple/list length of return values and units_out must match.")
+        out = [_wrap_as_quantity(v, u) for v, u in zip(val, unit)]
+        return tuple(out) if isinstance(val, tuple) else out
+
+    # Scalar return
     q = val * unit
     try:
         return q.to_compact()  # pretty prefixes (kN, MPa, mm, GPa, etc.)
     except Exception:
         return q
 
+
 def _strip_magnitudes(val: Any) -> Any:
-    """Return Quantity magnitudes; pass-through for numerics/objects; handle tuples."""
+    """Return Quantity magnitudes; pass-through for numerics/objects; handle lists/tuples/dicts."""
     if isinstance(val, tuple):
         return tuple(_strip_magnitudes(v) for v in val)
+    if isinstance(val, list):
+        return [_strip_magnitudes(v) for v in val]
+    if isinstance(val, dict):
+        return {k: _strip_magnitudes(v) for k, v in val.items()}
     return getattr(val, "m", val)
+
 
 def _first_positional_params_after_self(fn: Callable) -> Sequence[str]:
     """Names of positional-or-keyword params AFTER 'self'/'cls' (or all, if no self/cls)."""
@@ -192,22 +575,33 @@ def _first_positional_params_after_self(fn: Callable) -> Sequence[str]:
 # =============================================================================
 
 def units_io(
-    types_in: Optional[Sequence[Optional[str]]],
+    types_in: Optional[Sequence[Optional[Union[str, Sequence[str]]]]],
     types_out: Optional[Union[str, Sequence[str]]],
     *,
-    types_in_kw: Optional[Mapping[str, Optional[str]]] = None,
+    types_in_kw: Optional[Mapping[str, Optional[Union[str, Sequence[str]]]]] = None,
     strict: bool = False,
     sanitize_unknown_kwargs: bool = True,
 ):
     """
     Dimension-type-based I/O.
 
-    - types_in: sequence of type keys aligned to the first positional-or-keyword params
-      after self/cls; use None to skip a slot; may be shorter than the parameter list.
-    - types_out: type key (scalar) or tuple of type keys (tuple return) or None.
-    - types_in_kw: mapping {kwarg_name: type_key or None} for keyword-only parameters.
-    - strict: require Quantities for typed positions/kwargs (else assume numerics are in system units).
-    - sanitize_unknown_kwargs: strip any unknown-kwarg Quantity to magnitude before the call.
+    Args
+    ----
+    types_in:
+        Sequence aligned to the first positional-or-keyword params after self/cls.
+        Use `None` to skip a slot. May be shorter than the parameter list.
+        Items may be a `str` type key or a tuple/list of type keys for vector args.
+    types_out:
+        A single type key (str) for scalar returns, or a sequence of type keys
+        for tuple/list returns, or None to return raw.
+    types_in_kw:
+        Mapping {kwarg_name: type_key or tuple/list of type keys or None} for keyword-only parameters.
+    strict:
+        If True, require Pint Quantities for typed inputs; if False (default), plain numerics
+        are assumed to already be in the active unit system and are passed as-is.
+    sanitize_unknown_kwargs:
+        If True (default), any kwarg not declared in `types_in_kw` that is a Quantity
+        will be stripped to its magnitude before calling the function.
     """
     types_in_kw = dict(types_in_kw or {})
 
@@ -220,7 +614,10 @@ def units_io(
             # Bind only what caller provided (no implicit defaults)
             ba = sig.bind_partial(*args, **kwargs)
 
-            def conv(val: Any, type_key: Optional[str]) -> Any:
+            def conv(val: Any, type_key: Optional[Union[str, Sequence[str]]]) -> Any:
+                # Pass-through None for optional parameters
+                if val is None:
+                    return None
                 if type_key is None:
                     return _strip_magnitudes(val) if (sanitize_unknown_kwargs and _is_qty(val)) else val
                 return _to_magnitude_in_system(val, current_unit_for(type_key), strict=strict)
@@ -263,12 +660,9 @@ def units_io(
             if depth > 0:
                 return result  # nested -> keep magnitudes internally
 
-            return (
-                _wrap_as_quantity(result, sys_unit_out)
-                if _DISPLAY_MODE.get() == "quantity"
-                else result
-            )
+            return _wrap_as_quantity(result, sys_unit_out) if _DISPLAY_MODE.get() == "quantity" else result
 
+        # Introspection aids
         inner.__types_in__ = types_in
         inner.__types_in_kw__ = dict(types_in_kw)
         inner.__types_out__ = types_out
@@ -278,7 +672,7 @@ def units_io(
 
 
 # =============================================================================
-# Method decorator: temporarily coerce ALL Quantity attributes to magnitudes
+# Method decorator: temporarily coerce ALL Quantity attrs to magnitudes
 # =============================================================================
 
 def magnitudes_during_call(
@@ -355,7 +749,9 @@ def magnitudes_during_call(
                         setattr(self, name, val)
                     except Exception:
                         pass
+
         return wrapper
+
     return deco
 
 
@@ -363,257 +759,392 @@ def magnitudes_during_call(
 # Convenience unit aliases (Metric + Imperial), expanded
 # =============================================================================
 # -- Metric lengths
-m    = ureg.meter
-mm   = ureg.millimeter
-cm   = ureg.centimeter
-dm   = ureg.decimeter
-km   = ureg.kilometer
+m = ureg.meter
+mm = ureg.millimeter
+cm = ureg.centimeter
+dm = ureg.decimeter
+km = ureg.kilometer
 
 # -- Imperial lengths
 inch = ureg.inch
-in_  = ureg.inch  # alt alias
-ft   = ureg.foot
-yd   = ureg.yard
-mi   = ureg.mile
+in_ = ureg.inch  # alt alias
+ft = ureg.foot
+yd = ureg.yard
+mi = ureg.mile
 
 # -- Areas
-m2   = m**2
-cm2  = cm**2
-mm2  = mm**2
-dm2  = dm**2
-km2  = km**2
-ft2  = ft**2
-in2  = inch**2
-yd2  = yd**2
-mi2  = mi**2
+m2 = m**2
+cm2 = cm**2
+mm2 = mm**2
+dm2 = dm**2
+km2 = km**2
+ft2 = ft**2
+in2 = inch**2
+yd2 = yd**2
+mi2 = mi**2
 
 # -- Volumes
-m3   = m**3
-cm3  = cm**3
-mm3  = mm**3
-dm3  = dm**3
-ft3  = ft**3
-in3  = inch**3
-yd3  = yd**3
+m3 = m**3
+cm3 = cm**3
+mm3 = mm**3
+dm3 = dm**3
+ft3 = ft**3
+in3 = inch**3
+yd3 = yd**3
 
 # -- Mass
-kg   = ureg.kilogram
-g    = ureg.gram
-mg   = ureg.milligram
-ton  = 1000 * kg
-lb   = ureg.pound         # avoirdupois (mass)
-lbm  = ureg.pound         # alias
+kg = ureg.kilogram
+g = ureg.gram
+mg = ureg.milligram
+ton = 1000 * kg
+lb = ureg.pound  # avoirdupois (mass)
+lbm = ureg.pound  # alias
 slug = ureg.slug
 
 # -- Force / torque
-N      = ureg.newton
-kN     = 1e3 * N
-MN     = 1e6 * N
-GN     = 1e9 * N
-lbf    = ureg.pound_force
-kip    = 1000 * lbf
-Nm     = N * m
-kNm    = kN * m
-MNm    = MN * m
+N = ureg.newton
+kN = 1e3 * N
+MN = 1e6 * N
+GN = 1e9 * N
+lbf = ureg.pound_force
+kip = 1000 * lbf
+Nm = N * m
+kNm = kN * m
+MNm = MN * m
 lbf_ft = lbf * ft
 lbf_in = lbf * inch
 
 # -- Stress / pressure
-Pa   = ureg.pascal
-kPa  = ureg.kilopascal
-MPa  = ureg.megapascal
-GPa  = ureg.gigapascal
-bar  = ureg.bar
+Pa = ureg.pascal
+kPa = ureg.kilopascal
+MPa = ureg.megapascal
+GPa = ureg.gigapascal
+bar = ureg.bar
 mbar = ureg.millibar
-psi  = ureg.psi
-ksi  = 1000 * psi
-psf  = lbf / ft2
+psi = ureg.psi
+ksi = 1000 * psi
+psf = lbf / ft2
 
 # -- Density / specific weight
-rho_m3       = kg / m3
-rho_cm3      = g / cm3
-rho_mm3      = mg / mm3
-rho_ft3      = lb / ft3
+rho_m3 = kg / m3
+rho_cm3 = g / cm3
+rho_mm3 = mg / mm3
+rho_ft3 = lb / ft3
 rho_slug_ft3 = slug / ft3
-gamma_N_m3    = N / m3        # specific weight (metric)
-gamma_lbf_ft3 = lbf / ft3     # specific weight (imperial)
+gamma_N_m3 = N / m3
+gamma_lbf_ft3 = lbf / ft3
 
 # -- Time
-s    = ureg.second
-ms   = ureg.millisecond
-us   = ureg.microsecond
+s = ureg.second
+ms = ureg.millisecond
+us = ureg.microsecond
 min_ = ureg.minute
-h    = ureg.hour
-day  = ureg.day
+h = ureg.hour
+day = ureg.day
 
 # -- Angle
-rad  = ureg.radian
-deg  = ureg.degree
+rad = ureg.radian
+deg = ureg.degree
 
 # -- Temperature (absolute + deltas)
-K     = ureg.kelvin
-degC  = ureg.degC
-degF  = ureg.degF
-R     = ureg.degR              # Rankine (prefer degR for compatibility)
-dK    = ureg.kelvin            # temperature difference in K
+K = ureg.kelvin
+degC = ureg.degC
+degF = ureg.degF
+R = ureg.degR
+dK = ureg.kelvin           # temperature difference in K
 ddegC = ureg.delta_degC
 ddegF = ureg.delta_degF
 
 # -- Velocity
-mps  = m / s
+mps = m / s
 kmph = km / h
-mph  = mi / h
-fps  = ft / s
+mph = mi / h
+fps = ft / s
 
 # -- Acceleration
 mps2 = m / s**2
 fps2 = ft / s**2
-g0   = ureg.g0
+g0 = ureg.g0
 
 # -- Energy / Power
-J    = ureg.joule
-kJ   = 1e3 * J
-MJ   = 1e6 * J
-W    = ureg.watt
-kW   = 1e3 * W
-MW   = 1e6 * W
-Wh   = W * h
-kWh  = 1e3 * Wh
-hp   = ureg.horsepower
-BTU  = ureg.Btu                # correct case for Pint
+J = ureg.joule
+kJ = 1e3 * J
+MJ = 1e6 * J
+W = ureg.watt
+kW = 1e3 * W
+MW = 1e6 * W
+Wh = W * h
+kWh = 1e3 * Wh
+hp = ureg.horsepower
+BTU = ureg.Btu
 BTU_per_hr = BTU / h
 
 # -- Stiffness / compliance
-N_per_m      = N / m
-kN_per_mm    = kN / mm
-lbf_per_in   = lbf / inch
-lbf_per_ft   = lbf / ft
+N_per_m = N / m
+kN_per_mm = kN / mm
+lbf_per_in = lbf / inch
+lbf_per_ft = lbf / ft
 
 # -- Line / surface / volumetric loads
-N_per_m2     = N / m2           # = Pa
-kN_per_m2    = kN / m2          # = kPa
-N_per_m3     = N / m3
-kN_per_m     = kN / m
-lbf_per_ft2  = lbf / ft2        # = psf
-lbf_per_ft   = lbf / ft
+N_per_m2 = N / m2  # = Pa
+kN_per_m2 = kN / m2  # = kPa
+N_per_m3 = N / m3
+kN_per_m = kN / m
+lbf_per_ft2 = lbf / ft2  # = psf
+lbf_per_ft = lbf / ft
 
 # -- Section properties
-I_m4   = m**4         # second moment of area
-I_cm4  = cm**4
-I_mm4  = mm**4
-I_in4  = inch**4
-I_ft4  = ft**4
+I_m4 = m**4
+I_cm4 = cm**4
+I_mm4 = mm**4
+I_in4 = inch**4
+I_ft4 = ft**4
 
-Z_m3   = m**3         # section modulus
-Z_cm3  = cm**3
-Z_mm3  = mm**3
-Z_in3  = inch**3
-Z_ft3  = ft**3
+Z_m3 = m**3
+Z_cm3 = cm**3
+Z_mm3 = mm**3
+Z_in3 = inch**3
+Z_ft3 = ft**3
 
-J_torsion_m4  = m**4  # torsional constant
+J_torsion_m4 = m**4
 J_torsion_in4 = inch**4
 
 # -- Mass/area/length densities
-kg_per_m   = kg / m
-kg_per_m2  = kg / m2
-kg_per_m3  = kg / m3
-lb_per_ft  = lb / ft
+kg_per_m = kg / m
+kg_per_m2 = kg / m2
+kg_per_m3 = kg / m3
+lb_per_ft = lb / ft
 lb_per_ft2 = lb / ft2
 lb_per_ft3 = lb / ft3
 
 # -- Thermal: conductivity, capacity, expansion, flux, HTC, diffusivity
-k_W_mK            = W / (m * K)                        # thermal conductivity
-k_BTU_hr_ft_degF  = BTU / (h * ft * ddegF)             # imperial conductivity
-cp_J_kgK          = J / (kg * K)                       # specific heat capacity
-cp_BTU_lb_degF    = BTU / (lb * ddegF)
-alpha_1_K         = 1 / K                              # linear thermal expansion
-alpha_1_degF      = 1 / ddegF
-q_W_m2            = W / m2                             # heat flux
-q_BTU_hr_ft2      = BTU / (h * ft2)
-h_W_m2K           = W / (m2 * K)                       # heat transfer coefficient
+k_W_mK = W / (m * K)
+k_BTU_hr_ft_degF = BTU / (h * ft * ddegF)
+cp_J_kgK = J / (kg * K)
+cp_BTU_lb_degF = BTU / (lb * ddegF)
+alpha_1_K = 1 / K
+alpha_1_degF = 1 / ddegF
+q_W_m2 = W / m2
+q_BTU_hr_ft2 = BTU / (h * ft2)
+h_W_m2K = W / (m2 * K)
 h_BTU_hr_ft2_degF = BTU / (h * ft2 * ddegF)
-thermal_diffusivity_m2_s  = m2 / s                     # α = k/(ρ c_p)
+thermal_diffusivity_m2_s = m2 / s
 thermal_diffusivity_ft2_s = ft2 / s
 
 # -- Viscosity
-mu_Pa_s      = Pa * s                                   # dynamic viscosity
-poise        = ureg.poise
-centipoise   = ureg.centipoise                          # 1 cP = 1 mPa·s
-nu_m2_s      = m2 / s                                   # kinematic viscosity
-stokes       = ureg.stokes
-centistokes  = ureg.centistokes
+mu_Pa_s = Pa * s
+poise = ureg.poise
+centipoise = ureg.centipoise
+nu_m2_s = m2 / s
+stokes = ureg.stokes
+centistokes = ureg.centistokes
 
 # -- Electrical
-ohm_m   = ureg.ohm * m                                  # resistivity
-S_m     = ureg.siemens / m                              # conductivity
-A       = ureg.ampere
-V       = ureg.volt
-C       = ureg.coulomb
-F       = ureg.farad
-H       = ureg.henry
-T       = ureg.tesla
-Wb      = ureg.weber
-ohm_sym = ureg.ohm     # ASCII alias for Ω
+ohm_m = ureg.ohm * m
+S_m = ureg.siemens / m
+A = ureg.ampere
+V = ureg.volt
+C = ureg.coulomb
+F = ureg.farad
+H = ureg.henry
+T = ureg.tesla
+Wb = ureg.weber
+ohm_sym = ureg.ohm  # ASCII alias
 
 # -- Misc derived
-J_per_kg   = J / kg
+J_per_kg = J / kg
 BTU_per_lb = BTU / lb
-W_per_mK   = k_W_mK
-Pa_s       = mu_Pa_s
+W_per_mK = k_W_mK
+Pa_s = mu_Pa_s
 
 
 __all__ = [
     # registry & systems
     "ureg",
-    "UNIT_SYSTEMS", "list_unit_systems", "set_unit_system", "current_unit_system", "current_unit_for",
+    "UNIT_SYSTEMS",
+    "list_unit_systems",
+    "set_unit_system",
+    "current_unit_system",
+    "current_unit_for",
     # display & decorators
-    "set_output_magnitudes", "output_magnitudes", "units_io", "magnitudes_during_call",
-
+    "set_output_magnitudes",
+    "output_magnitudes",
+    "units_io",
+    "magnitudes_during_call",
+    "no_units",
     # convenience aliases
     # lengths
-    "m", "mm", "cm", "dm", "km", "inch", "in_", "ft", "yd", "mi",
+    "m",
+    "mm",
+    "cm",
+    "dm",
+    "km",
+    "inch",
+    "in_",
+    "ft",
+    "yd",
+    "mi",
     # areas
-    "m2", "cm2", "mm2", "dm2", "km2", "ft2", "in2", "yd2", "mi2",
+    "m2",
+    "cm2",
+    "mm2",
+    "dm2",
+    "km2",
+    "ft2",
+    "in2",
+    "yd2",
+    "mi2",
     # volumes
-    "m3", "cm3", "mm3", "dm3", "ft3", "in3", "yd3",
+    "m3",
+    "cm3",
+    "mm3",
+    "dm3",
+    "ft3",
+    "in3",
+    "yd3",
     # mass
-    "kg", "g", "mg", "ton", "lb", "lbm", "slug",
+    "kg",
+    "g",
+    "mg",
+    "ton",
+    "lb",
+    "lbm",
+    "slug",
     # force / torque
-    "N", "kN", "MN", "GN", "lbf", "kip", "Nm", "kNm", "MNm", "lbf_ft", "lbf_in",
+    "N",
+    "kN",
+    "MN",
+    "GN",
+    "lbf",
+    "kip",
+    "Nm",
+    "kNm",
+    "MNm",
+    "lbf_ft",
+    "lbf_in",
     # stress / pressure
-    "Pa", "kPa", "MPa", "GPa", "bar", "mbar", "psi", "ksi", "psf",
+    "Pa",
+    "kPa",
+    "MPa",
+    "GPa",
+    "bar",
+    "mbar",
+    "psi",
+    "ksi",
+    "psf",
     # density / specific weight
-    "rho_m3", "rho_cm3", "rho_mm3", "rho_ft3", "rho_slug_ft3", "gamma_N_m3", "gamma_lbf_ft3",
+    "rho_m3",
+    "rho_cm3",
+    "rho_mm3",
+    "rho_ft3",
+    "rho_slug_ft3",
+    "gamma_N_m3",
+    "gamma_lbf_ft3",
     # time
-    "s", "ms", "us", "min_", "h", "day",
+    "s",
+    "ms",
+    "us",
+    "min_",
+    "h",
+    "day",
     # angle
-    "rad", "deg",
+    "rad",
+    "deg",
     # temperature
-    "K", "degC", "degF", "R", "dK", "ddegC", "ddegF",
+    "K",
+    "degC",
+    "degF",
+    "R",
+    "dK",
+    "ddegC",
+    "ddegF",
     # velocity
-    "mps", "kmph", "mph", "fps",
+    "mps",
+    "kmph",
+    "mph",
+    "fps",
     # acceleration
-    "mps2", "fps2", "g0",
+    "mps2",
+    "fps2",
+    "g0",
     # energy / power
-    "J", "kJ", "MJ", "W", "kW", "MW", "Wh", "kWh", "hp", "BTU", "BTU_per_hr",
+    "J",
+    "kJ",
+    "MJ",
+    "W",
+    "kW",
+    "MW",
+    "Wh",
+    "kWh",
+    "hp",
+    "BTU",
+    "BTU_per_hr",
     # stiffness / compliance
-    "N_per_m", "kN_per_mm", "lbf_per_in", "lbf_per_ft",
+    "N_per_m",
+    "kN_per_mm",
+    "lbf_per_in",
+    "lbf_per_ft",
     # loads
-    "N_per_m2", "kN_per_m2", "N_per_m3", "kN_per_m", "lbf_per_ft2", "lbf_per_ft",
+    "N_per_m2",
+    "kN_per_m2",
+    "N_per_m3",
+    "kN_per_m",
+    "lbf_per_ft2",
+    "lbf_per_ft",
     # section properties
-    "I_m4", "I_cm4", "I_mm4", "I_in4", "I_ft4",
-    "Z_m3", "Z_cm3", "Z_mm3", "Z_in3", "Z_ft3",
-    "J_torsion_m4", "J_torsion_in4",
+    "I_m4",
+    "I_cm4",
+    "I_mm4",
+    "I_in4",
+    "I_ft4",
+    "Z_m3",
+    "Z_cm3",
+    "Z_mm3",
+    "Z_in3",
+    "Z_ft3",
+    "J_torsion_m4",
+    "J_torsion_in4",
     # mass/area/length densities
-    "kg_per_m", "kg_per_m2", "kg_per_m3", "lb_per_ft", "lb_per_ft2", "lb_per_ft3",
+    "kg_per_m",
+    "kg_per_m2",
+    "kg_per_m3",
+    "lb_per_ft",
+    "lb_per_ft2",
+    "lb_per_ft3",
     # thermal
-    "k_W_mK", "k_BTU_hr_ft_degF", "cp_J_kgK", "cp_BTU_lb_degF",
-    "alpha_1_K", "alpha_1_degF", "q_W_m2", "q_BTU_hr_ft2",
-    "h_W_m2K", "h_BTU_hr_ft2_degF", "thermal_diffusivity_m2_s", "thermal_diffusivity_ft2_s",
+    "k_W_mK",
+    "k_BTU_hr_ft_degF",
+    "cp_J_kgK",
+    "cp_BTU_lb_degF",
+    "alpha_1_K",
+    "alpha_1_degF",
+    "q_W_m2",
+    "q_BTU_hr_ft2",
+    "h_W_m2K",
+    "h_BTU_hr_ft2_degF",
+    "thermal_diffusivity_m2_s",
+    "thermal_diffusivity_ft2_s",
     # viscosity
-    "mu_Pa_s", "poise", "centipoise", "nu_m2_s", "stokes", "centistokes",
+    "mu_Pa_s",
+    "poise",
+    "centipoise",
+    "nu_m2_s",
+    "stokes",
+    "centistokes",
     # electrical
-    "ohm_m", "S_m", "A", "V", "C", "F", "H", "T", "Wb", "ohm_sym",
+    "ohm_m",
+    "S_m",
+    "A",
+    "V",
+    "C",
+    "F",
+    "H",
+    "T",
+    "Wb",
+    "ohm_sym",
     # misc
-    "J_per_kg", "BTU_per_lb", "W_per_mK", "Pa_s",
+    "J_per_kg",
+    "BTU_per_lb",
+    "W_per_mK",
+    "Pa_s",
 ]

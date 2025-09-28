@@ -242,8 +242,10 @@ def _to_base_magnitude(x):
         return x.to_base_units().m
     return x
 
+
 def to_base_magnitudes(func):
     """Decorator that converts any Pint Quantity in *args/**kwargs* to base-unit magnitudes."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Preserve self/cls in position 0; if it's a Quantity (it shouldn't be), _to_base_magnitude is a no-op
@@ -254,6 +256,7 @@ def to_base_magnitudes(func):
 
         new_kwargs = {k: _to_base_magnitude(v) for k, v in kwargs.items()}
         return func(*new_args, **new_kwargs)
+
     return wrapper
 
 

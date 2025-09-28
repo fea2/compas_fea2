@@ -16,10 +16,10 @@ from compas.geometry import centroid_points
 from compas.geometry import centroid_points_weighted
 
 import compas_fea2
-from compas_fea2.config import settings
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.config import settings
 from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.connectors import _Connector
 from compas_fea2.model.constraints import _Constraint
@@ -47,6 +47,7 @@ from compas_fea2.model.parts import RigidPart
 from compas_fea2.model.parts import _Part
 from compas_fea2.utilities._devtools import get_docstring
 from compas_fea2.utilities._devtools import part_method
+from compas_fea2.units import units_io
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -78,7 +79,6 @@ if TYPE_CHECKING:
     from compas_fea2.model.materials.material import _Material
     from compas_fea2.model.sections import _Section
     from compas_fea2.problem import Problem
-    from compas_fea2.units import UnitRegistry
 
 
 class Model(FEAData):
@@ -123,6 +123,10 @@ class Model(FEAData):
     path : :class:`pathlib.Path`
         Path to the main folder where the problems' results are stored.
 
+    Notes
+    -----
+    Quantities such as *volume* and *gravity* are exposed in the active unit system.
+    See :mod:`compas_fea2.units` for configuration.
     """
 
     def __init__(self, description: "Optional[str]" = None, author: "Optional[str]" = None, **kwargs):
@@ -132,7 +136,6 @@ class Model(FEAData):
         self._key = 0
         self._starting_key = 0
 
-        self._units: "Optional[UnitRegistry]" = None
         self._constants: dict = {"g": None}
 
         self._path: "Optional[Path]" = None
@@ -282,12 +285,15 @@ class Model(FEAData):
         return self._fields
 
     @property
+    @units_io(types_in=(), types_out="gravity")
     def g(self) -> "float":
-        """Return the gravitational constant of the model."""
+        """Return the gravitational acceleration in the active unit system (e.g., m/s²)."""
         return self.constants["g"]
 
     @g.setter
+    @units_io(types_in=("gravity",), types_out=None)
     def g(self, value):
+        """Set gravitational acceleration (expects a magnitude or Quantity with dimension of acceleration)."""
         self._constants["g"] = value
 
     @property
@@ -303,7 +309,7 @@ class Model(FEAData):
     @property
     def sections(self) -> "SectionsGroup":
         """Return a set of all sections in the model."""
-        return SectionsGroup(members= set(self.elements.group_by(key=lambda x: x.section).keys()), name="ALL_SECTIONS")
+        return SectionsGroup(members=set(self.elements.group_by(key=lambda x: x.section).keys()), name="ALL_SECTIONS")
 
     @property
     def part_sections(self) -> "Dict[_Part, Set[_Section]]":
@@ -414,22 +420,10 @@ class Model(FEAData):
         raise AttributeError("The model has no bounding box")
 
     @property
+    @units_io(types_in=(), types_out="volume")
     def volume(self) -> "float":
-        """Return the volume of the model."""
+        """Return the total volume of the model in the active unit system."""
         return sum(p.volume for p in self.parts)
-
-    @property
-    def units(self) -> "Optional[UnitRegistry]":
-        """Return the units of the model."""
-        return self._units
-
-    @units.setter
-    def units(self, value: "UnitRegistry"):
-        from compas_fea2.units import UnitRegistry
-
-        if not isinstance(value, UnitRegistry):
-            raise ValueError("Pint UnitRegistry required")
-        self._units = value
 
     def assign_keys(self, start: "int | None" = None, restart=False):
         """Assign keys to the model and its parts.
@@ -796,11 +790,13 @@ class Model(FEAData):
 
     @get_docstring(_Part)
     @part_method
+    @units_io(types_in=(None, "length"), types_out=None)
     def find_nodes_on_plane(self, plane: "Plane", tol: float = 1) -> "Any":
         pass
 
     @get_docstring(_Part)
     @part_method
+    @units_io(types_in=(None, "length"), types_out=None)
     def find_nodes_in_polygon(self, polygon: "Polygon", tol: float = 1.1) -> "Any":
         pass
 
@@ -1103,6 +1099,7 @@ class Model(FEAData):
         """
         return self._add_bc_type("rollerYZ", nodes, frame, **kwargs)
 
+    @units_io(types_in=(None, "temperature"), types_out=None)
     def add_thermal_bc(self, nodes: "Union[list[Node], NodesGroup]", temperature: "float", **kwargs) -> "BoundaryConditionsField | List[BoundaryConditionsField]":
         """Add a :class:`compas_fea2.model.bcs.ThermalBC` to the model.
 
@@ -1111,7 +1108,7 @@ class Model(FEAData):
         nodes : list[:class=`compas_fea2.model.Node`] or :class=`compas_fea2.model.NodesGroup`
             The nodes where the thermal boundary condition is applied.
         temperature : float, optional
-            The temperature to apply, by default None (no temperature is applied).
+            The temperature to apply ("temperature" in the active unit system).
 
         Returns
         -------
@@ -1438,8 +1435,6 @@ Problems
     def clear(self):
         """Clear the model."""
         self._parts.clear()
-        self._materials.clear()
-        self._sections.clear()
         self._constraints.clear()
         self._connectors.clear()
         self._interfaces.clear()

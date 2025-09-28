@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -8,11 +9,12 @@ from compas.geometry import Point
 from compas.geometry import transform_points
 from compas.tolerance import TOL
 
-import compas_fea2
-from compas_fea2.config import settings
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.config import settings
+from compas_fea2.units import _strip_magnitudes
+from compas_fea2.units import units_io
 
 if TYPE_CHECKING:
     from compas_fea2.model.model import Model
@@ -46,13 +48,10 @@ class Node(FEAData):
     ----------
     xyz : list[float, float, float] | :class:`compas.geometry.Point`
         The location of the node in the global coordinate system.
-    mass : float or tuple, optional
-        Lumped nodal mass, by default ``None``. If ``float``, the same value is
-        used in all 3 directions. If you want to specify a different mass for each
-        direction, provide a ``tuple`` as (mass_x, mass_y, mass_z) in global
-        coordinates.
+    mass : float, tuple, or list, optional
+        Lumped nodal mass. If float, same value is used in x,y,z. If sequence of length 3, interpreted as (mx,my,mz). All values in the active unit system ("mass"). Default None.
     temperature : float, optional
-        The temperature at the Node.
+        Initial temperature at the node, in the active unit system ("temperature").
     name : str, optional
         Unique identifier. If not provided, it is automatically generated. Set a
         name if you want a more human-readable input file.
@@ -62,7 +61,7 @@ class Node(FEAData):
     name : str
         Unique identifier.
     mass : tuple
-        Lumped nodal mass in the 3 global directions (mass_x, mass_y, mass_z).
+        Lumped nodal mass (mx,my,mz) in active mass units.
     key : str, read-only
         The identifier of the node.
     xyz : list[float]
@@ -90,7 +89,7 @@ class Node(FEAData):
     point : :class:`compas.geometry.Point`
         The Point equivalent of the Node.
     temperature : float
-        The temperature at the Node.
+        Temperature at the Node (active temperature units).
 
     Notes
     -----
@@ -98,12 +97,15 @@ class Node(FEAData):
     belong to only one Part. Every time a node is added to a Part, it gets
     registered to that Part.
 
+    All physical attributes are interpreted in the active unit system.
+
     Examples
     --------
-    >>> node = Node(xyz=(1.0, 2.0, 3.0))
+    >>> node = Node(xyz=(1.0, 2.0, 3.0), mass=10.0, temperature=293.15)
 
     """
 
+    @units_io(types_in=(("length","length","length"), "mass", "temperature"), types_out=None)
     def __init__(self, xyz: Sequence[float], mass: Optional[Union[float, List[float]]] = None, temperature: Optional[float] = None, **kwargs):
         super().__init__(**kwargs)
         self._part_key: Optional[int] = None
@@ -200,7 +202,9 @@ class Node(FEAData):
         return self._part_key
 
     @property
+    @units_io(types_in=(), types_out=("length","length","length"))
     def xyz(self) -> List[float]:
+        """Coordinates [x,y,z] in active length units."""
         return [self._x, self._y, self._z]
 
     @xyz.setter
@@ -212,42 +216,52 @@ class Node(FEAData):
         self._z = value[2]
 
     @property
+    @units_io(types_in=(), types_out="length")
     def x(self) -> float:
         return self._x
 
     @x.setter
+    @units_io(types_in=("length",), types_out=None)
     def x(self, value: float):
         self._x = float(value)
 
     @property
+    @units_io(types_in=(), types_out="length")
     def y(self) -> float:
         return self._y
 
     @y.setter
+    @units_io(types_in=("length",), types_out=None)
     def y(self, value: float):
         self._y = float(value)
 
     @property
+    @units_io(types_in=(), types_out="length")
     def z(self) -> float:
         return self._z
 
     @z.setter
+    @units_io(types_in=("length",), types_out=None)
     def z(self, value: float):
         self._z = float(value)
 
     @property
+    @units_io(types_in=(), types_out=("mass","mass","mass","mass","mass","mass"))
     def mass(self) -> Sequence[float]:
         return self._mass
 
     @mass.setter
+    @units_io(types_in=(("mass",),), types_out=None)
     def mass(self, value: float | Sequence[float]):
         self._mass = _parse_mass(value)
 
     @property
+    @units_io(types_in=(), types_out="temperature")
     def t0(self) -> float | None:
         return self._temperature
 
     @t0.setter
+    @units_io(types_in=("temperature",), types_out=None)
     def t0(self, value: float):
         self._temperature = value
 
@@ -255,34 +269,6 @@ class Node(FEAData):
     def gkey(self) -> str | None:
         if TOL:
             return TOL.geometric_key(self.xyz, precision=settings.PRECISION)
-
-    # @property
-    # def dof(self) -> Dict[str, bool]:
-    #     """Dictionary with the active degrees of freedom."""
-
-    #     bcs
-    #     gen_bc = GeneralBC()
-    #     for bc in self._bcs:
-    #         gen_bc += bc
-    #     return {attr: not bool(getattr(gen_bc, attr)) for attr in ["x", "y", "z", "xx", "yy", "zz"]}
-
-    # @property
-    # def bc_fields(self) -> List["FieldsGroup"] | None:
-    #     """List of boundary conditions applied to the node."""
-    #     bc_fields =[]
-    #     if self.model:
-    #         for bc_field in self.model.bcs:
-    #             if self in bc_field.distribution:
-    #                 bc_fields.append(bc_field)
-    #         return bc_fields
-
-    # @property
-    # def bcs(self) -> List["_BoundaryCondition"]:
-    #     """List of boundary conditions applied to the node."""
-    #     bcs = []
-    #     if self.bc_fields:
-    #         for bc_field in self.bc_fields:
-    #             bcs.append(bc_field.condition)
 
     @property
     def on_boundary(self) -> Optional[bool]:
@@ -294,16 +280,15 @@ class Node(FEAData):
 
     @property
     def point(self) -> Point:
-        return Point(*self.xyz)
+        return Point(*_strip_magnitudes(self.xyz))
 
     @property
-    def connected_elements(self) -> set:
+    def connected_elements(self) -> Optional[Dict]:
         if self.part:
             if self.part.elements:
                 return self.part.elements.group_by(key=lambda e: self in e.nodes)
         else:
             raise ValueError("Node is not registered to a Part.")
-        # return self._connected_elements
 
     def transform(self, transformation) -> None:
         """Transform the node using a transformation matrix.
@@ -332,17 +317,9 @@ class Node(FEAData):
         node.transform(transformation)
         return node
 
-    # # ==============================================================================
-    # # Results
-    # # ==============================================================================
-    # @property
-    # def results_cls(self):
-    #     """Return a dictionary of result classes associated with the node."""
-    #     from compas_fea2.results import DisplacementResult
-    #     from compas_fea2.results import ReactionResult
-    #     from compas_fea2.results import TemperatureResult
-
-    #     return {"u": DisplacementResult, "rf": ReactionResult, "t": TemperatureResult}
+    # ==============================================================================
+    # Results
+    # ==============================================================================
 
     def displacement(self, step):
         """Get the displacement of the node at a given step.

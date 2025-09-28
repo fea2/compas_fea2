@@ -18,6 +18,7 @@ from typing import cast
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.units import units_io
 
 # Type-checking imports to avoid circular dependencies at runtime
 if TYPE_CHECKING:
@@ -565,13 +566,14 @@ class FacesGroup(_Group["Face"]):
         return nodes_set
 
     @property
+    @units_io(types_in=(), types_out="area")
     def area(self) -> float:
-        """Calculate the total area of the faces in the group."""
+        """Total area of the faces in the group (active unit system)."""
         return sum(face.area for face in self.faces)
 
     @property
     def normal(self) -> List[float]:
-        """Calculate the average normal vector of the faces in the group."""
+        """Average normal of the faces in the group (dimensionless unit vector)."""
         from compas.geometry import normalize_vector
 
         normals = [face.normal for face in self.faces]
@@ -579,17 +581,18 @@ class FacesGroup(_Group["Face"]):
             avg_normal = [sum(components) / len(normals) for components in zip(*normals)]
             return normalize_vector(avg_normal)
         raise AttributeError("Could not calculate the average normal vector, no faces in the group.")
-    
+
     @property
+    @units_io(types_in=(), types_out=("length", "length", "length"))
     def centroid(self) -> List[float]:
-        """Calculate the centroid of the faces in the group."""
+        """Centroid of the faces in the group (x, y, z) in the active length unit."""
         from compas.geometry import centroid_points
 
         all_face_centroids = [face.centroid for face in self.faces]
         if all_face_centroids:
             return centroid_points(all_face_centroids)
         raise AttributeError("Could not calculate the centroid, no faces in the group.")
-    
+
     @property
     def mesh(self) -> "Mesh":
         """Return a COMPAS mesh representing the faces in the group."""
@@ -614,10 +617,11 @@ class FacesGroup(_Group["Face"]):
             faces.append(face_vertex_indices)
 
         return Mesh.from_vertices_and_faces(vertices, faces)
-    
+
     @property
     def boundary(self):
         from compas.geometry import Polygon
+
         pts = []
         vertices = []
         for e in self.mesh.edges_on_boundary():
@@ -625,9 +629,8 @@ class FacesGroup(_Group["Face"]):
                 if v not in vertices:
                     vertices.append(v)
                     pts.append(self.mesh.vertex_coordinates(v))
-        
+
         return Polygon(pts)
-            
 
 
 class PartsGroup(_Group["_Part"]):

@@ -24,6 +24,8 @@ from compas_fea2.base import FEAData
 from compas_fea2.base import Frameable
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.units import units_io
+from compas_fea2.units import _strip_magnitudes
 
 if TYPE_CHECKING:
     from compas_fea2.model.materials import _Material
@@ -337,12 +339,15 @@ class _Element(FEAData, Frameable):
         return self._part_key
 
     @property
+    @units_io(types_in=(), types_out="area")
     def area(self) -> float:
-        """Return the area of the element."""
+        """Return the element area in the active unit system."""
         return self._area
 
     @property
+    @units_io(types_in=(), types_out="volume")
     def volume(self) -> float:
+        """Return the element volume in the active unit system."""
         return self._volume
 
     @property
@@ -374,13 +379,15 @@ class _Element(FEAData, Frameable):
         return self._heat
 
     @property
+    @units_io(types_in=(), types_out="mass")
     def mass(self) -> float | None:
-        """Return the mass of the element."""
+        """Return the total mass of the element (scalar)."""
         if self.section and self.section.material and self.volume and self.section.material.density:
-            return [self.volume * self.section.material.density] * 6
+            return self.volume * self.section.material.density
         return None
 
     @property
+    @units_io(types_in=(), types_out="gravity")
     def g(self) -> float:
         """Return the gravity constant of the model.
 
@@ -395,6 +402,7 @@ class _Element(FEAData, Frameable):
             raise ValueError("Gravity constant not defined")
 
     @property
+    @units_io(types_in=(), types_out="weight")
     def weight(self) -> float:
         """Return the weight of the element.
 
@@ -410,8 +418,12 @@ class _Element(FEAData, Frameable):
 
     @property
     def nodal_mass(self) -> List[float] | None:
+        """Per-node lumped masses (magnitudes), equally distributed."""
         if self.mass:
-            return [self.mass / len(self.nodes)] * 3
+            n = len(self.nodes) if self.nodes else 0
+            if n:
+                return [self.mass / n] * n
+        return None
 
     @property
     def ndim(self) -> int:
@@ -425,6 +437,7 @@ class _Element(FEAData, Frameable):
         return self._faces
 
     @property
+    @units_io(types_in=(), types_out="length")
     def length(self) -> float:
         """Return the length of the element."""
         return self._length
@@ -606,13 +619,18 @@ class _Element1D(_Element):
         return self._shape
 
     @property
+    @units_io(types_in=(), types_out="length")
     def length(self) -> float:
+        """Element length in the active length unit."""
         return distance_point_point(*[node.point for node in self.nodes])
 
     @property
+    @units_io(types_in=(), types_out="volume")
     def volume(self) -> float | None:
+        """Element volume (area × length) in the active unit system."""
         if self.section:
             return self.section.A * self.length
+        return None
 
     def plot_section(self):
         if self.section:
@@ -899,14 +917,15 @@ class Face(FEAData):
         super().__init__(**kwargs)
         if len(nodes) < 3:
             raise ValueError("A face must have at least 3 nodes.")
-        # Check for degenerate (zero-area) face
-        coords = [node.xyz for node in nodes]
+        # Convert to magnitudes
+        coords = [tuple(x.m if hasattr(x, "m") else x for x in node.xyz) for node in nodes]
         poly = Polygon(coords)
+        # Check for degenerate (zero-area) face
         if poly.area == 0:
             raise ValueError(f"Degenerate face: area is zero. Vertices {[n.xyz for n in nodes]}")
         self._nodes = nodes
         self._tag = tag
-        self._plane = Plane.from_three_points(*[node.xyz for node in nodes[:3]])  # TODO check when more than 3 nodes
+        self._plane = Plane.from_three_points(*[_strip_magnitudes(node.xyz) for node in nodes[:3]])  # TODO check when more than 3 nodes
         self._registration = element
 
     @property
@@ -974,7 +993,9 @@ class Face(FEAData):
         return Polygon([n.xyz for n in self.nodes])
 
     @property
+    @units_io(types_in=(), types_out="area")
     def area(self) -> float:
+        """Face area in the active unit system."""
         return self.polygon.area
 
     @property
@@ -1112,9 +1133,12 @@ class _Element2D(_Element):
         return self._faces
 
     @property
+    @units_io(types_in=(), types_out="volume")
     def volume(self) -> float | None:
+        """Pseudo-volume (area × thickness) in the active unit system."""
         if self._faces and self.section:
             return self._faces[0].area * self.section.t
+        return None
 
     @property
     def reference_point(self) -> "Point | None":
@@ -1320,7 +1344,9 @@ class _Element3D(_Element):
         return [Face(nodes=itemgetter(*indices)(self.nodes), tag=name, element=self) for name, indices in face_indices.items()]
 
     @property
+    @units_io(types_in=(), types_out="area")
     def area(self) -> float:
+        """Surface area exposed by the solid element (if applicable)."""
         return self._area
 
     @classmethod

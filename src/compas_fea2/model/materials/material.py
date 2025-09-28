@@ -42,7 +42,7 @@ class _Material(FEAData):
 
     """
 
-    @units_io(types_in=("density", None), types_out=None)
+    @units_io(types_in=("density", "thermal_expansion"), types_out=None)
     def __init__(self, density: Optional[float] = None, expansion: Optional[float] = None, **kwargs):
         super().__init__(**kwargs)
         self._density = density
@@ -55,16 +55,18 @@ class _Material(FEAData):
         return self._density
 
     @density.setter
-    @units_io(types_in=("density", None), types_out=None)
+    @units_io(types_in=("density",), types_out=None) 
     def density(self, value: Optional[float]):
         self._density = value
 
     @property
+    @units_io(types_in=(), types_out="thermal_expansion")
     def expansion(self) -> Optional[float]:
         """float: Thermal expansion coefficient."""
         return self._expansion
 
     @expansion.setter
+    @units_io(types_in=("thermal_expansion",), types_out=None)
     def expansion(self, value: Optional[float]):
         """Set the thermal expansion coefficient."""
         self._expansion = value
@@ -99,21 +101,12 @@ class _Material(FEAData):
 name        : {}
 density     : {}
 expansion   : {}
-""".format(
-            self.__class__.__name__, len(self.__class__.__name__) * "-", self.name, self._density, self._expansion
-        )
-
-    def __html__(self) -> str:
-        return """<html>
-<head></head>
-<body><p>Hello World!</p></body>
-</html>"""
+""".format(self.__class__.__name__, len(self.__class__.__name__) * "-", self.name, self._density, self._expansion)
 
 
 # ==============================================================================
 # linear elastic
 # ==============================================================================
-# @extend_docstring(_Material)
 class ElasticOrthotropic(_Material):
     """Elastic, orthotropic and homogeneous material
 
@@ -160,6 +153,16 @@ class ElasticOrthotropic(_Material):
         Shear modulus Gzx in z-x directions.
     """
 
+    @units_io(
+        types_in=(
+            "stress", "stress", "stress",    # Ex, Ey, Ez
+            None, None, None,                # vxy, vyz, vzx (dimensionless)
+            "stress", "stress", "stress",    # Gxy, Gyz, Gzx
+            "density",                       # density
+            "thermal_expansion",             # expansion
+        ),
+        types_out=None,
+    )
     def __init__(
         self,
         Ex: float,
@@ -299,7 +302,7 @@ class ElasticIsotropic(_Material):
 
     """
 
-    @units_io(types_in=("stress", None, "density", None), types_out=None)
+    @units_io(types_in=("stress", None, "density", "thermal_expansion"), types_out=None)
     def __init__(self, E: float, v: float, density: float, expansion: Optional[float] = None, **kwargs):
         super().__init__(density=density, expansion=expansion, **kwargs)
         self._E = E
@@ -310,7 +313,7 @@ class ElasticIsotropic(_Material):
     def E(self) -> float:
         """float: Young's modulus E."""
         return self._E
-    
+
     @E.setter
     @units_io(types_in=("stress", None), types_out=None)
     def E(self, value: float):
@@ -320,7 +323,7 @@ class ElasticIsotropic(_Material):
     def v(self) -> float:
         """float: Poisson's ratio v."""
         return self._v
-    
+
     @v.setter
     def v(self, value: float):
         self._v = value
@@ -353,11 +356,10 @@ expansion   : {}
 E : {}
 v : {}
 G : {}
-""".format(
-            self.name, self._density, self._expansion, self._E, self._v, self.G
-        )
+""".format(self.name, self._density, self._expansion, self._E, self._v, self.G)
 
     @property
+    @units_io(types_in=(), types_out=("stress"))
     def G(self) -> float:
         return 0.5 * self._E / (1 + self._v)
 
@@ -398,6 +400,7 @@ class ElasticPlastic(ElasticIsotropic):
         in the form of strain/stress value pairs.
     """
 
+    @units_io(types_in=("stress", None, "density", None, "thermal_expansion"), types_out=None)
     def __init__(self, E: float, v: float, density: float, strain_stress: list[tuple[float, float]], expansion: Optional[float] = None, **kwargs):
         super().__init__(E=E, v=v, density=density, expansion=expansion, **kwargs)
         self.strain_stress = strain_stress
@@ -431,9 +434,7 @@ v  : {}
 G  : {}
 
 strain_stress : {}
-""".format(
-            self.name, self._density, self._expansion, self._E, self._v, self.G, self.strain_stress
-        )
+""".format(self.name, self._density, self._expansion, self._E, self._v, self.G, self.strain_stress)
 
 
 # ==============================================================================
@@ -476,6 +477,7 @@ class ThermalElasticIsotropic(ElasticIsotropic):
 
     """
 
+    @units_io(types_in=("thermal_conductivity", "specific_heat", "stress", None, "density", "thermal_expansion"), types_out=None)
     def __init__(self, k: float, c: float, E: float, v: float, density: float, expansion: Optional[float] = None, **kwargs):
         super().__init__(E=E, v=v, density=density, expansion=expansion, **kwargs)
         self._k = k
@@ -512,14 +514,14 @@ G : {}
 
 k : {}
 c : {}
-""".format(
-            self.name, self._density, self._expansion, self._E, self._v, self.G, self.k, self.c
-        )
+""".format(self.name, self._density, self._expansion, self._E, self._v, self.G, self.k, self.c)
 
     @property
+    @units_io(types_in=(), types_out=("thermal_conductivity"))
     def k(self) -> float:
         return self._k
 
     @property
+    @units_io(types_in=(), types_out=("specific_heat"))
     def c(self) -> float:
         return self._c

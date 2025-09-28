@@ -100,7 +100,7 @@ class PartPartInterface(_Interface):
 
     def __init__(self, master, slave, behavior, **kwargs):
         super().__init__(master=master, slave=slave, behavior=behavior, **kwargs)
-        
+
     @classmethod
     def from_parts_and_plane(cls, part_master, part_slave, plane, behavior, **kwargs):
         """Create a PartPartInterface from two parts and a plane that separates them.
@@ -132,7 +132,7 @@ class PartPartInterface(_Interface):
         slave_fg = FacesGroup(slave_faces, name=f"{part_master.name}_to_{part_slave.name}_slave", part=part_slave)
 
         return cls(master=master_fg, slave=slave_fg, behavior=behavior, **kwargs)
-    
+
     # @property
     # def overlap_mesh(self):
     #     """Generate a mesh representing the overlapping area between the master and slave faces.
@@ -144,8 +144,6 @@ class PartPartInterface(_Interface):
     #     """
     #     for face in self.master.faces:
     #         if all([node in self.masterface.nodes
-        
-        
 
 
 class BoundaryInterface(_Interface):

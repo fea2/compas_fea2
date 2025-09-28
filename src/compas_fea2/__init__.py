@@ -10,8 +10,4 @@ __license__ = "MIT License"
 __email__ = "francesco.ranaudo@gmail.com"
 __version__ = "0.3.1"
 
-__all__ = [
-    "set_backend",
-    "list_backends"
-]
-
+__all__ = ["set_backend", "list_backends"]

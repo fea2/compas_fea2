@@ -10,6 +10,7 @@ from compas_fea2.base import from_data
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import RigidPart
+from compas_fea2.units import units_io
 
 if TYPE_CHECKING:
     from compas_fea2.model.groups import NodesGroup
@@ -25,14 +26,15 @@ class _Connector(FEAData):
 
     Parameters
     ----------
-    nodes : list[Node] | compas_fea2.model.groups.NodeGroup
+    nodes : list[Node] | compas_fea2.model.groups.NodesGroup
         The connected nodes. The nodes must be registered to different parts.
         For connecting nodes in the same part, check :class:`compas_fea2.model.elements.SpringElement`.
 
     Notes
     -----
     Connectors are registered to a :class:`compas_fea2.model.Model`.
-
+    All numeric values mentioned in subclasses that represent physical quantities
+    use the active unit system of the session. See :mod:`compas_fea2.units`.
     """
 
     def __init__(self, nodes: Union[List["Node"], "NodesGroup"], **kwargs):
@@ -98,11 +100,18 @@ class LinearConnector(_Connector):
 
     Parameters
     ----------
-    nodes : list[Node] | compas_fea2.model.groups.NodeGroup
-        The connected nodes. The nodes must be registered to different parts.
-        For connecting nodes in the same part, check :class:`compas_fea2.model.elements.SpringElement`.
-    dofs : str
-        The degrees of freedom to be connected. Options are 'beam', 'bar', or a list of integers.
+    nodes : list[Node] | compas_fea2.model.groups.NodesGroup
+        The connected nodes. Nodes must belong to different parts.
+        For connecting nodes in the same part, use
+        :class:`compas_fea2.model.elements.SpringElement`.
+    dofs : str, optional
+        Degrees of freedom to be linked (e.g., 'beam', 'bar', or a list-like encoding).
+    section : object
+        Section object defining connector behavior (no units processed here).
+
+    Notes
+    -----
+    No direct physical magnitudes are passed here (besides via `section`).
     """
 
     def __init__(self, master, slave, section, dofs: str = "beam", **kwargs):
@@ -166,11 +175,15 @@ class RigidLinkConnector(_Connector):
 
     Parameters
     ----------
-    nodes : list[Node] | compas_fea2.model.groups.NodeGroup
+    nodes : list[Node] | compas_fea2.model.groups.NodesGroup
         The connected nodes. The nodes must be registered to different parts.
         For connecting nodes in the same part, check :class:`compas_fea2.model.elements.RigidElement`.
-    dofs : str
-        The degrees of freedom to be connected. Options are 'beam', 'bar', or a list of integers.
+    dofs : str, optional
+        Degrees of freedom to be connected. Options are 'beam', 'bar', or a list of integers.
+
+    Notes
+    -----
+    No direct physical magnitudes are passed here.
     """
 
     def __init__(self, nodes: Union[List["Node"], "NodesGroup"], dofs: str = "beam", **kwargs):
@@ -194,7 +207,22 @@ class RigidLinkConnector(_Connector):
 
 
 class SpringConnector(_Connector):
-    """Spring connector."""
+    """Spring connector.
+
+    Parameters
+    ----------
+    nodes : list[Node] | compas_fea2.model.groups.NodesGroup
+    section : object
+        Spring section object (stores stiffness etc.).
+    yielding : dict[str, float], optional
+        Yield thresholds as magnitudes in the active unit system. Keys: 'c' (compression), 't' (tension).
+    failure : dict[str, float], optional
+        Failure thresholds as magnitudes in the active unit system. Keys: 'c', 't'.
+
+    Notes
+    -----
+    `yielding`/`failure` are not unit-normalized automatically; pass magnitudes.
+    """
 
     def __init__(self, nodes: Union[List["Node"], "NodesGroup"], section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs):
         super().__init__(nodes, **kwargs)
@@ -251,7 +279,14 @@ class SpringConnector(_Connector):
 
 
 class ZeroLengthConnector(_Connector):
-    """Zero length connector connecting overlapping nodes."""
+    """Zero length connector connecting overlapping nodes.
+
+    Parameters
+    ----------
+    nodes : list[Node] | compas_fea2.model.groups.NodesGroup
+    direction : Any
+        Direction identifier (dimensionless). Interpretation is backend-dependent.
+    """
 
     def __init__(self, nodes: Union[List["Node"], "NodesGroup"], direction, **kwargs):
         super().__init__(nodes, **kwargs)
@@ -274,7 +309,24 @@ class ZeroLengthConnector(_Connector):
 
 
 class ZeroLengthSpringConnector(ZeroLengthConnector):
-    """Spring connector connecting overlapping nodes."""
+    """Spring connector connecting overlapping nodes.
+
+    Parameters
+    ----------
+    nodes : list[Node] | compas_fea2.model.groups.NodesGroup
+    direction : Any
+        Direction identifier (dimensionless). Interpretation is backend-dependent.
+    section : object
+        Spring section object (stores stiffness etc.).
+    yielding : dict[str, float], optional
+        Yield thresholds as magnitudes in the active unit system. Keys: 'c' (compression), 't' (tension).
+    failure : dict[str, float], optional
+        Failure thresholds as magnitudes in the active unit system. Keys: 'c', 't'.
+
+    Notes
+    -----
+    `yielding`/`failure` are not unit-normalized automatically; pass magnitudes.
+    """
 
     def __init__(self, nodes: Union[List["Node"], "NodesGroup"], direction, section, yielding: Optional[Dict[str, float]] = None, failure: Optional[Dict[str, float]] = None, **kwargs):
         # SpringConnector.__init__(self, nodes=nodes, section=section, yielding=yielding, failure=failure)
@@ -302,8 +354,33 @@ class ZeroLengthSpringConnector(ZeroLengthConnector):
 
 
 class ZeroLengthContactConnector(ZeroLengthConnector):
-    """Contact connector connecting overlapping nodes."""
+    """Contact connector connecting overlapping nodes.
 
+    Parameters
+    ----------
+    nodes : list[Node] | compas_fea2.model.groups.NodesGroup
+        Overlapping nodes to be connected.
+    direction : Any
+        Contact direction flag (dimensionless; backend-specific).
+    Kn : float
+        Normal contact stiffness in the active unit system
+        ("translational_stiffness": e.g., N/m in SI, N/mm in SI-mm, lbf/in in Imperial).
+    Kt : float
+        Tangential contact stiffness in the active unit system (same dimension as `Kn`).
+    mu : float
+        Coefficient of friction (dimensionless).
+
+    Attributes
+    ----------
+    Kn : float
+        Normal contact stiffness (exposed with units via property).
+    Kt : float
+        Tangential contact stiffness (exposed with units via property).
+    mu : float
+        Coefficient of friction (dimensionless).
+    """
+
+    @units_io(types_in=(None, None, "translational_stiffness", "translational_stiffness", "coefficient_of_friction"), types_out=None)
     def __init__(self, nodes: Union[List["Node"], "NodesGroup"], direction, Kn: float, Kt: float, mu: float, **kwargs):
         super().__init__(nodes, direction, **kwargs)
         self._Kn: float = Kn
@@ -311,14 +388,17 @@ class ZeroLengthContactConnector(ZeroLengthConnector):
         self._mu: float = mu
 
     @property
+    @units_io(types_in=(), types_out="translational_stiffness")
     def Kn(self) -> float:
         return self._Kn
 
     @property
+    @units_io(types_in=(), types_out="translational_stiffness")
     def Kt(self) -> float:
         return self._Kt
 
     @property
+    @units_io(types_in=(), types_out="coefficient_of_friction")
     def mu(self) -> float:
         return self._mu
 
