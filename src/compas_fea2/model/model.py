@@ -45,9 +45,9 @@ from compas_fea2.model.nodes import Node
 from compas_fea2.model.parts import Part
 from compas_fea2.model.parts import RigidPart
 from compas_fea2.model.parts import _Part
+from compas_fea2.units import units_io
 from compas_fea2.utilities._devtools import get_docstring
 from compas_fea2.utilities._devtools import part_method
-from compas_fea2.units import units_io
 
 if TYPE_CHECKING:
     from pathlib import Path

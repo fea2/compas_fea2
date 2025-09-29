@@ -22,6 +22,8 @@ from compas_fea2.units import units_io
 
 # Type-checking imports to avoid circular dependencies at runtime
 if TYPE_CHECKING:
+    from compas.datastructures import Mesh
+
     from compas_fea2.model.bcs import _BoundaryCondition
     from compas_fea2.model.connectors import _Connector
     from compas_fea2.model.constraints import _Constraint
@@ -43,7 +45,6 @@ if TYPE_CHECKING:
     from compas_fea2.model.parts import _Part
     from compas_fea2.model.releases import _BeamEndRelease
     from compas_fea2.model.sections import _Section
-    from compas.datastructures import Mesh
 
 
 # Define a generic type for members of _Group
@@ -597,6 +598,7 @@ class FacesGroup(_Group["Face"]):
     def mesh(self) -> "Mesh":
         """Return a COMPAS mesh representing the faces in the group."""
         from compas.datastructures import Mesh
+
         from compas_fea2.model.elements import Face
 
         vertices = []

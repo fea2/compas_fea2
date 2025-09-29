@@ -2140,7 +2140,7 @@ class ShellSection(_Section2D):
     material : :class:`compas_fea2.model._Material`
         The section material.
     """
-    
+
     @units_io(types_in=("length",), types_out=None)
     def __init__(self, t, material, **kwargs):
         super(ShellSection, self).__init__(t=t, material=material, **kwargs)

@@ -1,6 +1,9 @@
 import unittest
 from compas_fea2.model.sections import RectangularSection, CircularSection, ISection
 from compas_fea2.model.materials.steel import Steel
+from compas_fea2.units import set_output_magnitudes
+
+set_output_magnitudes(True)
 
 
 class TestSections(unittest.TestCase):

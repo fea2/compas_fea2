@@ -148,7 +148,7 @@ class Shape(Polygon, FEAData):
     # Second moment of area (inertia) and related
     # --------------------------------------------------------------------------
     @cached_property
-    @units_io(types_in=(), types_out=("inertia", "inertia", "inertia"))
+    @units_io(types_in=(), types_out=("area_moment", "area_moment", "polar_moment"))
     def inertia_xy(self) -> Tuple[float, float, float]:
         """
         (Ixx, Iyy, Ixy) about the centroid in the local x-y plane (units: length^4).
@@ -177,19 +177,19 @@ class Shape(Polygon, FEAData):
         return (Ixx, Iyy, Ixy)
 
     @property
-    @units_io(types_in=(), types_out="inertia")
+    @units_io(types_in=(), types_out="area_moment")
     def Ixx(self) -> float:
         """Moment of inertia about local x-axis (through centroid)."""
         return self.inertia_xy[0]
 
     @property
-    @units_io(types_in=(), types_out="inertia")
+    @units_io(types_in=(), types_out="area_moment")
     def Iyy(self) -> float:
         """Moment of inertia about local y-axis (through centroid)."""
         return self.inertia_xy[1]
 
     @property
-    @units_io(types_in=(), types_out="inertia")
+    @units_io(types_in=(), types_out="polar_moment")
     def Ixy(self) -> float:
         """Product of inertia about local x and y axes (through centroid)."""
         return self.inertia_xy[2]
@@ -214,7 +214,7 @@ class Shape(Polygon, FEAData):
         return self.radii[1]
 
     @cached_property
-    @units_io(types_in=(), types_out=("inertia", "inertia", "angle"))
+    @units_io(types_in=(), types_out=("area_moment", "area_moment", "angle"))
     def principal(self) -> Tuple[float, float, float]:
         """
         (I1, I2, theta): principal moments of inertia and
@@ -514,7 +514,7 @@ class Circle(Shape):
         return 2 * pi * self._radius
 
     @property
-    @units_io(types_in=(), types_out="inertia")
+    @units_io(types_in=(), types_out="polar_moment")
     def J(self) -> float:
         """Polar moment of inertia for a circular cross-section."""
         return pi * self._radius**4 / 2
@@ -604,7 +604,7 @@ class Ellipse(Shape):
         return self._segments
 
     @property
-    @units_io(types_in=(), types_out="inertia")
+    @units_io(types_in=(), types_out="polar_moment")
     def J(self) -> float:
         return pi * self._radius_a * self._radius_b**3 / 2
 
@@ -707,7 +707,7 @@ class Rectangle(Shape):
         return self._h
 
     @property
-    @units_io(types_in=(), types_out="inertia")
+    @units_io(types_in=(), types_out="polar_moment")
     def J(self):
         """Torsional constant (polar moment of inertia).
         Roark's Formulas for stress & Strain, 7th Edition, Warren C. Young & Richard G. Budynas
@@ -1069,7 +1069,7 @@ class IShape(Shape):
         return self._tw * self.hw
 
     @property
-    @units_io(types_in=(), types_out="inertia")
+    @units_io(types_in=(), types_out="polar_moment")
     def J(self) -> float:
         """
         Torsional constant approximation for an I-beam cross-section.
@@ -1104,12 +1104,12 @@ class IShape(Shape):
     @property
     @units_io(types_in=(), types_out="area")
     def Avx(self) -> float:
-        return self.shear_area_I_beam_axes()[0]
+        return self.shear_area_I_beam_axes[0]
 
     @property
     @units_io(types_in=(), types_out="area")
     def Avy(self) -> float:
-        return self.shear_area_I_beam_axes()[1]
+        return self.shear_area_I_beam_axes[1]
 
     @property
     def __data__(self) -> dict:

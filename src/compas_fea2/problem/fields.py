@@ -11,7 +11,6 @@ from compas_fea2.model.groups import ElementsGroup
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.problem.loads import ScalarLoad
 from compas_fea2.problem.loads import VectorLoad
-
 from compas_fea2.units import units_io
 
 if TYPE_CHECKING:

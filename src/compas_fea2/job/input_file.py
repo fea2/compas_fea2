@@ -5,8 +5,8 @@ from typing import Any
 from typing import Optional
 from typing import Union
 
-from compas_fea2.config import settings
 from compas_fea2.base import FEAData
+from compas_fea2.config import settings
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model

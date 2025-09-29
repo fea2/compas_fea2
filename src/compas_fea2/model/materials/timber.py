@@ -2,6 +2,9 @@ from typing import Optional
 
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.units import GPa
+from compas_fea2.units import MPa
+from compas_fea2.units import kg_per_m3
 
 from .material import ElasticOrthotropic
 
@@ -139,7 +142,7 @@ class Timber(ElasticOrthotropic):
 
     # --- Softwood Classes (C-classes) ---
     @classmethod
-    def C14(cls, units=None, **kwargs):
+    def C14(cls, **kwargs):
         """
         Softwood C14.
 
@@ -148,30 +151,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=14 * units.MPa,
-            ft0k=8 * units.MPa,
-            fc0k=16 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2 * units.MPa,
-            fvk=3 * units.MPa,
+            fmk=14 * MPa,
+            ft0k=8 * MPa,
+            fc0k=16 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2 * MPa,
+            fvk=3 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=7 * units.GPa,
-            E90mean=0.23 * units.GPa,
-            Gmean=0.44 * units.GPa,
-            densityk=290 * units("kg/m**3"),
-            density=350 * units("kg/m**3"),
+            E0mean=7 * GPa,
+            E90mean=0.23 * GPa,
+            Gmean=0.44 * GPa,
+            densityk=290 * kg_per_m3,
+            density=350 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C16(cls, units=None, **kwargs):
+    def C16(cls, **kwargs):
         """
         Softwood C16.
 
@@ -180,30 +179,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=16 * units.MPa,
-            ft0k=10 * units.MPa,
-            fc0k=17 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.2 * units.MPa,
-            fvk=3.2 * units.MPa,
+            fmk=16 * MPa,
+            ft0k=10 * MPa,
+            fc0k=17 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.2 * MPa,
+            fvk=3.2 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=8 * units.GPa,
-            E90mean=0.27 * units.GPa,
-            Gmean=0.5 * units.GPa,
-            densityk=310 * units("kg/m**3"),
-            density=370 * units("kg/m**3"),
+            E0mean=8 * GPa,
+            E90mean=0.27 * GPa,
+            Gmean=0.5 * GPa,
+            densityk=310 * kg_per_m3,
+            density=370 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C18(cls, units=None, **kwargs):
+    def C18(cls, **kwargs):
         """
         Softwood C18.
 
@@ -212,30 +207,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=18 * units.MPa,
-            ft0k=11 * units.MPa,
-            fc0k=18 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.2 * units.MPa,
-            fvk=3.4 * units.MPa,
+            fmk=18 * MPa,
+            ft0k=11 * MPa,
+            fc0k=18 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.2 * MPa,
+            fvk=3.4 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=9 * units.GPa,
-            E90mean=0.3 * units.GPa,
-            Gmean=0.56 * units.GPa,
-            densityk=320 * units("kg/m**3"),
-            density=380 * units("kg/m**3"),
+            E0mean=9 * GPa,
+            E90mean=0.3 * GPa,
+            Gmean=0.56 * GPa,
+            densityk=320 * kg_per_m3,
+            density=380 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C20(cls, units=None, **kwargs):
+    def C20(cls, **kwargs):
         """
         Softwood C20.
 
@@ -244,30 +235,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=20 * units.MPa,
-            ft0k=12 * units.MPa,
-            fc0k=19 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.3 * units.MPa,
-            fvk=3.6 * units.MPa,
+            fmk=20 * MPa,
+            ft0k=12 * MPa,
+            fc0k=19 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.3 * MPa,
+            fvk=3.6 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=9.5 * units.GPa,
-            E90mean=0.32 * units.GPa,
-            Gmean=0.59 * units.GPa,
-            densityk=330 * units("kg/m**3"),
-            density=390 * units("kg/m**3"),
+            E0mean=9.5 * GPa,
+            E90mean=0.32 * GPa,
+            Gmean=0.59 * GPa,
+            densityk=330 * kg_per_m3,
+            density=390 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C22(cls, units=None, **kwargs):
+    def C22(cls, **kwargs):
         """
         Softwood C22.
 
@@ -276,30 +263,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=22 * units.MPa,
-            ft0k=13 * units.MPa,
-            fc0k=20 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.4 * units.MPa,
-            fvk=3.8 * units.MPa,
+            fmk=22 * MPa,
+            ft0k=13 * MPa,
+            fc0k=20 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.4 * MPa,
+            fvk=3.8 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=10 * units.GPa,
-            E90mean=0.33 * units.GPa,
-            Gmean=0.63 * units.GPa,
-            densityk=340 * units("kg/m**3"),
-            density=410 * units("kg/m**3"),
+            E0mean=10 * GPa,
+            E90mean=0.33 * GPa,
+            Gmean=0.63 * GPa,
+            densityk=340 * kg_per_m3,
+            density=410 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C24(cls, units=None, **kwargs):
+    def C24(cls, **kwargs):
         """
         Softwood C24.
 
@@ -308,30 +291,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=24 * units.MPa,
-            ft0k=14 * units.MPa,
-            fc0k=21 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.5 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=24 * MPa,
+            ft0k=14 * MPa,
+            fc0k=21 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.5 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=11 * units.GPa,
-            E90mean=0.37 * units.GPa,
-            Gmean=0.69 * units.GPa,
-            densityk=350 * units("kg/m**3"),
-            density=420 * units("kg/m**3"),
+            E0mean=11 * GPa,
+            E90mean=0.37 * GPa,
+            Gmean=0.69 * GPa,
+            densityk=350 * kg_per_m3,
+            density=420 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C27(cls, units=None, **kwargs):
+    def C27(cls, **kwargs):
         """
         Softwood C27.
 
@@ -340,30 +319,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=27 * units.MPa,
-            ft0k=16 * units.MPa,
-            fc0k=22 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.6 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=27 * MPa,
+            ft0k=16 * MPa,
+            fc0k=22 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.6 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=11.5 * units.GPa,
-            E90mean=0.38 * units.GPa,
-            Gmean=0.72 * units.GPa,
-            densityk=370 * units("kg/m**3"),
-            density=450 * units("kg/m**3"),
+            E0mean=11.5 * GPa,
+            E90mean=0.38 * GPa,
+            Gmean=0.72 * GPa,
+            densityk=370 * kg_per_m3,
+            density=450 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C30(cls, units=None, **kwargs):
+    def C30(cls, **kwargs):
         """
         Softwood C30.
 
@@ -372,30 +347,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=30 * units.MPa,
-            ft0k=18 * units.MPa,
-            fc0k=23 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.7 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=30 * MPa,
+            ft0k=18 * MPa,
+            fc0k=23 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.7 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=12 * units.GPa,
-            E90mean=0.4 * units.GPa,
-            Gmean=0.75 * units.GPa,
-            densityk=380 * units("kg/m**3"),
-            density=460 * units("kg/m**3"),
+            E0mean=12 * GPa,
+            E90mean=0.4 * GPa,
+            Gmean=0.75 * GPa,
+            densityk=380 * kg_per_m3,
+            density=460 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C35(cls, units=None, **kwargs):
+    def C35(cls, **kwargs):
         """
         Softwood C35.
 
@@ -404,30 +375,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=35 * units.MPa,
-            ft0k=21 * units.MPa,
-            fc0k=25 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.8 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=35 * MPa,
+            ft0k=21 * MPa,
+            fc0k=25 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.8 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=13 * units.GPa,
-            E90mean=0.43 * units.GPa,
-            Gmean=0.81 * units.GPa,
-            densityk=400 * units("kg/m**3"),
-            density=480 * units("kg/m**3"),
+            E0mean=13 * GPa,
+            E90mean=0.43 * GPa,
+            Gmean=0.81 * GPa,
+            densityk=400 * kg_per_m3,
+            density=480 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C40(cls, units=None, **kwargs):
+    def C40(cls, **kwargs):
         """
         Softwood C40.
 
@@ -436,30 +403,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=40 * units.MPa,
-            ft0k=24 * units.MPa,
-            fc0k=26 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=2.9 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=40 * MPa,
+            ft0k=24 * MPa,
+            fc0k=26 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=2.9 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=14 * units.GPa,
-            E90mean=0.47 * units.GPa,
-            Gmean=0.88 * units.GPa,
-            densityk=420 * units("kg/m**3"),
-            density=500 * units("kg/m**3"),
+            E0mean=14 * GPa,
+            E90mean=0.47 * GPa,
+            Gmean=0.88 * GPa,
+            densityk=420 * kg_per_m3,
+            density=500 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C45(cls, units=None, **kwargs):
+    def C45(cls, **kwargs):
         """
         Softwood C45.
 
@@ -468,30 +431,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=45 * units.MPa,
-            ft0k=27 * units.MPa,
-            fc0k=27 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=3.1 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=45 * MPa,
+            ft0k=27 * MPa,
+            fc0k=27 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=3.1 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=15 * units.GPa,
-            E90mean=0.5 * units.GPa,
-            Gmean=0.94 * units.GPa,
-            densityk=440 * units("kg/m**3"),
-            density=520 * units("kg/m**3"),
+            E0mean=15 * GPa,
+            E90mean=0.5 * GPa,
+            Gmean=0.94 * GPa,
+            densityk=440 * kg_per_m3,
+            density=520 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def C50(cls, units=None, **kwargs):
+    def C50(cls, **kwargs):
         """
         Softwood C50.
 
@@ -500,31 +459,27 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled softwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=50 * units.MPa,
-            ft0k=30 * units.MPa,
-            fc0k=29 * units.MPa,
-            ft90k=0.4 * units.MPa,
-            fc90k=3.2 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=50 * MPa,
+            ft0k=30 * MPa,
+            fc0k=29 * MPa,
+            ft90k=0.4 * MPa,
+            fc90k=3.2 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_softwood,
             vTT=vTT_softwood,
-            E0mean=16 * units.GPa,
-            E90mean=0.53 * units.GPa,
-            Gmean=1 * units.GPa,
-            densityk=460 * units("kg/m**3"),
-            density=550 * units("kg/m**3"),
+            E0mean=16 * GPa,
+            E90mean=0.53 * GPa,
+            Gmean=1 * GPa,
+            densityk=460 * kg_per_m3,
+            density=550 * kg_per_m3,
             **kwargs,
         )
 
     # --- Hardwood Classes (D-classes) ---
     @classmethod
-    def D18(cls, units=None, **kwargs):
+    def D18(cls, **kwargs):
         """
         Hardwood D18.
 
@@ -533,30 +488,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled hardwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=18 * units.MPa,
-            ft0k=11 * units.MPa,
-            fc0k=18 * units.MPa,
-            ft90k=0.6 * units.MPa,
-            fc90k=7.5 * units.MPa,
-            fvk=3.4 * units.MPa,
+            fmk=18 * MPa,
+            ft0k=11 * MPa,
+            fc0k=18 * MPa,
+            ft90k=0.6 * MPa,
+            fc90k=7.5 * MPa,
+            fvk=3.4 * MPa,
             vLT=vLT_hardwood,
             vTT=vTT_hardwood,
-            E0mean=9.5 * units.GPa,
-            E90mean=0.63 * units.GPa,
-            Gmean=0.59 * units.GPa,
-            densityk=475 * units("kg/m**3"),
-            density=570 * units("kg/m**3"),
+            E0mean=9.5 * GPa,
+            E90mean=0.63 * GPa,
+            Gmean=0.59 * GPa,
+            densityk=475 * kg_per_m3,
+            density=570 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def D24(cls, units=None, **kwargs):
+    def D24(cls, **kwargs):
         """
         Hardwood D24.
 
@@ -565,30 +516,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled hardwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=24 * units.MPa,
-            ft0k=14 * units.MPa,
-            fc0k=21 * units.MPa,
-            ft90k=0.6 * units.MPa,
-            fc90k=7.8 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=24 * MPa,
+            ft0k=14 * MPa,
+            fc0k=21 * MPa,
+            ft90k=0.6 * MPa,
+            fc90k=7.8 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_hardwood,
             vTT=vTT_hardwood,
-            E0mean=10 * units.GPa,
-            E90mean=0.67 * units.GPa,
-            Gmean=0.62 * units.GPa,
-            densityk=485 * units("kg/m**3"),
-            density=580 * units("kg/m**3"),
+            E0mean=10 * GPa,
+            E90mean=0.67 * GPa,
+            Gmean=0.62 * GPa,
+            densityk=485 * kg_per_m3,
+            density=580 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def D30(cls, units=None, **kwargs):
+    def D30(cls, **kwargs):
         """
         Hardwood D30.
 
@@ -597,30 +544,25 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled hardwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
-
         return cls(
-            fmk=30 * units.MPa,
-            ft0k=18 * units.MPa,
-            fc0k=23 * units.MPa,
-            ft90k=0.6 * units.MPa,
-            fc90k=8 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=30 * MPa,
+            ft0k=18 * MPa,
+            fc0k=23 * MPa,
+            ft90k=0.6 * MPa,
+            fc90k=8 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_hardwood,
             vTT=vTT_hardwood,
-            E0mean=11 * units.GPa,
-            E90mean=0.73 * units.GPa,
-            Gmean=0.69 * units.GPa,
-            densityk=530 * units("kg/m**3"),
-            density=640 * units("kg/m**3"),
+            E0mean=11 * GPa,
+            E90mean=0.73 * GPa,
+            Gmean=0.69 * GPa,
+            densityk=530 * kg_per_m3,
+            density=640 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def D35(cls, units=None, **kwargs):
+    def D35(cls, **kwargs):
         """
         Hardwood D35.
 
@@ -629,30 +571,25 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled hardwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
-
         return cls(
-            fmk=35 * units.MPa,
-            ft0k=21 * units.MPa,
-            fc0k=25 * units.MPa,
-            ft90k=0.6 * units.MPa,
-            fc90k=8.1 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=35 * MPa,
+            ft0k=21 * MPa,
+            fc0k=25 * MPa,
+            ft90k=0.6 * MPa,
+            fc90k=8.1 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_hardwood,
             vTT=vTT_hardwood,
-            E0mean=12 * units.GPa,
-            E90mean=0.8 * units.GPa,
-            Gmean=0.75 * units.GPa,
-            densityk=540 * units("kg/m**3"),
-            density=650 * units("kg/m**3"),
+            E0mean=12 * GPa,
+            E90mean=0.8 * GPa,
+            Gmean=0.75 * GPa,
+            densityk=540 * kg_per_m3,
+            density=650 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def D40(cls, units=None, **kwargs):
+    def D40(cls, **kwargs):
         """
         Hardwood D40.
 
@@ -661,30 +598,25 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled hardwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
-
         return cls(
-            fmk=40 * units.MPa,
-            ft0k=24 * units.MPa,
-            fc0k=26 * units.MPa,
-            ft90k=0.6 * units.MPa,
-            fc90k=8.3 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=40 * MPa,
+            ft0k=24 * MPa,
+            fc0k=26 * MPa,
+            ft90k=0.6 * MPa,
+            fc90k=8.3 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_hardwood,
             vTT=vTT_hardwood,
-            E0mean=13 * units.GPa,
-            E90mean=0.86 * units.GPa,
-            Gmean=0.81 * units.GPa,
-            densityk=550 * units("kg/m**3"),
-            density=660 * units("kg/m**3"),
+            E0mean=13 * GPa,
+            E90mean=0.86 * GPa,
+            Gmean=0.81 * GPa,
+            densityk=550 * kg_per_m3,
+            density=660 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def D50(cls, units=None, **kwargs):
+    def D50(cls, **kwargs):
         """
         Hardwood D50.
 
@@ -693,30 +625,25 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled hardwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
-
         return cls(
-            fmk=50 * units.MPa,
-            ft0k=30 * units.MPa,
-            fc0k=29 * units.MPa,
-            ft90k=0.6 * units.MPa,
-            fc90k=9.3 * units.MPa,
-            fvk=4 * units.MPa,
+            fmk=50 * MPa,
+            ft0k=30 * MPa,
+            fc0k=29 * MPa,
+            ft90k=0.6 * MPa,
+            fc90k=9.3 * MPa,
+            fvk=4 * MPa,
             vLT=vLT_hardwood,
             vTT=vTT_hardwood,
-            E0mean=14 * units.GPa,
-            E90mean=0.93 * units.GPa,
-            Gmean=0.88 * units.GPa,
-            densityk=620 * units("kg/m**3"),
-            density=750 * units("kg/m**3"),
+            E0mean=14 * GPa,
+            E90mean=0.93 * GPa,
+            Gmean=0.88 * GPa,
+            densityk=620 * kg_per_m3,
+            density=750 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def D60(cls, units=None, **kwargs):
+    def D60(cls, **kwargs):
         """
         Hardwood D60.
 
@@ -725,30 +652,26 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled hardwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
 
         return cls(
-            fmk=60 * units.MPa,
-            ft0k=36 * units.MPa,
-            fc0k=32 * units.MPa,
-            ft90k=0.6 * units.MPa,
-            fc90k=10.5 * units.MPa,
-            fvk=4.5 * units.MPa,
+            fmk=60 * MPa,
+            ft0k=36 * MPa,
+            fc0k=32 * MPa,
+            ft90k=0.6 * MPa,
+            fc90k=10.5 * MPa,
+            fvk=4.5 * MPa,
             vLT=vLT_hardwood,
             vTT=vTT_hardwood,
-            E0mean=17 * units.GPa,
-            E90mean=1.13 * units.GPa,
-            Gmean=1.06 * units.GPa,
-            densityk=700 * units("kg/m**3"),
-            density=840 * units("kg/m**3"),
+            E0mean=17 * GPa,
+            E90mean=1.13 * GPa,
+            Gmean=1.06 * GPa,
+            densityk=700 * kg_per_m3,
+            density=840 * kg_per_m3,
             **kwargs,
         )
 
     @classmethod
-    def D70(cls, units=None, **kwargs):
+    def D70(cls, **kwargs):
         """
         Hardwood D70.
 
@@ -757,24 +680,19 @@ class Timber(ElasticOrthotropic):
         :class:`compas_fea2.model.material.ElasticTimber`
             The precompiled hardwood material.
         """
-        if not units:
-            units = u(system="SI_mm")
-        elif not isinstance(units, UnitRegistry):
-            units = u(system=units)
-
         return cls(
-            fmk=70 * units.MPa,
-            ft0k=42 * units.MPa,
-            fc0k=34 * units.MPa,
-            ft90k=0.6 * units.MPa,
-            fc90k=13.5 * units.MPa,
-            fvk=5 * units.MPa,
+            fmk=70 * MPa,
+            ft0k=42 * MPa,
+            fc0k=34 * MPa,
+            ft90k=0.6 * MPa,
+            fc90k=13.5 * MPa,
+            fvk=5 * MPa,
             vLT=vLT_hardwood,
             vTT=vTT_hardwood,
-            E0mean=20 * units.GPa,
-            E90mean=1.33 * units.GPa,
-            Gmean=1.25 * units.GPa,
-            densityk=900 * units("kg/m**3"),
-            density=1080 * units("kg/m**3"),
+            E0mean=20 * GPa,
+            E90mean=1.33 * GPa,
+            Gmean=1.25 * GPa,
+            densityk=900 * kg_per_m3,
+            density=1080 * kg_per_m3,
             **kwargs,
         )

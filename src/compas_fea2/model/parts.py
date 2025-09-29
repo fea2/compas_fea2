@@ -1402,7 +1402,6 @@ class _Part(FEAData):
         """
         return self.find_closest_nodes_to_point(node.xyz, number_of_nodes, report=report, single=single)
 
-
     def find_nodes_in_polygon(self, polygon: "Polygon", tol: float = 1.1) -> "NodesGroup | None":
         """Find the nodes of the part that are contained within a planar polygon.
 

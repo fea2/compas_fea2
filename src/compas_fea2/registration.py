@@ -6,7 +6,9 @@
 """
 
 from importlib.metadata import entry_points
-from typing import Dict, Mapping, Type
+from typing import Dict
+from typing import Mapping
+from typing import Type
 
 _IMPLS: Dict[Type, Type] = {}  # Mapping of base classes to active implementation classes
 

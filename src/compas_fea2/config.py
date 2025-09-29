@@ -18,8 +18,9 @@ Quick usage:
 
 from __future__ import annotations
 
-import os
 import json
+import os
+
 from compas.geometry import Frame
 
 
@@ -110,10 +111,11 @@ class Settings:
     def _apply_unit_system(self) -> None:
         """Apply the configured unit system to compas_fea2.units."""
         try:
-            from compas_fea2.units import set_unit_system, list_unit_systems
+            from compas_fea2.units import list_unit_systems
+            from compas_fea2.units import set_unit_system
 
             set_unit_system(self.UNIT_SYSTEM)
-        except Exception as e:
+        except Exception:
             # Fallback to SI if an unknown system was configured
             try:
                 set_unit_system("SI")

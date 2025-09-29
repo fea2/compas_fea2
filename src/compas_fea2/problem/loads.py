@@ -172,7 +172,7 @@ class VectorLoad(_Load, Frameable):
     - All force and moment values are interpreted and returned in units consistent with the active unit system.
     """
 
-    @units_io(types_in=("force","force","force","moment","moment","moment",None,None), types_out=None)
+    @units_io(types_in=("force", "force", "force", "moment", "moment", "moment", None, None), types_out=None)
     def __init__(self, x=None, y=None, z=None, xx=None, yy=None, zz=None, frame=None, **kwargs):
         _Load.__init__(self, **kwargs)
         Frameable.__init__(self, frame)
@@ -348,7 +348,7 @@ class VectorLoad(_Load, Frameable):
 
     # --- convenience vectors and magnitudes (GLOBAL) -------------------
     @property
-    @units_io(types_in=(), types_out=("force","force","force"))
+    @units_io(types_in=(), types_out=("force", "force", "force"))
     def force_vector(self) -> Optional[Vector]:
         """Global force vector (X, Y, Z) or None if all force components are None.
         Returned vector components are in force units consistent with the active unit system.
@@ -359,7 +359,7 @@ class VectorLoad(_Load, Frameable):
         return Vector(gx if gx is not None else 0.0, gy if gy is not None else 0.0, gz if gz is not None else 0.0)
 
     @property
-    @units_io(types_in=(), types_out=("moment","moment","moment"))
+    @units_io(types_in=(), types_out=("moment", "moment", "moment"))
     def moment_vector(self) -> Optional[Vector]:
         """Global moment vector (XX, YY, ZZ) or None if all moment components are None.
         Returned vector components are in moment units consistent with the active unit system.

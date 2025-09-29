@@ -1,5 +1,8 @@
 import unittest
 from compas_fea2.model.ics import InitialTemperature
+from compas_fea2.units import set_output_magnitudes
+
+set_output_magnitudes(True)
 
 
 class TestInitialTemperature(unittest.TestCase):

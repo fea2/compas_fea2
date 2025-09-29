@@ -20,10 +20,9 @@ from compas.geometry import Point
 from compas.geometry import Transformation
 from compas.geometry import Vector
 
-import compas_fea2
-from .registration import _IMPLS
 from compas_fea2.config import settings
 
+from .registration import _IMPLS
 from .utilities._devtools import normalize_string
 
 if TYPE_CHECKING:
@@ -408,8 +407,6 @@ class Frameable:
             return True
         from compas.geometry import Transformation  # local import
 
-        import compas_fea2  # type: ignore
-
         T = Transformation.from_frame_to_frame(self.frame, settings.GLOBAL_FRAME)
         # Extract rotation part and compare to identity.
         for i in range(3):
@@ -426,13 +423,11 @@ class Frameable:
     # --- transformations ----------------------------------------------------
     def _T_local_to_global(self) -> Transformation:
         """Get the transformation from local frame to global frame."""
-        import compas_fea2  # type: ignore
 
         return Transformation.from_frame_to_frame(self.frame, settings.GLOBAL_FRAME)
 
     def _T_global_to_local(self) -> Transformation:
         """Get the transformation from global frame to local frame."""
-        import compas_fea2  # type: ignore
 
         return Transformation.from_frame_to_frame(settings.GLOBAL_FRAME, self.frame)
 

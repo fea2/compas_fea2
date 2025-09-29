@@ -3,7 +3,15 @@ from __future__ import annotations
 import contextvars
 import functools
 import inspect
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterable
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import Union
 
 import pint
 
@@ -316,8 +324,8 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "power": ureg.horsepower,
         "frequency": ureg.hertz,
         # Thermal
-        "temperature": ureg.degF,            # absolute (use degR if needed)
-        "temperature_diff": ureg.delta_degF, # differences
+        "temperature": ureg.degF,  # absolute (use degR if needed)
+        "temperature_diff": ureg.delta_degF,  # differences
         "thermal_conductivity": ureg.Btu / (ureg.hour * ureg.foot * ureg.delta_degF),
         "thermal_resistivity": (ureg.foot * ureg.delta_degF) / (ureg.Btu / ureg.hour),
         "thermal_resistance": ureg.delta_degF / (ureg.Btu / ureg.hour),
@@ -365,9 +373,7 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
 # Context state: active unit system & display mode; call depth for internals
 # =============================================================================
 
-_CURRENT_SYSTEM: contextvars.ContextVar[Union[str, Dict[str, pint.Unit]]] = contextvars.ContextVar(
-    "cfea2_unit_system", default="SI"
-)
+_CURRENT_SYSTEM: contextvars.ContextVar[Union[str, Dict[str, pint.Unit]]] = contextvars.ContextVar("cfea2_unit_system", default="SI")
 _DISPLAY_MODE: contextvars.ContextVar[str] = contextvars.ContextVar(
     "cfea2_display_mode",
     default="quantity",  # top-level returns Quantity by default
@@ -378,6 +384,7 @@ _CALL_DEPTH: contextvars.ContextVar[int] = contextvars.ContextVar("cfea2_call_de
 # =============================================================================
 # Public helpers
 # =============================================================================
+
 
 def list_unit_systems() -> Sequence[str]:
     return list(UNIT_SYSTEMS.keys())
@@ -413,17 +420,13 @@ def current_unit_for(type_key: Union[str, Sequence[str]]) -> Union[pint.Unit, Tu
         try:
             return tuple(system[k] for k in type_key)
         except KeyError as e:
-            raise KeyError(
-                f"Type '{type_key}' not defined in current unit system. Known: {list(system)}"
-            ) from e
+            raise KeyError(f"Type '{type_key}' not defined in current unit system. Known: {list(system)}") from e
 
     # Scalar key
     try:
         return system[type_key]
     except KeyError as e:
-        raise KeyError(
-            f"Type '{type_key}' not defined in current unit system. Known: {list(system)}"
-        ) from e
+        raise KeyError(f"Type '{type_key}' not defined in current unit system. Known: {list(system)}") from e
 
 
 def set_output_magnitudes(enabled: bool) -> None:
@@ -463,6 +466,7 @@ def no_units(fn: Callable) -> Callable:
 # =============================================================================
 # Internal utilities
 # =============================================================================
+
 
 def _is_qty(x: Any) -> bool:
     # Pint Quantity has .to (convert) and .m (magnitude)
@@ -574,6 +578,7 @@ def _first_positional_params_after_self(fn: Callable) -> Sequence[str]:
 # Decorator: declare TYPES in/out; concrete units come from the active system
 # =============================================================================
 
+
 def units_io(
     types_in: Optional[Sequence[Optional[Union[str, Sequence[str]]]]],
     types_out: Optional[Union[str, Sequence[str]]],
@@ -674,6 +679,7 @@ def units_io(
 # =============================================================================
 # Method decorator: temporarily coerce ALL Quantity attrs to magnitudes
 # =============================================================================
+
 
 def magnitudes_during_call(
     *,
@@ -851,7 +857,7 @@ K = ureg.kelvin
 degC = ureg.degC
 degF = ureg.degF
 R = ureg.degR
-dK = ureg.kelvin           # temperature difference in K
+dK = ureg.kelvin  # temperature difference in K
 ddegC = ureg.delta_degC
 ddegF = ureg.delta_degF
 

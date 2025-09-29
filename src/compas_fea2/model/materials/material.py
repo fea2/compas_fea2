@@ -55,7 +55,7 @@ class _Material(FEAData):
         return self._density
 
     @density.setter
-    @units_io(types_in=("density",), types_out=None) 
+    @units_io(types_in=("density",), types_out=None)
     def density(self, value: Optional[float]):
         self._density = value
 
@@ -101,7 +101,9 @@ class _Material(FEAData):
 name        : {}
 density     : {}
 expansion   : {}
-""".format(self.__class__.__name__, len(self.__class__.__name__) * "-", self.name, self._density, self._expansion)
+""".format(
+            self.__class__.__name__, len(self.__class__.__name__) * "-", self.name, self._density, self._expansion
+        )
 
 
 # ==============================================================================
@@ -155,11 +157,17 @@ class ElasticOrthotropic(_Material):
 
     @units_io(
         types_in=(
-            "stress", "stress", "stress",    # Ex, Ey, Ez
-            None, None, None,                # vxy, vyz, vzx (dimensionless)
-            "stress", "stress", "stress",    # Gxy, Gyz, Gzx
-            "density",                       # density
-            "thermal_expansion",             # expansion
+            "stress",
+            "stress",
+            "stress",  # Ex, Ey, Ez
+            None,
+            None,
+            None,  # vxy, vyz, vzx (dimensionless)
+            "stress",
+            "stress",
+            "stress",  # Gxy, Gyz, Gzx
+            "density",  # density
+            "thermal_expansion",  # expansion
         ),
         types_out=None,
     )
@@ -356,7 +364,9 @@ expansion   : {}
 E : {}
 v : {}
 G : {}
-""".format(self.name, self._density, self._expansion, self._E, self._v, self.G)
+""".format(
+            self.name, self._density, self._expansion, self._E, self._v, self.G
+        )
 
     @property
     @units_io(types_in=(), types_out=("stress"))
@@ -434,7 +444,9 @@ v  : {}
 G  : {}
 
 strain_stress : {}
-""".format(self.name, self._density, self._expansion, self._E, self._v, self.G, self.strain_stress)
+""".format(
+            self.name, self._density, self._expansion, self._E, self._v, self.G, self.strain_stress
+        )
 
 
 # ==============================================================================
@@ -514,7 +526,9 @@ G : {}
 
 k : {}
 c : {}
-""".format(self.name, self._density, self._expansion, self._E, self._v, self.G, self.k, self.c)
+""".format(
+            self.name, self._density, self._expansion, self._E, self._v, self.G, self.k, self.c
+        )
 
     @property
     @units_io(types_in=(), types_out=("thermal_conductivity"))

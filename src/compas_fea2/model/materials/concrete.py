@@ -6,8 +6,6 @@ from matplotlib import pyplot as plt
 
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-from compas_fea2.units import MPa
-from compas_fea2.units import kg_per_m3
 from compas_fea2.units import units_io
 
 from .material import _Material
@@ -177,7 +175,9 @@ v   : {}
 G   : {}
 fck : {}
 fr  : {}
-""".format(self.name, self.density, self.E, self.v, self.G, self.fck, self.fr)
+""".format(
+            self.name, self.density, self.E, self.v, self.G, self.fck, self.fr
+        )
 
     @property
     def __data__(self):
@@ -301,7 +301,9 @@ ec : {}
 ft : {}
 et : {}
 fr : {}
-""".format(self.name, self.density, self.E, self.v, self.G, self.fc, self.ec, self.ft, self.et, self.fr)
+""".format(
+            self.name, self.density, self.E, self.v, self.G, self.fc, self.ec, self.ft, self.et, self.fr
+        )
 
     @property
     def __data__(self):

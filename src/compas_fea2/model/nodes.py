@@ -105,7 +105,7 @@ class Node(FEAData):
 
     """
 
-    @units_io(types_in=(("length","length","length"), "mass", "temperature"), types_out=None)
+    @units_io(types_in=(("length", "length", "length"), "mass", "temperature"), types_out=None)
     def __init__(self, xyz: Sequence[float], mass: Optional[Union[float, List[float]]] = None, temperature: Optional[float] = None, **kwargs):
         super().__init__(**kwargs)
         self._part_key: Optional[int] = None
@@ -202,7 +202,7 @@ class Node(FEAData):
         return self._part_key
 
     @property
-    @units_io(types_in=(), types_out=("length","length","length"))
+    @units_io(types_in=(), types_out=("length", "length", "length"))
     def xyz(self) -> List[float]:
         """Coordinates [x,y,z] in active length units."""
         return [self._x, self._y, self._z]
@@ -246,7 +246,7 @@ class Node(FEAData):
         self._z = float(value)
 
     @property
-    @units_io(types_in=(), types_out=("mass","mass","mass","mass","mass","mass"))
+    @units_io(types_in=(), types_out=("mass", "mass", "mass", "mass", "mass", "mass"))
     def mass(self) -> Sequence[float]:
         return self._mass
 

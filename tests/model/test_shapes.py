@@ -1,6 +1,9 @@
 import unittest
 from compas.geometry import Point, Frame
 from compas_fea2.model.shapes import Rectangle, Circle, IShape, Shape
+from compas_fea2.units import set_output_magnitudes
+
+set_output_magnitudes(True)
 
 
 class TestShapes(unittest.TestCase):

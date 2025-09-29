@@ -24,8 +24,8 @@ from compas_fea2.base import FEAData
 from compas_fea2.base import Frameable
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
-from compas_fea2.units import units_io
 from compas_fea2.units import _strip_magnitudes
+from compas_fea2.units import units_io
 
 if TYPE_CHECKING:
     from compas_fea2.model.materials import _Material
