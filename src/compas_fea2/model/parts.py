@@ -34,6 +34,7 @@ from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
 from compas_fea2.config import settings
+from compas_fea2.units import _strip_magnitudes
 from compas_fea2.units import units_io
 
 from .elements import BeamElement
@@ -862,7 +863,7 @@ class _Part(FEAData):
     def bounding_box(self) -> Box:
         """The bounding box of the part."""
         # FIXME: add bounding box for linear elements (bb of the section outer boundary)
-        return Box.from_bounding_box(bounding_box([n.xyz for n in self.nodes]))
+        return Box.from_bounding_box(bounding_box([_strip_magnitudes(n.xyz) for n in self.nodes]))
 
     @property
     def bb_center(self) -> Point:
@@ -1872,7 +1873,7 @@ class _Part(FEAData):
             for face in element_faces:
                 faces.append(face)
         faces_group = FacesGroup(faces)
-        faces_subgroup = faces_group.subgroup(condition=lambda x: all(is_point_on_plane(node.xyz, plane, tol=tol) for node in x.nodes))
+        faces_subgroup = faces_group.subgroup(condition=lambda x: all(is_point_on_plane(_strip_magnitudes(node.xyz), plane, tol=tol) for node in x.nodes))
         return faces_subgroup
 
     def find_faces_in_polygon(self, polygon: "Polygon", tol: float = 1.1) -> FacesGroup:

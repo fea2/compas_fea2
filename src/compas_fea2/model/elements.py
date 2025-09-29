@@ -387,7 +387,7 @@ class _Element(FEAData, Frameable):
         return None
 
     @property
-    @units_io(types_in=(), types_out="gravity")
+    @units_io(types_in=(), types_out="acceleration")
     def g(self) -> float:
         """Return the gravity constant of the model.
 

@@ -566,7 +566,7 @@ class GravityLoadField(_ElementVectorField):
     Parameters
     ----------
     g : float
-        Gravitational acceleration magnitude ("gravity").
+        Gravitational acceleration magnitude.
     direction : tuple[float, float, float]
         Unit vector indicating gravity direction (dimensionless).
     nodes : Iterable[Node] | None
@@ -575,7 +575,7 @@ class GravityLoadField(_ElementVectorField):
         Typically 1 for permanent, unless you want to force a different rank.
     """
 
-    @units_io(types_in=("gravity", None, None, None, None), types_out=None)
+    @units_io(types_in=("acceleration", None, None, None, None), types_out=None)
     def __init__(self, g=9.81, direction=(0, 0, -1), distribution=None, load_case=None, combination_rank: int = 1, **kwargs):
         from compas_fea2.problem.loads import VectorLoad
 
@@ -611,7 +611,7 @@ class GravityLoadField(_ElementVectorField):
         return field
 
     @property
-    @units_io(types_in=(), types_out="gravity")
+    @units_io(types_in=(), types_out="acceleration")
     def g(self):
         """Gravitational acceleration in the active unit system (e.g., m/s²)."""
         return self._g

@@ -14,6 +14,7 @@ from compas_fea2.base import Registry
 from compas_fea2.base import from_data
 from compas_fea2.config import settings
 from compas_fea2.units import _strip_magnitudes
+from compas_fea2.units import no_units
 from compas_fea2.units import units_io
 
 if TYPE_CHECKING:
@@ -290,6 +291,7 @@ class Node(FEAData):
         else:
             raise ValueError("Node is not registered to a Part.")
 
+    @no_units
     def transform(self, transformation) -> None:
         """Transform the node using a transformation matrix.
 

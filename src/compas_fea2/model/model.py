@@ -285,13 +285,13 @@ class Model(FEAData):
         return self._fields
 
     @property
-    @units_io(types_in=(), types_out="gravity")
+    @units_io(types_in=(), types_out="acceleration")
     def g(self) -> "float":
         """Return the gravitational acceleration in the active unit system (e.g., m/s²)."""
         return self.constants["g"]
 
     @g.setter
-    @units_io(types_in=("gravity",), types_out=None)
+    @units_io(types_in=("acceleration",), types_out=None)
     def g(self, value):
         """Set gravitational acceleration (expects a magnitude or Quantity with dimension of acceleration)."""
         self._constants["g"] = value

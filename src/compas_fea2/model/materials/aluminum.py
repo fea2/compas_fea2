@@ -2,7 +2,6 @@ from typing import Optional
 from uuid import UUID
 
 from compas_fea2.units import MPa
-from compas_fea2.units import units_io
 
 from .material import _Material
 
