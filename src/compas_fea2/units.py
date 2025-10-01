@@ -423,6 +423,8 @@ def current_unit_for(type_key: Union[str, Sequence[str]]) -> Union[pint.Unit, Tu
             raise KeyError(f"Type '{type_key}' not defined in current unit system. Known: {list(system)}") from e
 
     # Scalar key
+    if not isinstance(type_key, str):
+        raise TypeError(f"Expected a string type_key for scalar lookup, got {type(type_key).__name__}")
     try:
         return system[type_key]
     except KeyError as e:
@@ -658,7 +660,15 @@ def units_io(
 
             sys_unit_out: Union[pint.Unit, Tuple[pint.Unit, ...]]
             if isinstance(types_out, (tuple, list)):
-                sys_unit_out = tuple(current_unit_for(t) for t in types_out)
+                # Flatten any nested tuples so that sys_unit_out is always a tuple of pint.Unit
+                units = tuple(current_unit_for(t) for t in types_out)
+                flat_units = []
+                for u in units:
+                    if isinstance(u, (tuple, list)):
+                        flat_units.extend(u)
+                    else:
+                        flat_units.append(u)
+                sys_unit_out = tuple(flat_units)
             else:
                 sys_unit_out = current_unit_for(types_out)
 
@@ -668,9 +678,9 @@ def units_io(
             return _wrap_as_quantity(result, sys_unit_out) if _DISPLAY_MODE.get() == "quantity" else result
 
         # Introspection aids
-        inner.__types_in__ = types_in
-        inner.__types_in_kw__ = dict(types_in_kw)
-        inner.__types_out__ = types_out
+        setattr(inner, "__types_in__", types_in)
+        setattr(inner, "__types_in_kw__", dict(types_in_kw))
+        setattr(inner, "__types_out__", types_out)
         return inner
 
     return decorate

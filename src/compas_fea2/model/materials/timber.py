@@ -1,3 +1,5 @@
+from typing import Any
+from typing import Dict
 from typing import Optional
 
 from compas_fea2.base import Registry
@@ -86,8 +88,36 @@ class Timber(ElasticOrthotropic):
     __doc__ = __doc__ or ""
     __doc__ += ElasticOrthotropic.__doc__ or ""
 
-    def __init__(self, fmk, ft0k, fc0k, ft90k, fc90k, fvk, vLT, vTT, E0mean, E90mean, Gmean, densityk, density, **kwargs):
-        super().__init__(Ex=E90mean, Ey=E0mean, Ez=E90mean, vxy=vLT * E90mean / E0mean, vyz=vLT, vzx=vTT, Gxy=Gmean, Gyz=Gmean, Gzx=Gmean, density=density, **kwargs)
+    def __init__(
+        self,
+        fmk: float,
+        ft0k: float,
+        fc0k: float,
+        ft90k: float,
+        fc90k: float,
+        fvk: float,
+        vLT: float,
+        vTT: float,
+        E0mean: float,
+        E90mean: float,
+        Gmean: float,
+        densityk: float,
+        density: float,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            Ex=E90mean,
+            Ey=E0mean,
+            Ez=E90mean,
+            vxy=vLT * E90mean / E0mean,
+            vyz=vLT,
+            vzx=vTT,
+            Gxy=Gmean,
+            Gyz=Gmean,
+            Gzx=Gmean,
+            density=density,
+            **kwargs,
+        )
         self.fmk = fmk
         self.ft0k = ft0k
         self.fc0k = fc0k
@@ -97,7 +127,7 @@ class Timber(ElasticOrthotropic):
         self.densityk = densityk
 
     @property
-    def __data__(self):
+    def __data__(self) -> Dict[str, Any]:
         data = super().__data__
         data.update(
             {
@@ -121,28 +151,33 @@ class Timber(ElasticOrthotropic):
 
     @from_data
     @classmethod
-    def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate: bool = True):
+    def __from_data__(
+        cls,
+        data: Dict[str, Any],
+        registry: Optional[Registry] = None,
+        duplicate: bool = True,
+    ) -> "Timber":
         material = cls(
-            fmk=data.get("fmk"),
-            ft0k=data.get("ft0k"),
-            fc0k=data.get("fc0k"),
-            ft90k=data.get("ft90k"),
-            fc90k=data.get("fc90k"),
-            fvk=data.get("fvk"),
-            vLT=data.get("vLT"),
-            vTT=data.get("vTT"),
-            E0mean=data.get("E0mean"),
-            E90mean=data.get("E90mean"),
-            Gmean=data.get("Gmean"),
-            densityk=data.get("densityk"),
-            density=data.get("density"),
+            fmk=float(data.get("fmk", 0.0)),
+            ft0k=float(data.get("ft0k", 0.0)),
+            fc0k=float(data.get("fc0k", 0.0)),
+            ft90k=float(data.get("ft90k", 0.0)),
+            fc90k=float(data.get("fc90k", 0.0)),
+            fvk=float(data.get("fvk", 0.0)),
+            vLT=float(data.get("vLT", 0.0)),
+            vTT=float(data.get("vTT", 0.0)),
+            E0mean=float(data.get("E0mean", 0.0)),
+            E90mean=float(data.get("E90mean", 0.0)),
+            Gmean=float(data.get("Gmean", 0.0)),
+            densityk=float(data.get("densityk", 0.0)),
+            density=float(data.get("density", 0.0)),
             name=data.get("name"),
         )
         return material
 
     # --- Softwood Classes (C-classes) ---
     @classmethod
-    def C14(cls, **kwargs):
+    def C14(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C14.
 
@@ -170,7 +205,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C16(cls, **kwargs):
+    def C16(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C16.
 
@@ -198,7 +233,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C18(cls, **kwargs):
+    def C18(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C18.
 
@@ -226,7 +261,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C20(cls, **kwargs):
+    def C20(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C20.
 
@@ -254,7 +289,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C22(cls, **kwargs):
+    def C22(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C22.
 
@@ -282,7 +317,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C24(cls, **kwargs):
+    def C24(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C24.
 
@@ -310,7 +345,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C27(cls, **kwargs):
+    def C27(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C27.
 
@@ -338,7 +373,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C30(cls, **kwargs):
+    def C30(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C30.
 
@@ -366,7 +401,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C35(cls, **kwargs):
+    def C35(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C35.
 
@@ -394,7 +429,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C40(cls, **kwargs):
+    def C40(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C40.
 
@@ -422,7 +457,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C45(cls, **kwargs):
+    def C45(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C45.
 
@@ -450,7 +485,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def C50(cls, **kwargs):
+    def C50(cls, **kwargs: Any) -> "Timber":
         """
         Softwood C50.
 
@@ -479,7 +514,7 @@ class Timber(ElasticOrthotropic):
 
     # --- Hardwood Classes (D-classes) ---
     @classmethod
-    def D18(cls, **kwargs):
+    def D18(cls, **kwargs: Any) -> "Timber":
         """
         Hardwood D18.
 
@@ -507,7 +542,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def D24(cls, **kwargs):
+    def D24(cls, **kwargs: Any) -> "Timber":
         """
         Hardwood D24.
 
@@ -535,7 +570,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def D30(cls, **kwargs):
+    def D30(cls, **kwargs: Any) -> "Timber":
         """
         Hardwood D30.
 
@@ -562,7 +597,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def D35(cls, **kwargs):
+    def D35(cls, **kwargs: Any) -> "Timber":
         """
         Hardwood D35.
 
@@ -589,7 +624,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def D40(cls, **kwargs):
+    def D40(cls, **kwargs: Any) -> "Timber":
         """
         Hardwood D40.
 
@@ -616,7 +651,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def D50(cls, **kwargs):
+    def D50(cls, **kwargs: Any) -> "Timber":
         """
         Hardwood D50.
 
@@ -643,7 +678,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def D60(cls, **kwargs):
+    def D60(cls, **kwargs: Any) -> "Timber":
         """
         Hardwood D60.
 
@@ -671,7 +706,7 @@ class Timber(ElasticOrthotropic):
         )
 
     @classmethod
-    def D70(cls, **kwargs):
+    def D70(cls, **kwargs: Any) -> "Timber":
         """
         Hardwood D70.
 

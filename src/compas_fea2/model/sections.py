@@ -203,7 +203,7 @@ rotational stiffness    : {self._rotational}
 
     @property
     @units_io(types_in=(), types_out="translational_stiffness")
-    def axial(self) -> float | None:
+    def axial(self) -> float | None:  # type: ignore[override]
         return self._axial
 
     @axial.setter
@@ -213,7 +213,7 @@ rotational stiffness    : {self._rotational}
 
     @property
     @units_io(types_in=(), types_out="translational_stiffness")
-    def lateral(self) -> float | None:
+    def lateral(self) -> float | None:  # type: ignore[override]
         return self._lateral
 
     @lateral.setter
@@ -223,7 +223,7 @@ rotational stiffness    : {self._rotational}
 
     @property
     @units_io(types_in=(), types_out="rotational_stiffness")
-    def rotational(self) -> float | None:
+    def rotational(self) -> float | None:  # type: ignore[override]
         return self._rotational
 
     @rotational.setter
@@ -786,7 +786,7 @@ class GenericBeamSection(_Section1D):
     **kwargs : dict, optional
         Additional keyword arguments.
     """
-
+    @units_io(types_in=("area", "area_moment", "area_moment", "area_moment", "area", "area", "polar_moment", "warping_constant", "warping_constant"), types_out=None)
     def __init__(self, A: float, Ixx: float, Iyy: float, Ixy: float, Avx: float, Avy: float, J: float, g0: float, gw: float, material: "_Material", **kwargs):  # noqa: F821
         super().__init__(A=A, Ixx=Ixx, Iyy=Iyy, Ixy=Ixy, Avx=Avx, Avy=Avy, J=J, g0=g0, gw=gw, material=material, **kwargs)
         self._shape = Circle(radius=sqrt(A / pi))  # only used for plotting
@@ -1139,7 +1139,7 @@ class HexSection(_Section1D):
     NotImplementedError
         If the section is not available for the selected backend.
     """
-
+    @units_io(types_in=("length", "length"), types_out=None)
     def __init__(self, r, t, material, **kwargs):
         raise NotImplementedError("This section is not available for the selected backend")
 
@@ -1198,7 +1198,7 @@ class ISection(_Section1D):
     material : :class:`compas_fea2.model._Material`
         The section material.
     """
-
+    @units_io(types_in=("length", "length", "length", "length", "length"), types_out=None)
     def __init__(self, w, h, tw, tbf, ttf, material, **kwargs):
         shape = IShape(w, h, tw, tbf, ttf)
         super().__init__(**from_shape(shape, material, **kwargs))
@@ -2053,7 +2053,7 @@ class TieSection(TrussSection):
     material : :class:`compas_fea2.model._Material`
         The section material.
     """
-
+    @units_io(types_in=("area",), types_out=None)
     def __init__(self, A, material, **kwargs):
         super(TieSection, self).__init__(A=A, material=material, **kwargs)
 

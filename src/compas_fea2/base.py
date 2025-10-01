@@ -1,6 +1,7 @@
 import importlib
 import json
 import uuid
+import warnings
 from copy import deepcopy
 from functools import wraps
 from typing import TYPE_CHECKING
@@ -121,7 +122,7 @@ class FEAData(Data):
         """
         imp = _IMPLS.get(cls)
         if not imp:
-            return super(FEAData, cls).__new__(cls)  # type: ignore
+            return super(FEAData, cls).__new__(cls)
         return super(FEAData, imp).__new__(imp)  # type: ignore
 
     def __init__(self, name: Optional[str] = None, **kwargs: Any) -> None:
@@ -164,7 +165,7 @@ class FEAData(Data):
         self._registration = value
 
     @name.setter
-    def name(self, value: str) -> None:
+    def name(self, value: str) -> None: # type: ignore
         self._name = value
 
     def __repr__(self) -> str:
@@ -270,7 +271,7 @@ class FEAData(Data):
         print(f"Loading {cls.__name__} from {filepath}")
         return cls.__from_data__(compas.json_load(filepath))  # type: ignore[return-value, no-any-return]
 
-    def copy(self, duplicate: bool = False):
+    def copy(self, duplicate: bool = False):  # type: ignore
         """
         Make an independent copy of the data object.
 
@@ -295,21 +296,35 @@ class FEAData(Data):
         registry = Registry()
         data = deepcopy(self.__data__)
         try:
-            obj = cls.__from_data__(data, registry, duplicate=duplicate)  # type: ignore[return-value, no-any-return]
+            obj = cls.__from_data__(data, registry, duplicate=duplicate)  # type: ignore
         except Exception as e:
             raise RuntimeError(f"Failed to copy object: {e}")
         return obj
 
-    def to_json(self, filepath: str) -> None:
+    def to_json(self, filepath: str, pretty: bool = False, compact: bool = False, minimal: bool = False) -> None:
         """Convert an object to its native data representation and save it to a JSON file.
 
         Parameters
         ----------
         filepath : str
             The path to the JSON file.
+        pretty : bool, optional
+            If True, output will be pretty-printed.
+        compact : bool, optional
+            If True, output will be compact.
+        minimal : bool, optional
+            If True, output will be minimal.
+
         """
         print(f"Saving {self.__class__.__name__} to {filepath}")
-        json.dump(self.__data__, open(filepath, "w"), indent=4)
+        indent = 4 if pretty else None
+        separators = (",", ":") if compact else None
+        data = self.__data__
+        if minimal:
+            # Optionally remove keys for minimal output
+            data = {k: v for k, v in data.items() if v is not None}
+        with open(filepath, "w") as f:
+            json.dump(data, f, indent=indent, separators=separators)
 
 
 class Registry:
@@ -342,9 +357,6 @@ class Registry:
         module = importlib.import_module(mod_name)
         cls = getattr(module, cls_name)
 
-        # existing internal logic to create/return instance from data
-        # Typically this calls something like cls.__from_data__ or registry-managed constructor
-        # We delegate to the existing registry implementation while preserving duplicate semantics
         if hasattr(cls, "__from_data__"):
             return cls.__from_data__(data, registry=self, duplicate=duplicate)
         # fallback: try to instantiate directly

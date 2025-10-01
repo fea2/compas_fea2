@@ -275,6 +275,7 @@ class _Element(FEAData, Frameable):
 
     @property
     def material(self) -> "Union[None, _Material]":
+        """Return the material assigned to the element via its section."""
         return self.section.material if self.section else None
 
     @section.setter
@@ -674,7 +675,7 @@ class _Element1D(_Element):
 
         if not hasattr(step, "section_forces_field"):
             raise ValueError("The step does not have a section_forces_field")
-        return step.section_forces_field.get_result_at(self)
+        return step.section_forces_field.get_result_at(self) # type: ignore[return-value]
 
     def forces(self, step: "_Step") -> Dict["Node", "Vector"]:
         """Get the forces result for the element.
@@ -1078,16 +1079,6 @@ class _Element2D(_Element):
 
         self._ndim = 2
 
-        # BUG this is not correct!
-        # if frame:
-        #     if isinstance(frame, (Vector, List, Tuple)):
-        #         compas_polygon = Polygon(points=[node.point for node in nodes])
-        #         # the third axis is built from the y-axis (frame input) and z-axis (normal of the element)
-        #         x_axis = cross_vectors(frame, compas_polygon.normal)
-        #         frame = Frame(nodes[0].point, Vector(*x_axis), Vector(*frame))
-        #         self._frame = frame
-        #     else:
-        #         raise ValueError("The frame must be a Frame object or a Vector object.")
 
     @property
     def nodes(self) -> List["Node"]:
@@ -1213,7 +1204,7 @@ class _Element2D(_Element):
         """
         if not hasattr(step, "stress_field"):
             raise ValueError("The step does not have a stress field")
-        return step.stress_field.get_result_at(self)
+        return step.stress_field.get_result_at(self) # type: ignore[return-value]
 
 
 class ShellElement(_Element2D):

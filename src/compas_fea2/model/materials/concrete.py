@@ -267,7 +267,7 @@ class ConcreteSmearedCrack(_Material):
         Parameters for modelling the compression side of the stress-strain curve.
     """
 
-    def __init__(self, *, E, v, density, fc, ec, ft, et, fr=[1.16, 0.0836], **kwargs):
+    def __init__(self, E, v, density, fc, ec, ft, et, fr=[1.16, 0.0836], **kwargs):
         super().__init__(density=density, **kwargs)
 
         self.E = E

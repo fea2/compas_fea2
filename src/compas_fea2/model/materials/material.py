@@ -50,7 +50,7 @@ class _Material(FEAData):
 
     @property
     @units_io(types_in=(), types_out="density")
-    def density(self) -> Optional[float]:
+    def density(self) -> Optional[float]: #type: ignore[override]
         """float: Density of the material."""
         return self._density
 
@@ -61,7 +61,7 @@ class _Material(FEAData):
 
     @property
     @units_io(types_in=(), types_out="thermal_expansion")
-    def expansion(self) -> Optional[float]:
+    def expansion(self) -> Optional[float]: #type: ignore[override]
         """float: Thermal expansion coefficient."""
         return self._expansion
 
@@ -318,7 +318,7 @@ class ElasticIsotropic(_Material):
 
     @property
     @units_io(types_in=(), types_out="stress")
-    def E(self) -> float:
+    def E(self) -> float: # type: ignore[override]
         """float: Young's modulus E."""
         return self._E
 
@@ -376,9 +376,6 @@ G : {}
 
 class Stiff(_Material):
     """Elastic, very stiff and massless material."""
-
-    def __init__(self, *, density: float, expansion: Optional[float] = None, name: Optional[str] = None, **kwargs):
-        raise NotImplementedError()
 
 
 # ==============================================================================

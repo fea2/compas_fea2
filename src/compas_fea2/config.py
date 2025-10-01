@@ -63,8 +63,7 @@ class Settings:
     def from_config(cls, config_dir):
         """Load settings from a config directory.
 
-        - If config_dir/config.json does not exist, a file is created with defaults
-          and those values are returned.
+        - If config_dir/config.json does not exist, a file is created with defaults and those values are returned.
         - If the file exists, values are read and used to initialize Settings.
 
         Parameters:
@@ -134,19 +133,16 @@ class Settings:
 
     def _apply_unit_system(self) -> None:
         """Apply the configured unit system to compas_fea2.units."""
-        try:
-            from compas_fea2.units import list_unit_systems
-            from compas_fea2.units import set_unit_system
+        from compas_fea2.units import list_unit_systems
+        from compas_fea2.units import set_unit_system
 
+        if self.UNIT_SYSTEM in list_unit_systems():
             set_unit_system(self.UNIT_SYSTEM)
-        except Exception:
-            # Fallback to SI if an unknown system was configured
-            try:
-                set_unit_system("SI")
-                self.UNIT_SYSTEM = "SI"
-            except Exception:
-                # As a last resort, ignore (units subsystem may not be available at import time)
-                pass
+        else:
+            print(f"Unknown unit system: {self.UNIT_SYSTEM}. Known systems: {list_unit_systems()}")
+            print("Falling back to 'SI'.")
+            set_unit_system("SI")
+            self.UNIT_SYSTEM = "SI"
 
     def set_units(self, unit_system: str, *, persist: bool = True) -> None:
         """Change the active unit system and apply it immediately.

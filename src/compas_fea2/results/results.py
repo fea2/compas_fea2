@@ -63,9 +63,14 @@ class Result(FEAData):
         return self._components_names
 
     @property
+    def invariants_names(self):
+        """Names of the invariants of the result."""
+        return self._invariants_names
+
+    @property
     def invariants(self):
         """A dictionary with {"invariant name": invariant value} for each invariant of the result."""
-        return self._invariants
+        return {invariant: getattr(self, invariant) for invariant in self._invariants_names}
 
     def safety_factor(self, component, allowable):
         """Compute the safety factor (absolute ration value/limit) of the displacement.
@@ -82,7 +87,10 @@ class Result(FEAData):
         float
             The safety factor. Values higher than 1 are not safe.
         """
-        return abs(self.vector[component] / allowable) if self.vector[component] != 0 else 1
+        if not getattr(self, "vector"):
+            raise ValueError("The result does not have a vector.")
+        else:
+            return abs(self.vector[component] / allowable) if self.vector[component] != 0 else 1  # type: ignore
 
 
 class VectorResult(Result):
@@ -183,11 +191,11 @@ class NodeResult(Result):
 
     @property
     def vector(self):
-        return Vector(self._x, self._y, self._z)
+        return Vector(self._x, self._y, self._z) # type: ignore
 
     @property
     def vector_rotation(self):
-        return Vector(self._xx, self._yy, self._zz)
+        return Vector(self._xx, self._yy, self._zz) # type: ignore
 
     @property
     def magnitude(self):
@@ -574,12 +582,12 @@ class SectionForcesResult(ElementResult):
         self._Mx_1 = Mx_1
         self._My_1 = My_1
         self._Mz_1 = Mz_1
-        self._Fx_1 = Fx_2
-        self._Fy_1 = Fy_2
-        self._Fz_1 = Fz_2
-        self._Mx_1 = Mx_2
-        self._My_1 = My_2
-        self._Mz_1 = Mz_2
+        self._Fx_2 = Fx_2
+        self._Fy_2 = Fy_2
+        self._Fz_2 = Fz_2
+        self._Mx_2 = Mx_2
+        self._My_2 = My_2
+        self._Mz_2 = Mz_2
 
         self._force_vector_1 = Vector(Fx_1, Fy_1, Fz_1)
         self._moment_vector_1 = Vector(Mx_1, My_1, Mz_1)
@@ -760,19 +768,6 @@ class SectionForcesResult(ElementResult):
             "net_force": self.net_force,
             "net_moment": self.net_moment,
         }
-
-    def to_json(self, file_path):
-        """Export the result to a JSON file.
-
-        Parameters
-        ----------
-        file_path : str
-            Path to the JSON file.
-        """
-        import json
-
-        with open(file_path, "w") as f:
-            json.dump(self.to_dict(), f, indent=4)
 
     def to_csv(self, file_path):
         """Export the result to a CSV file.
@@ -1038,14 +1033,12 @@ class StressResult(ElementResult):
     @property
     def tresca_stress(self):
         """Tresca stress (max absolute shear stress)."""
-        return max(abs(self.principal_stresses_values - np.roll(self.principal_stresses_values, -1)))
+        return max(abs(self.principal_stresses_values - np.roll(self.principal_stresses_values, -1)).tolist())
 
-    @property
     def safety_factor_max(self, allowable_stress):
         """Maximum safety factor based on principal stress."""
         return abs(allowable_stress / self.smax) if self.smax != 0 else np.inf
 
-    @property
     def safety_factor_min(self, allowable_stress):
         """Minimum safety factor based on principal stress."""
         return abs(allowable_stress / self.smin) if self.smin != 0 else np.inf
@@ -1178,7 +1171,7 @@ class StressResult(ElementResult):
         Draws the three Mohr's circles for a 3D stress state.
         """
 
-        circles = self.compute_mohrs_circles_3d()
+        circles = self.compute_mohr_circles_3d()
 
         # Create a figure and axis for the plot
         fig, ax = plt.subplots(figsize=(8, 8))
@@ -1248,7 +1241,7 @@ class StressResult(ElementResult):
         if not isinstance(self.location.section.material, ElasticIsotropic):
             raise NotImplementedError("This function is only available for Elastic Isotropic materials")
         # Delta_sigma = E * alpha * Delta_T
-        return self.location.section.material.E * self.location.section.material.expansion * temperature_change
+        return self.location.section.material.E * self.location.section.material.expansion * temperature_change # type: ignore
 
     def generate_html_report(self, file_path):
         """
@@ -1324,7 +1317,7 @@ class StressResult(ElementResult):
             <h2>Element Information</h2>
             <p><strong>Element ID:</strong> {self.element.id if hasattr(self.element, "id") else "N/A"}</p>
             <p><strong>Frame:</strong> {self.element.frame if hasattr(self.element, "frame") else "N/A"}</p>
-            
+
             <h2>Stress Tensor</h2>
             <table>
                 <tr>
@@ -1476,7 +1469,6 @@ class ShellStressResult(Result):
         self.plane_results(plane).generate_html_report(file_path)
 
 
-# TODO: double inheritance StressResult and Element3DResult
 class SolidStressResult(StressResult):
     def __init__(self, element, s11, s12, s13, s22, s23, s33, **kwargs):
         super().__init__(element=element, s11=s11, s12=s12, s13=s13, s22=s22, s23=s23, s33=s33, **kwargs)

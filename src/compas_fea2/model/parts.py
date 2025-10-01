@@ -666,44 +666,56 @@ class _Part(FEAData):
         value._is_reference = True
 
     @property
-    def nodes(self) -> NodesGroup:
+    def nodes(self) -> NodesGroup | None:
         """The nodes of the part."""
         return self._nodes
 
     @property
     def nodes_sorted(self) -> List[Node]:
         """The nodes of the part sorted by their part key."""
-        return self.nodes.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1)
+        if self._nodes is None:
+            raise ValueError("No nodes in the part.")
+        return self.nodes.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1) # type: ignore
 
     @property
     def points(self) -> List[Point]:
         """The points of the part's nodes."""
+        if self._nodes is None:
+            raise ValueError("No nodes in the part.")
         return [node.point for node in self._nodes]
 
     @property
     def points_sorted(self) -> List[Point]:
         """The points of the part's nodes sorted by their part key."""
-        return [node.point for node in self.nodes.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1)]
+        if self._nodes is None:
+            raise ValueError("No nodes in the part.")
+        return [node.point for node in self.nodes.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1)] # type: ignore
 
     @property
-    def elements(self) -> ElementsGroup:
+    def elements(self) -> ElementsGroup | None:
         """The elements of the part."""
         return self._elements
 
     @property
     def elements_sorted(self) -> List[_Element]:
         """The elements of the part sorted by their part key."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         return self.elements.sorted_by(key=lambda x: x.part_key if x.part_key is not None else -1)
 
     @property
     def elements_grouped(self) -> Dict[type, List[_Element]]:
         """The elements of the part grouped by their element type."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         sub_groups = self.elements.group_by(key=lambda x: x.__class__.__base__)
         return {key: group.members for key, group in sub_groups}
 
     @property
     def elements_faces(self) -> Dict[_Element, FacesGroup]:
         """The faces of the part's elements grouped by element."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         face_group = FacesGroup([face for element in self.elements if element.faces is not None for face in element.faces])
         return face_group.group_by(key=lambda x: getattr(x, "element", None))
 
@@ -725,24 +737,32 @@ class _Part(FEAData):
     @property
     def elements_connectivity(self) -> List[List[int]]:
         """The connectivity of the part's elements."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         return [element.nodes_partkey for element in self.elements]
 
     @property
     def elements_connectivity_grouped(self) -> Dict[int, List[List[float]]]:
         """The connectivity of the part's elements grouped by element type."""
+        if self._elements is None:
+            raise ValueError("No elements in the part.")
         elements_group = groupby(self.elements, key=lambda x: x.__class__.__base__)
         return {hash(key): [list(map(float, element.nodes_partkey)) for element in group] for key, group in elements_group}
 
     @property
-    @units_io(types_in=(), types_out=(("length", "length", "length"),))
+    @units_io(types_in=(), types_out=())
     def elements_centroids(self) -> List[List[float]]:
         """The centroids of the part's elements (x, y, z in active length unit)."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         return [list(np.mean([node.xyz for node in element.nodes], axis=0)) for element in self.elements]
 
     @property
     def sections(self) -> SectionsGroup:
         """All the materials associated with the part. If the part is registered to a model,
         it is faster to use the model's sections property."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         return SectionsGroup(members=self.elements.group_by(key=lambda x: getattr(x, "section", None)).keys())
 
     @property
@@ -776,6 +796,8 @@ class _Part(FEAData):
     @property
     def edges(self) -> EdgesGroup:
         """The edges of the part's elements."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         edges = []
         for element in self.elements:
             if hasattr(element, "edges"):
@@ -787,6 +809,8 @@ class _Part(FEAData):
     @property
     def faces(self) -> FacesGroup:
         """The faces of the part's elements."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         return FacesGroup([face for element in self.elements if element.faces is not None for face in element.faces])
 
     # @property
@@ -799,6 +823,8 @@ class _Part(FEAData):
     @property
     def gkey_node(self) -> Dict[str, Node]:
         """A dictionary that associates each node and its geometric key."""
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
         return self.nodes.gkey_node
 
     @property
@@ -863,6 +889,8 @@ class _Part(FEAData):
     def bounding_box(self) -> Box:
         """The bounding box of the part."""
         # FIXME: add bounding box for linear elements (bb of the section outer boundary)
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
         return Box.from_bounding_box(bounding_box([_strip_magnitudes(n.xyz) for n in self.nodes]))
 
     @property
@@ -878,6 +906,8 @@ class _Part(FEAData):
     @property
     def centroid(self) -> Point:
         """The geometric center of the part."""
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
         self.compute_nodal_masses()
         points = [node.point for node in self.nodes]
         weights = [sum(node.mass) / len(node.mass) for node in self.nodes]
@@ -897,17 +927,20 @@ class _Part(FEAData):
     @units_io(types_in=(), types_out="volume")
     def volume(self) -> float:
         """The total volume of the part (active unit system)."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         self._volume = 0.0
         for element in self.elements:
             if element.volume:
                 self._volume += element.volume
         return self._volume
 
-    # FIXME: this should be mass?
     @property
     @units_io(types_in=(), types_out="weight")
     def weight(self) -> float:
         """The total weight (force) of the part (active unit system)."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         self._weight = 0.0
         for element in self.elements:
             if element.weight:
@@ -922,16 +955,22 @@ class _Part(FEAData):
     @property
     def nodes_count(self) -> int:
         """The number of nodes in the part."""
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
         return len(self.nodes) - 1
 
     @property
     def elements_count(self) -> int:
         """The number of elements in the part."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         return len(self.elements) - 1
 
     @property
     def element_types(self) -> Dict[type, List[_Element]]:
         """The types of elements in the part grouped by their type."""
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         element_types = {}
         for element in self.elements:
             element_types.setdefault(type(element), []).append(element)
@@ -959,7 +998,7 @@ class _Part(FEAData):
         ElementsGroup
             A group containing all elements that share the given node.
         """
-        if node not in self.graph:
+        if self.graph is None or not self.graph.has_node(node):
             return ElementsGroup(members=[])
 
         # The graph builds automatically on first access via the @property
@@ -979,7 +1018,7 @@ class _Part(FEAData):
         ElementsGroup
             A group containing all elements adjacent to the given element.
         """
-        if element not in self.graph:
+        if self.graph is None or not self.graph.has_node(element):
             return ElementsGroup(members=[])
 
         adjacent_elements = set()
@@ -1004,11 +1043,11 @@ class _Part(FEAData):
         NodesGroup
             A group of nodes representing the shortest path, or an empty group if no path exists.
         """
+        if self.graph is None:
+            raise ValueError("The part's graph is not built. Ensure the part has nodes and elements.")
         import networkx as nx
-
         # Use an undirected view of the graph for pathfinding
         undirected_graph = self.graph.to_undirected()
-
         try:
             # shortest_path returns a list of both Nodes and Elements in the path
             path = nx.shortest_path(undirected_graph, source=start_node, target=end_node)
@@ -1030,15 +1069,14 @@ class _Part(FEAData):
             group represents a disconnected island of nodes.
         """
         import networkx as nx
-
+        if self.graph is None:
+            raise ValueError("The part's graph is not built. Ensure the part has nodes and elements.")
         undirected_graph = self.graph.to_undirected()
         components = list(nx.connected_components(undirected_graph))
-
         component_groups = []
         for island in components:
             nodes_in_island = {item for item in island if isinstance(item, Node)}
             component_groups.append(NodesGroup(members=nodes_in_island))
-
         return component_groups
 
     def find_element_neighbors_by_layer(self, start_element: "_Element", layers: int = 1) -> List["ElementsGroup"]:
@@ -1062,6 +1100,8 @@ class _Part(FEAData):
             A list of ElementsGroup objects, where each group corresponds to a layer.
         """
         import networkx as nx
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
 
         # Create a graph of only element-to-element connections for simplicity
         element_graph = nx.Graph()
@@ -1122,6 +1162,8 @@ class _Part(FEAData):
         return part
 
     def elements_by_dimension(self, dimension: int = 1) -> Iterable["_Element"]:
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         dimenstion_map = {1: _Element1D, 2: _Element2D, 3: _Element3D}
         if dimension not in dimenstion_map:
             raise ValueError(f"Invalid dimension {dimension}. Valid dimensions are {list(dimenstion_map.keys())}.")
@@ -1276,6 +1318,8 @@ class _Part(FEAData):
             The corresponding node, or None if not found.
 
         """
+        if self._nodes is None:
+            return None
         for node in self._nodes:
             if node._uid == uid:
                 return node
@@ -1295,6 +1339,8 @@ class _Part(FEAData):
             The corresponding node, or None if not found.
 
         """
+        if self._nodes is None:
+            return None
         for node in self._nodes:
             if node.key == key:
                 return node
@@ -1315,6 +1361,8 @@ class _Part(FEAData):
             List of nodes with the given name.
 
         """
+        if self.nodes is None:
+            return set()
         return self.nodes.subgroup(condition=lambda x: x.name == name).members
 
     @units_io(types_in=(None, "length"), types_out=None)
@@ -1333,6 +1381,8 @@ class _Part(FEAData):
         List[Node]
             List of nodes on the given plane.
         """
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
         return self.nodes.subgroup(condition=lambda x: is_point_on_plane(x.point, plane, tol))
 
     def find_closest_nodes_to_point(self, point: List[float], number_of_nodes: int = 1, report: Optional[bool] = False, single: bool = False) -> "NodesGroup | None | Dict[Node, float]":
@@ -1354,6 +1404,8 @@ class _Part(FEAData):
             A list of the closest nodes, or a dictionary with nodes
             and distances if report=True.
         """
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
         if number_of_nodes > len(self.nodes):
             if settings.VERBOSE:
                 print(f"The number of nodes to find exceeds the available nodes. Capped to {len(self.nodes)}")
@@ -1445,6 +1497,9 @@ class _Part(FEAData):
         NodesGroup or None or Dict[Node, float]
             A group of nodes within the specified distance, or a dictionary with nodes and distances if report=True.
         """
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
+
         if not isinstance(point, Point):
             raise TypeError(f"{point!r} is not a Point.")
 
@@ -1513,6 +1568,8 @@ class _Part(FEAData):
         bool
             True if the node is in the part, False otherwise.
         """
+        if self.nodes is None:
+            return False
         return node in self.nodes
 
     def add_node(self, node: Node) -> Node:
@@ -1596,6 +1653,8 @@ class _Part(FEAData):
             The node to remove.
 
         """
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
         if self.contains_node(node):
             self.nodes.remove_member(node)
             if node.gkey is not None:
@@ -1634,6 +1693,10 @@ class _Part(FEAData):
             List with the nodal masses.
 
         """
+        if self.nodes is None:
+            raise ValueError("No nodes in the part.")
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         # clear masses
         for node in self.nodes:
             node.mass = [0.0 for _ in range(6)]
@@ -1677,6 +1740,8 @@ class _Part(FEAData):
         Optional[_Element]
             The corresponding element, or None if not found.
         """
+        if self.elements is None:
+            return None
         for element in self.elements:
             if element.key == key:
                 return element
@@ -1694,6 +1759,8 @@ class _Part(FEAData):
         List[_Element]
             List of elements with the given name.
         """
+        if self.elements is None:
+            return None
         for element in self.elements:
             if element.key == name:
                 return element
@@ -1710,6 +1777,8 @@ class _Part(FEAData):
         -------
         bool
         """
+        if self.elements is None:
+            return False
         return element in self.elements
 
     def add_element(self, element: Union["_Element", "_Element1D", "_Element2D", "_Element3D"]) -> Union["_Element", "_Element1D", "_Element2D", "_Element3D"]:
@@ -1739,11 +1808,11 @@ class _Part(FEAData):
         if not self._elements:
             self._elements = ElementsGroup(members=[element], name=f"{self.name}_ALL_ELEMENTS")
             self._groups.add(self._elements)
-            element._part_key = len(self.elements) - 1
+            element._part_key = len(self.elements or []) - 1
         else:
             if element not in self._elements:
                 self._elements.add_member(element)
-                element._part_key = len(self.elements) - 1
+                element._part_key = len(self.elements or []) - 1
         element._registration = self
 
         self._graph = None  # reset the graph if it exists
@@ -1783,7 +1852,7 @@ class _Part(FEAData):
         Removing elements can cause inconsistencies.
         """
         if self.contains_element(element):
-            self.elements.elements.remove(element)
+            self.elements.remove(element)
             element._registration = None
             for node in element.nodes:
                 node.connected_elements.remove(element)
@@ -1864,6 +1933,8 @@ class _Part(FEAData):
         -----
         The search is limited to solid elements.
         """
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         elements_sub_group = self.elements.subgroup(condition=lambda x: isinstance(x, (_Element2D, _Element3D)))
         faces = []
         for element in elements_sub_group:
@@ -1891,6 +1962,8 @@ class _Part(FEAData):
         :class:`compas_fea2.model.FaceGroup`]
             Subgroup of the faces within the polygon.
         """
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         # filter elements with faces
         elements_sub_group = self.elements.subgroup(condition=lambda x: isinstance(x, (_Element2D, _Element3D)))
         faces = []
@@ -1923,7 +1996,8 @@ class _Part(FEAData):
 
         This method remains the same and does the heavy lifting.
         """
-
+        if self.elements is None:
+            raise ValueError("No elements in the part.")
         face_key_map = defaultdict(list)
         for element in self.elements:
             if not hasattr(element, "faces") or not element.faces:
