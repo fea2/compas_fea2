@@ -144,11 +144,10 @@ class Model(FEAData):
 
         self._parts: "PartsGroup" = PartsGroup(members=[], name="ALL_PARTS")
         self._interfaces: "InterfacesGroup" = InterfacesGroup(members=[], name="ALL_INTERFACES")
-        self._interactions: "InteractionsGroup" = InteractionsGroup(members=[], name="ALL_INTERACTIONS")
         self._connectors: "ConnectorsGroup" = ConnectorsGroup(members=[], name="ALL_CONNECTORS")
         self._constraints: "ConstraintsGroup" = ConstraintsGroup(members=[], name="ALL_CONSTRAINTS")
         self._fields: "FieldsGroup" = FieldsGroup(members=[], name="ALL_FIELDS")
-        self._groups: "Set[_Group]" = set([self._parts, self._interfaces, self._interactions, self._connectors, self._constraints, self._fields])
+        self._groups: "Set[_Group]" = set([self._parts, self._interfaces, self._connectors, self._constraints, self._fields])
 
         self._problems: "Set[Problem]" = set()
 
@@ -162,7 +161,6 @@ class Model(FEAData):
                 "constants": self._constants,
                 "parts": [part.__data__ for part in self._parts],
                 "interfaces": [interface.__data__ for interface in self._interfaces],
-                "interactions": [interaction.__data__ for interaction in self._interactions],
                 "constraints": [constraint.__data__ for constraint in self._constraints],
                 "fields": [field.__data__ for field in self._fields],
                 "connectors": [connector.__data__ for connector in self._connectors],
@@ -187,9 +185,6 @@ class Model(FEAData):
 
         for interface_data in data.get("interfaces", []):
             model.interfaces.add_member(registry.add_from_data(interface_data, duplicate=duplicate))
-
-        for interaction_data in data.get("interactions", []):
-            model.interactions.add_member(registry.add_from_data(interaction_data, duplicate=duplicate))
 
         for constraint_data in data.get("constraints", []):
             model.constraints.add_member(registry.add_from_data(constraint_data, duplicate=duplicate))
@@ -329,7 +324,7 @@ class Model(FEAData):
     @property
     def interactions(self) -> "InteractionsGroup":
         """Return a dictionary of all interactions in the model."""
-        return self._interactions
+        return InteractionsGroup(members=[interface.behavior for interface in self.interfaces])
 
     # TODO change to leverage groups
     @property
