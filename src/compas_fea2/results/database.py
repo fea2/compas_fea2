@@ -435,10 +435,14 @@ class SQLiteResultsDatabase(ResultsDatabase):
         result object.
         """
         # Clean non-init keywords and fetch member
-        result_line.pop("step", None)
-        result_line.pop("part", None)
+        step_name=result_line.pop("step", None)
+        part_name=result_line.pop("part", None)
         key = result_line.pop("key")
-        m = getattr(self.model, results_func)(key)
+        if part_name:
+            part = self.model.find_part_by_name(name = part_name)
+            m = getattr(part, results_func)(key)
+        else :
+            m = getattr(self.model, results_func)(key)
         m = m[0] if isinstance(m, (list, tuple)) else m
         if not m:
             raise ValueError(f"Member with key {key} not found in {self.model}")
