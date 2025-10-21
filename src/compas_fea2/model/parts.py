@@ -451,7 +451,7 @@ class _Part(FEAData):
 
         # Create a new part instance
         part = cls(name=name)
-        fea2_nodes = np.array([part.add_node(Node(coords)) for coords in node_coords])
+        fea2_nodes = np.array([part.add_node(Node(list(coords))) for coords in node_coords])
         # Select element classes mapping (nodes - cls)
         # Base mapping for element classes by node count
         mapping = {
@@ -480,9 +480,9 @@ class _Part(FEAData):
             if verbose:
                 print(f"Element {ntags} added")
 
-        if not part._boundary_mesh:
+        if not part.boundary_mesh:
             gmshModel.generate_mesh(2)
-            part._boundary_mesh = gmshModel.mesh_to_compas()
+            part.boundary_mesh = gmshModel.mesh_to_compas()
 
         if rigid:
             point = part.boundary_mesh.centroid()
