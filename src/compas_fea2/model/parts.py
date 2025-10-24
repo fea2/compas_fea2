@@ -480,10 +480,6 @@ class _Part(FEAData):
             if verbose:
                 print(f"Element {ntags} added")
 
-        if not part.boundary_mesh:
-            gmshModel.generate_mesh(2)
-            part.boundary_mesh = gmshModel.mesh_to_compas()
-
         if rigid:
             point = part.boundary_mesh.centroid()
             part.reference_node = Node(xyz=point)
