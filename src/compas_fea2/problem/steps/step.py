@@ -119,6 +119,21 @@ class _Step(FEAData):
         field_output._registration = self
         return field_output
 
+    def add_field_outputs(self, field_outputs):
+        """Add multiple field outputs to the step.
+        Parameters
+        ----------
+        field_outputs : list(:class:`compas_fea2.problem.fields.FieldType`)
+            The field outputs to add to the step.
+        Returns
+        -------
+        list(:class:`compas_fea2.problem.fields.FieldType`)
+        """
+        field_outputs = field_outputs if isinstance(field_outputs, Iterable) else [field_outputs]
+        for output in field_outputs:
+            self.add_field_output(output)
+        return field_outputs
+
     # # ==========================================================================
     # #                             Results methods
     # # ==========================================================================
