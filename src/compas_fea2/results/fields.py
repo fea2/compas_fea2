@@ -311,7 +311,7 @@ class NodeFieldResults(FieldResults):
 
     @property
     def components_names(self):
-        return ["x", "y", "z", "rx", "ry", "rz"]
+        return ["x", "y", "z", "xx", "yy", "zz"]
 
     @property
     def field_name(self):

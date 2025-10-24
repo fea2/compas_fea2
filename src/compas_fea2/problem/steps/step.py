@@ -553,7 +553,7 @@ class GeneralStep(_Step):
 
         # return self.add_field(field)
 
-    def add_gravity_fied(self, g=9810, x=0.0, y=0.0, z=-1.0, distribution=None, load_case=None, **kwargs):
+    def add_gravity_field(self, g=9810, x=0.0, y=0.0, z=-1.0, distribution=None, load_case=None, **kwargs):
         """Add a :class:`compas_fea2.problem.GravityLoad` load to the ``Step``
 
         Parameters

@@ -152,21 +152,21 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "volume": ureg.millimeter**3,
         "angle": ureg.radian,
         "time": ureg.second,
-        "velocity": ureg.meter / ureg.second,  # keep m/s
-        "acceleration": ureg.meter / ureg.second**2,
+        "velocity": ureg.millimeter / ureg.second,  # keep m/s
+        "acceleration": ureg.millimeter / ureg.second**2,
         "angular_velocity": ureg.radian / ureg.second,
         "angular_acceleration": ureg.radian / ureg.second**2,
         # Forces & moments
-        "mass": ureg.kilogram,
+        "mass": ureg.ton,
         "force": ureg.newton,
         "moment": ureg.newton * ureg.millimeter,  # N·mm
         # Loads
-        "line_load": ureg.newton / ureg.millimeter,  # N/mm
-        "surface_load": ureg.newton / ureg.meter**2,  # Pa
-        "volumetric_load": ureg.newton / ureg.meter**3,
+        "line_load": ureg.newton / ureg.millimeter,  
+        "surface_load": ureg.newton / ureg.millimeter**2, 
+        "volumetric_load": ureg.newton / ureg.millimeter**3,
         # Stress/strain & moduli
         "stress": ureg.megapascal,  # MPa with mm
-        "pressure": ureg.pascal,
+        "pressure": ureg.megapascal,
         "strain": ureg.dimensionless,
         "youngs_modulus": ureg.megapascal,
         "shear_modulus": ureg.megapascal,
@@ -182,8 +182,8 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "warping_constant": ureg.millimeter**6,
         "radius_of_gyration": ureg.millimeter,
         # Mass inertia
-        "mass_moment_inertia": ureg.kilogram * ureg.meter**2,  # keep SI base
-        "mass_polar_inertia": ureg.kilogram * ureg.meter**2,
+        "mass_moment_inertia": ureg.ton * ureg.meter**2,  # keep SI base
+        "mass_polar_inertia": ureg.ton * ureg.meter**2,
         # Rigidities
         "axial_rigidity": ureg.newton,
         "bending_rigidity": ureg.newton * ureg.millimeter**2,
@@ -196,45 +196,45 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "shear_layer_modulus": ureg.newton / ureg.millimeter**2,
         "contact_penalty": ureg.newton / ureg.millimeter**3,
         # Damping
-        "viscous_damping": ureg.newton * ureg.second / ureg.meter,
+        "viscous_damping": ureg.newton * ureg.second / ureg.millimeter,
         "rotational_damping": (ureg.newton * ureg.millimeter) * ureg.second / ureg.radian,
         "damping_ratio": ureg.dimensionless,
         "loss_factor": ureg.dimensionless,
         # Densities & weights
-        "density": ureg.kilogram / ureg.meter**3,
-        "specific_weight": ureg.newton / ureg.meter**3,
+        "density": ureg.ton / ureg.millimeter**3,
+        "specific_weight": ureg.newton / ureg.millimeter**3,
         # Flows
-        "mass_flow": ureg.kilogram / ureg.second,
-        "volumetric_flow": ureg.meter**3 / ureg.second,
+        "mass_flow": ureg.ton / ureg.second,
+        "volumetric_flow": ureg.millimeter**3 / ureg.second,
         # Energy & power
-        "energy": ureg.joule,
-        "work": ureg.joule,
-        "power": ureg.watt,
+        "energy": ureg.millijoule,
+        "work": ureg.millijoule,
+        "power": ureg.milliwatt,
         "frequency": ureg.hertz,
         # Thermal
         "temperature": ureg.kelvin,
         "temperature_diff": ureg.kelvin,
-        "thermal_conductivity": ureg.watt / (ureg.meter * ureg.kelvin),
-        "thermal_resistivity": (ureg.meter * ureg.kelvin) / ureg.watt,
-        "thermal_resistance": ureg.kelvin / ureg.watt,
-        "thermal_capacitance": ureg.joule / ureg.kelvin,
-        "specific_heat": ureg.joule / (ureg.kilogram * ureg.kelvin),
+        "thermal_conductivity": ureg.milliwatt / (ureg.millimeter * ureg.kelvin),
+        "thermal_resistivity": (ureg.millimeter * ureg.kelvin) / ureg.milliwatt,
+        "thermal_resistance": ureg.kelvin / ureg.milliwatt,
+        "thermal_capacitance": ureg.millijoule / ureg.kelvin,
+        "specific_heat": ureg.joule / (ureg.ton * ureg.kelvin),
         "thermal_expansion": 1 / ureg.kelvin,
-        "heat_flux": ureg.watt / ureg.meter**2,
-        "heat_rate": ureg.watt,
-        "heat_source_vol": ureg.watt / ureg.meter**3,
-        "heat_source_area": ureg.watt / ureg.meter**2,
-        "heat_source_line": ureg.watt / ureg.meter,
-        "htc": ureg.watt / (ureg.meter**2 * ureg.kelvin),
-        "thermal_diffusivity": ureg.meter**2 / ureg.second,
+        "heat_flux": ureg.milliwatt / ureg.millimeter**2,
+        "heat_rate": ureg.milliwatt,
+        "heat_source_vol": ureg.milliwatt / ureg.millimeter**3,
+        "heat_source_area": ureg.milliwatt / ureg.millimeter**2,
+        "heat_source_line": ureg.milliwatt / ureg.millimeter,
+        "htc": ureg.milliwatt / (ureg.millimeter**2 * ureg.kelvin),
+        "thermal_diffusivity": ureg.millimeter**2 / ureg.second,
         "emissivity": ureg.dimensionless,
         "absorptivity": ureg.dimensionless,
         "view_factor": ureg.dimensionless,
-        "stefan_boltzmann": ureg.watt / (ureg.meter**2 * ureg.kelvin**4),
+        "stefan_boltzmann": ureg.milliwatt / (ureg.millimeter**2 * ureg.kelvin**4),
         # Fluids
-        "viscosity_dynamic": ureg.pascal * ureg.second,
-        "viscosity_kinematic": ureg.meter**2 / ureg.second,
-        "pressure_head": ureg.meter,
+        "viscosity_dynamic": ureg.megapascal * ureg.second,
+        "viscosity_kinematic": ureg.millimeter**2 / ureg.second,
+        "pressure_head": ureg.millimeter,
         # Electromagnetics
         "voltage": ureg.volt,
         "current": ureg.ampere,
@@ -243,12 +243,12 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "conductance": ureg.siemens,
         "capacitance": ureg.farad,
         "inductance": ureg.henry,
-        "resistivity": ureg.ohm * ureg.meter,
-        "conductivity": ureg.siemens / ureg.meter,
-        "permittivity": ureg.farad / ureg.meter,
-        "permeability": ureg.henry / ureg.meter,
-        "electric_field": ureg.volt / ureg.meter,
-        "magnetic_field": ureg.ampere / ureg.meter,
+        "resistivity": ureg.ohm * ureg.millimeter,
+        "conductivity": ureg.siemens / ureg.millimeter,
+        "permittivity": ureg.farad / ureg.millimeter,
+        "permeability": ureg.henry / ureg.millimeter,
+        "electric_field": ureg.volt / ureg.millimeter,
+        "magnetic_field": ureg.ampere / ureg.millimeter,
         "magnetic_flux": ureg.weber,
         "magnetic_flux_density": ureg.tesla,
         # Dimensionless
