@@ -53,9 +53,11 @@ from .groups import InterfacesGroup
 from .groups import MaterialsGroup
 from .groups import NodesGroup
 from .groups import SectionsGroup
+from .groups import FieldsGroup
 from .materials.material import _Material
 from .nodes import Node
 from .releases import _BeamEndRelease
+from .fields import BeamReleaseField
 from .sections import ShellSection
 from .sections import SolidSection
 from .sections import _Section
@@ -142,6 +144,8 @@ class _Part(FEAData):
         self._groups: Set[GroupType] = set()
 
         self._reference_node: Optional[Node] = None
+
+        self._releases_fields = FieldsGroup(members=[], name=self.name+"_RELEASES_FIELDS")
 
     @property
     def __data__(self):
@@ -809,12 +813,10 @@ class _Part(FEAData):
             raise ValueError("No elements in the part.")
         return FacesGroup([face for element in self.elements if element.faces is not None for face in element.faces])
 
-    # @property
-    # def releases(self) -> "ReleasesGroup | None":
-    #     """The releases of the part."""
-    #     for element in self.elements:
-    #         if hasattr(element, "releases") and element.releases is not None:
-    #             return ReleasesGroup(members=element.releases, name=f"{self.name}_releases_all")
+    @property
+    def releases_fields(self) -> "FieldsGroup | None":
+        """The releases of the part."""
+        return self._releases_fields
 
     @property
     def gkey_node(self) -> Dict[str, Node]:
@@ -2299,14 +2301,14 @@ class Part(_Part):
     #                           Releases methods
     # =========================================================================
 
-    def add_beam_release(self, element: BeamElement, location: str, release: _BeamEndRelease) -> _BeamEndRelease:
+    def add_beams_releases_fields(self, elements: ElementsGroup, end: str, release: _BeamEndRelease) -> _BeamEndRelease:
         """Add a :class:`compas_fea2.model._BeamEndRelease` to an element in the part.
 
         Parameters
         ----------
-        element : :class:`compas_fea2.model.BeamElement`
+        elements : :class:`compas_fea2.model.ElementsGroup`
             The element to release.
-        location : str
+        end : str
             'start' or 'end'.
         release : :class:`compas_fea2.model._BeamEndRelease`
             Release type to apply.
@@ -2316,12 +2318,10 @@ class Part(_Part):
         :class:`compas_fea2.model._BeamEndRelease`
             The release applied to the element.
         """
-        raise NotImplementedError("Beam releases are not implemented in Part class. Use RigidPart instead.")
-        if not isinstance(release, _BeamEndRelease):
-            raise TypeError(f"{release!r} is not a beam release element.")
-        release.element = element
-        release.location = location
-        self._releases.add_member(release)
+
+        field = BeamReleaseField(elements=elements, end=end, release=release)
+        field._registration = self
+        self._releases_fields.add(field)
         return release
 
 

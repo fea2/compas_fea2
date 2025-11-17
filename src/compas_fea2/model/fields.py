@@ -9,10 +9,14 @@ from compas_fea2.model.bcs import _BoundaryCondition
 from compas_fea2.model.groups import NodesGroup
 from compas_fea2.model.ics import _InitialCondition
 from compas_fea2.model.nodes import Node
+from compas_fea2.model.groups import ElementsGroup
+from compas_fea2.model.elements import _Element1D
+from compas_fea2.model.releases import _BeamEndRelease
 
 if TYPE_CHECKING:
     from compas_fea2.model.bcs import _BoundaryCondition
     from compas_fea2.model.ics import _InitialCondition
+    from compas_fea2.model.parts import _Part
     from compas_fea2.model.model import Model
 
 
@@ -172,3 +176,90 @@ class InitialStressField(_InitialConditionField):
     def __init__(self, elements, condition, **kwargs):
         super().__init__(distribution=elements, conditions=condition, **kwargs)
         raise NotImplementedError("InitialStressField is not yet implemented.")
+
+
+# ------------------------------------------------------------------------------
+# BEAM END RELEASE FIELDS
+# ------------------------------------------------------------------------------
+
+class BeamReleaseField(FEAData):
+    """A BeamReleaseField is the spatial distribution of a specific set of beam end releases.
+
+    Parameters
+    ----------
+    release : `:class:compas_fea2.model._BeamEndRelease`
+        The release applied to the field.
+    elements : `:class:compas_fea2.model.ElementsGroup`
+        The elements composing the fields.
+    release_end : str 
+        The end to release is applied (start, end or both).
+    name : str, optional
+        Unique identifier for the field.
+
+    Attributes
+    ----------
+    release : `:class:compas_fea2.model._BeamEndRelease`
+        The release applied to the field.
+    elements : `:class:compas_fea2.model.ElementsGroup`
+        The elements composing the fields.
+    release_end : str
+        The end to release is applied (start, end, both)
+    name : str, optional
+        Unique identifier for the field.
+        Registered model to the field. None if the field has not been registered.
+    part :  `:class:compas_fea2.model._Part`
+        Part of the release field
+    """
+    def __init__(self, release, elements, end, name = None, **kwargs):
+        super().__init__(name, **kwargs)
+        if not isinstance(elements, ElementsGroup):
+            self._elements = ElementsGroup(elements)
+        else:
+            self._elements = elements
+        for element in self._elements:
+            if not isinstance(element, _Element1D):
+                raise ValueError('A BeamEndRelease can only applied on 1D elements.')
+        self._release = release
+
+
+        self._end = end
+        self._check_registration()
+
+    def _check_registration(self):
+        registrations = set([n.model for n in self._elements])
+        if len(registrations) != 1:
+            raise ValueError("All nodes in the distribution must be registered to the same model.")
+        if self._registration is None:
+            self._registration = registrations.pop()
+
+    @property
+    def release(self) -> "_BeamEndRelease":
+        if isinstance(self._release, _BeamEndRelease):
+            return self._release
+        else :
+            raise ValueError("Release is not a _BeamEndRelease.")
+
+    @property
+    def elements(self) -> "ElementsGroup":
+        return self._elements
+
+    @property
+    def end(self) -> str :
+        return self._end
+
+    @property
+    def elements_end_release(self):
+        """Return a list of tuples with the nodes and their assigned condition."""
+        return zip(self.elements, [self.end] * len(self.elements), [self.release] * len(self.elements))
+
+    @property
+    def part(self) -> "_Part":
+        if self._registration:
+            return self._registration
+        else:
+            raise ValueError("Register the ConditionField to a part first.")
+
+    @property
+    def model(self) -> "Model":
+        return self.part.model
+    
