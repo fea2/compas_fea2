@@ -10,6 +10,7 @@ from compas.geometry import Vector
 from compas_fea2.base import FEAData
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
+from compas_fea2.results.results import SectionForcesResult
 
 # Use the abstract DB interface to avoid hard-coupling to SQLite
 from .database import ResultsDatabase
@@ -538,9 +539,9 @@ class ContactForcesFieldResults(NodeFieldResults):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._field_name = "c"
         from compas_fea2.results.results import ContactForcesResult
+        super().__init__(*args, **kwargs)
+        self._field_name = ContactForcesResult._field_name
 
         self._result_cls = ContactForcesResult
 
@@ -569,14 +570,14 @@ class TemperatureFieldResults(NodeFieldResults):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._field_name = "t"
+        self._field_name = "temperature"
         from compas_fea2.results.results import TemperatureResult
 
         self._result_cls = TemperatureResult
 
     @property
     def components_names(self):
-        return ["temp"]
+        return ["T"]
 
 
 # ------------------------------------------------------------------------------
@@ -619,7 +620,6 @@ class SectionForcesFieldResults(ElementFieldResults):
         super(SectionForcesFieldResults, self).__init__(*args, **kwargs)
         self._results_func = "find_element_by_key"
         self._field_name = "sf"
-        from compas_fea2.results.results import SectionForcesResult
 
         self._result_cls = SectionForcesResult
 
@@ -633,8 +633,7 @@ class SectionForcesFieldResults(ElementFieldResults):
 
     @property
     def components_names(self):
-        # Typical beam section result components: axial (n1), shear (v2, v3), torsion (t), bending (m2, m3)
-        return ["n1", "v2", "v3", "t", "m2", "m3"]
+        return SectionForcesResult._components_names
 
     def get_element_forces(self, element):
         """Get the section forces for a given element.
