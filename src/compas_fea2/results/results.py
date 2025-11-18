@@ -530,7 +530,7 @@ class TemperatureResult(NodeResult):
     _results_func_output = "find_node_by_inputkey"
     _components_names = ["T"]
 
-    def __init__(self, node, temp, **kwargs):
+    def __init__(self, node, T, **kwargs):
         super().__init__(node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs)
         self._T = T
 
