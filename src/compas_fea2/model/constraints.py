@@ -45,6 +45,21 @@ class _Constraint(FEAData):
     def __from_data__(cls, data, registry: Optional[Registry] = None, duplicate=True):
         raise NotImplementedError("LinearConnector does not support from_data method yet.")
 
+# ------------------------------------------------------------------------------
+# Coupling
+# ------------------------------------------------------------------------------
+
+class CouplingConstraint(_Constraint):
+    def __init__(self, x=True, y=True, z=True, xx=True, yy=True, zz=True, **kwargs):
+        super().__init__(**kwargs)
+
+        self.directions = ['x', 'y', 'z', 'xx', 'yy', 'zz']
+        self.x = x
+        self.y = y
+        self.z = z
+        self.xx = xx
+        self.yy = yy
+        self.zz = zz
 
 # ------------------------------------------------------------------------------
 # MPC
