@@ -211,7 +211,7 @@ class _Part(FEAData):
     # =========================================================================
     @classmethod
     @units_io(types_in=(None, "length", None, None, None), types_out=None)
-    def from_compas_lines_discretized(cls, lines: List["Line"], targetlength: float, element_cls: type, section: "_Section2D", frame: "Union[Frame, List[float], Vector]", **kwargs):
+    def from_compas_lines_discretized(cls, lines: List["Line"], targetlength: float, element_cls: type, section: "_Section2D", orientation: "Union[Frame, List[float], Vector]", **kwargs):
         """Generate a discretized model from a list of :class:`compas.geometry.Line`.
 
         Parameters
@@ -225,7 +225,7 @@ class _Part(FEAData):
             The section to be assigned to the elements, by default None.
         element_model : str, optional
             Implementation model for the element, by default 'BeamElement'.
-        frame : :class:`compas.geometry.Vector` or list[float], optional
+        orientation : :class:`compas.geometry.Point` or list[float]
             Local frame of the element or x-axis of the frame by default [0,1,0].
         name : str, optional
             The name of the part, by default None (one is automatically generated).
@@ -242,7 +242,7 @@ class _Part(FEAData):
             lines=[Line(start=dividedline_points[i], end=dividedline_points[i + 1]) for i in range(len(dividedline_points) - 1)],
             section=section,
             element_cls=element_cls,
-            frame=frame,
+            orientation=orientation,
             **kwargs,
         )
 
@@ -253,7 +253,7 @@ class _Part(FEAData):
         cls,
         lines: List["Line"],
         element_cls: type = BeamElement,
-        frame: "Union[Frame, List[float], Vector]" = [0, 1, 0],
+        orientation: "Union[Point, List[float]]" = [0, 1, 0],
         section: Optional["_Section"] = None,
         name: Optional[str] = None,
         **kwargs,
@@ -266,8 +266,8 @@ class _Part(FEAData):
             The lines to be converted.
         element_cls : type, optional
             Implementation model for the element, by default BeamElement.
-        frame : :class:`compas.geometry.Line` or list[float], optional
-            The x-axis direction, by default [0,1,0].
+        orientation : :class:`compas.geometry.Point` or list[float], optional
+            Point determining the x-axis direction, by default [0,1,0].
         section : :class:`compas_fea2.model.Section1D`, optional
             The section to be assigned to the elements, by default None.
         name : str, optional
@@ -282,17 +282,16 @@ class _Part(FEAData):
         prt = cls(name=name)
         mass = kwargs.get("mass", None)
         for line in lines:
-            if not (isinstance(frame, Frame)):
-                frame = Frame(line.start, frame, line.vector)
             nodes = []
             for p in [line.start, line.end]:
-                if g := prt.nodes.subgroup(condition=lambda node: node.point == p):
-                    nodes.append(list(g.nodes)[0])
-                else:
-                    nodes.append(Node(list(p), mass=mass))
-
-            prt.add_nodes(nodes)
-            element = element_cls(nodes=nodes, section=section, frame=frame)
+                if prt.nodes :
+                    if p not in prt.points:
+                        nodes.append(prt.add_node(Node(list(p), mass=mass)))
+                    else:
+                        nodes.append(list(prt.find_closest_nodes_to_point(p))[0])
+                else :
+                    nodes.append(prt.add_node(Node(list(p), mass=mass)))
+            element = element_cls(nodes=nodes, section=section, orientation=orientation)
             if not isinstance(element, _Element1D):
                 raise ValueError("Provide a 1D element")
             prt.add_element(element)
