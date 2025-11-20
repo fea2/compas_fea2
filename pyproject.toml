@@ -10,11 +10,13 @@ build-backend = "setuptools.build_meta"
 name = "compas_fea2"
 description = "This package is the 2nd generation of Finite element Analysis tools for COMPAS."
 keywords = []
-authors = [{ name = "Francesco Ranaudo", email = "francesco.ranaudo@gmail.com" }]
+authors = [
+    { name = "Francesco Ranaudo", email = "francesco.ranaudo@gmail.com" },
+]
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.9"
-dynamic = ['dependencies', 'optional-dependencies', 'version']
+dynamic = ['version']
 classifiers = [
     "Development Status :: 4 - Beta",
     "Topic :: Scientific/Engineering",
@@ -24,6 +26,45 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
+dependencies = [
+    "compas>=2.14",
+    "compas_gmsh",
+    "click",
+    "pint",
+    "python-dotenv",
+    "h5py",
+]
+optional-dependencies = { dev = [
+    "build",
+    "bump-my-version",
+    "compas_invocations2",
+    "invoke >=0.14",
+    "ruff",
+    "twine",
+    "wheel",
+], docs = [
+    "markdown-callouts >=0.4",
+    "markdown-exec >=1.8",
+    "mkdocs >=1.6",
+    "mkdocs-autorefs >=1.4",
+    "mkdocs-coverage >=1.0",
+    "mkdocs-git-revision-date-localized-plugin >=1.2",
+    "mkdocs-llmstxt >=0.2",
+    "mkdocs-material >=9.5",
+    "mkdocs-minify-plugin >=0.8",
+    "mkdocs-redirects >=1.2",
+    "mkdocs-section-index >=0.3",
+    "mkdocstrings[python]",
+    "pydantic >=2.10",
+    "tomli >=2.0; python_version < '3.11'",
+], viz = [
+    "compas_notebook",
+    "compas_viewer",
+], opensees = [
+    "compas_fea2_opensees",
+], abaqus = [
+    "compas_fea2_abaqus",
+] }
 
 [project.urls]
 Homepage = "https://compas-dev.github.io/compas_fea2"
@@ -45,8 +86,6 @@ zip-safe = false
 
 [tool.setuptools.dynamic]
 version = { attr = "compas_fea2.__version__" }
-dependencies = { file = "requirements.txt" }
-optional-dependencies = { dev = { file = "requirements-dev.txt" } }
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -92,11 +131,8 @@ replace = "[{new_version}] {now:%Y-%m-%d}"
 # replace setup.cfg
 # ============================================================================
 
-[tool.black]
-line-length = 240
-
 [tool.ruff]
-line-length = 240
+line-length = 179
 indent-width = 4
 target-version = "py39"
 
