@@ -372,7 +372,7 @@ class _ElementsLoadField(_BaseLoadField):
         if not isinstance(factor, (int, float)):
             return NotImplemented
         scaled = [self._scale_value(L, factor) for L in self._loads]
-        return self.__class__(scaled, self._distribution, load_case=self._load_case, combination_rank=self._combination_rank)
+        return self.__class__(scaled, distribution=self._distribution, load_case=self._load_case, combination_rank=self._combination_rank)
 
     def __rmul__(self, factor: float | int):
         return self.__mul__(factor)
