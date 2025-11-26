@@ -157,7 +157,7 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "angular_velocity": ureg.radian / ureg.second,
         "angular_acceleration": ureg.radian / ureg.second**2,
         # Forces & moments
-        "mass": ureg.ton,
+        "mass": ureg.tonne,
         "force": ureg.newton,
         "moment": ureg.newton * ureg.millimeter,  # N·mm
         # Loads
@@ -182,8 +182,8 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "warping_constant": ureg.millimeter**6,
         "radius_of_gyration": ureg.millimeter,
         # Mass inertia
-        "mass_moment_inertia": ureg.ton * ureg.meter**2,  # keep SI base
-        "mass_polar_inertia": ureg.ton * ureg.meter**2,
+        "mass_moment_inertia": ureg.tonne * ureg.meter**2,  # keep SI base
+        "mass_polar_inertia": ureg.tonne * ureg.meter**2,
         # Rigidities
         "axial_rigidity": ureg.newton,
         "bending_rigidity": ureg.newton * ureg.millimeter**2,
@@ -201,10 +201,10 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "damping_ratio": ureg.dimensionless,
         "loss_factor": ureg.dimensionless,
         # Densities & weights
-        "density": ureg.ton / ureg.millimeter**3,
+        "density": ureg.tonne / ureg.millimeter**3,
         "specific_weight": ureg.newton / ureg.millimeter**3,
         # Flows
-        "mass_flow": ureg.ton / ureg.second,
+        "mass_flow": ureg.tonne / ureg.second,
         "volumetric_flow": ureg.millimeter**3 / ureg.second,
         # Energy & power
         "energy": ureg.millijoule,
@@ -218,7 +218,7 @@ UNIT_SYSTEMS: Dict[str, Dict[str, pint.Unit]] = {
         "thermal_resistivity": (ureg.millimeter * ureg.kelvin) / ureg.milliwatt,
         "thermal_resistance": ureg.kelvin / ureg.milliwatt,
         "thermal_capacitance": ureg.millijoule / ureg.kelvin,
-        "specific_heat": ureg.joule / (ureg.ton * ureg.kelvin),
+        "specific_heat": ureg.joule / (ureg.tonne * ureg.kelvin),
         "thermal_expansion": 1 / ureg.kelvin,
         "heat_flux": ureg.milliwatt / ureg.millimeter**2,
         "heat_rate": ureg.milliwatt,
@@ -812,7 +812,7 @@ yd3 = yd**3
 kg = ureg.kilogram
 g = ureg.gram
 mg = ureg.milligram
-ton = 1000 * kg
+ton = ureg.tonne
 lb = ureg.pound  # avoirdupois (mass)
 lbm = ureg.pound  # alias
 slug = ureg.slug

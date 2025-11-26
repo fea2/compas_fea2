@@ -452,12 +452,50 @@ class ContactForcesResult(NodeResult):
     _field_name = "cf"
     _results_func = "find_node_by_key"
     _results_func_output = "find_node_by_inputkey"
-    _components_names = ["x", "y", "z", "xx", "yy", "zz"]
+    _components_names = ["Nx", "Ny", "Nz", "Tx", "Ty", "Tz"]
     _invariants_names = ["magnitude"]
 
-    def __init__(self, node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs):
-        super().__init__(node, x, y, z, xx, yy, zz, **kwargs)
+    def __init__(self, node, Nx=0, Ny=0, Nz=0, Tx=0, Ty=0, Tz=0, **kwargs):
+        super().__init__(node, x=Nx+Tx, y=Ny+Ty, z=Nz+Tz, xx=0, yy=0, zz=0, **kwargs)
+        self._Nx = Nx
+        self._Ny = Ny
+        self._Nz = Nz
+        self._Tx = Tx
+        self._Ty = Ty
+        self._Tz = Tz
 
+    @property
+    def Nx(self):
+        return self._Nx
+
+    @property
+    def Ny(self):
+        return self._Ny
+
+    @property
+    def Nz(self):
+        return self._Nz
+
+    @property
+    def Tx(self):
+        return self._Tx
+
+    @property
+    def Ty(self):
+        return self._Ty
+
+    @property
+    def Tz(self):
+        return self._Tz
+    
+    @property
+    def N(self):
+        return Vector(self.Nx,self.Ny,self.Nz)
+    
+    @property
+    def T(self):
+        return Vector(self.Tx,self.Ty,self.Tz)
+    
 
 class TemperatureResult(NodeResult):
     """TemperatureResult object.
@@ -490,16 +528,15 @@ class TemperatureResult(NodeResult):
     _field_name = "t"
     _results_func = "find_node_by_key"
     _results_func_output = "find_node_by_inputkey"
-    _components_names = ["temp"]
-    _invariants_names = ["magnitude"]
+    _components_names = ["T"]
 
-    def __init__(self, node, temp, **kwargs):
+    def __init__(self, node, T, **kwargs):
         super().__init__(node, x=0, y=0, z=0, xx=0, yy=0, zz=0, **kwargs)
-        self._temp = temp
+        self._T = T
 
     @property
-    def temp(self):
-        return self._temp
+    def T(self):
+        return self._T
 
 
 # ---------------------------------------------------------------------------------------------
@@ -572,7 +609,6 @@ class SectionForcesResult(ElementResult):
     _results_func = "find_element_by_key"
     _results_func_output = "find_element_by_inputkey"
     _components_names = ["Fx_1", "Fy_1", "Fz_1", "Mx_1", "My_1", "Mz_1", "Fx_2", "Fy_2", "Fz_2", "Mx_2", "My_2", "Mz_2"]
-    _invariants_names = ["magnitude"]
 
     def __init__(self, element, Fx_1=0, Fy_1=0, Fz_1=0, Mx_1=0, My_1=0, Mz_1=0, Fx_2=0, Fy_2=0, Fz_2=0, Mx_2=0, My_2=0, Mz_2=0, **kwargs):
         super().__init__(element, **kwargs)

@@ -10,6 +10,7 @@ from typing import Union
 from compas_fea2.base import FEAData
 from compas_fea2.base import from_data
 from compas_fea2.problem.groups import LoadsFieldGroup
+from compas_fea2.problem.fields import GravityLoadField
 
 if TYPE_CHECKING:
     from compas_fea2.model import Model
@@ -250,7 +251,11 @@ class LoadFieldsCombination(FEAData):
             factor = select_factor(spec, rank)
             if factor == 0.0:
                 continue
-            scaled_field = field if factor == 1.0 else factor * field
+            if isinstance(field, GravityLoadField):
+                field._g = factor * field._g
+                scaled_field = field
+            else:
+                scaled_field = field if factor == 1.0 else factor * field
             scaled_fields.append(scaled_field)
         return LoadsFieldGroup(members=scaled_fields)
 

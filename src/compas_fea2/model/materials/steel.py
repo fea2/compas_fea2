@@ -3,6 +3,7 @@ from typing import Optional
 from compas_fea2.base import Registry
 from compas_fea2.base import from_data
 from compas_fea2.units import units_io
+import compas_fea2.units as u
 
 from .material import ElasticIsotropic
 
@@ -51,7 +52,7 @@ class Steel(ElasticIsotropic):
 
     @units_io(types_in=("stress", None, "density", "stress", "stress", None), types_out=None)
     def __init__(self, *, E, v, density, fy, fu, eu, **kwargs):
-        super().__init__(E=E, v=v, density=density, **kwargs)
+        super().__init__(E=E*u.MPa, v=v, density=density*u.kg_per_m3, **kwargs)
 
         fu = fu or fy
 
@@ -70,8 +71,6 @@ class Steel(ElasticIsotropic):
         self.fu = fu
         self.eu = eu
         self.ep = ep
-        self.E = E
-        self.v = v
         self.tension = {"f": f, "e": e}
         self.compression = {"f": fc, "e": ec}
 
@@ -139,4 +138,4 @@ ep : {:.2f}
         :class:`compas_fea2.model.material.Steel`
             The precompiled steel material.
         """
-        return cls(fy=355, fu=None, eu=20, E=210, v=0.3, density=7850, name=None)
+        return cls(fy=355, fu=None, eu=20, E=210000, v=0.3, density=7850, name=None)
