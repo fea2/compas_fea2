@@ -927,6 +927,9 @@ class Model(FEAData):
             "rollerY": "RollerBCY",
             "rollerZ": "RollerBCZ",
             "thermal": "ThermalBC",
+            "rollerXY": "RollerBCXY",
+            "rollerXZ": "RollerBCXZ",
+            "rollerYZ": "RollerBCYZ"
         }
         m = importlib.import_module("compas_fea2.model.bcs")
         bc = getattr(m, types[bc_type])(frame=frame)
